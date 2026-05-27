@@ -1,0 +1,9 @@
+.faq-container { background: var(--mb-gradient-page); min-height: 100vh; padding: 20rpx; }
+.faq-item { background: var(--mb-card-bg); border-radius: 16rpx; margin-bottom: 16rpx; overflow: hidden; }
+.faq-q { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 24rpx; }
+.q-text { font-size: 30rpx; color: var(--mb-text-primary); font-weight: 500; flex: 1; }
+.q-icon { font-size: 24rpx; color: var(--mb-text-muted); margin-left: 16rpx; transition: transform 0.3s; }
+.q-icon.open { transform: rotate(180deg); }
+.faq-a { max-height: 0; overflow: hidden; padding: 0 24rpx; transition: max-height 0.3s, padding 0.3s; }
+.faq-a.show { max-height: 400rpx; padding: 0 24rpx 24rpx; }
+.faq-a text { font-size: 28rpx; color: var(--mb-text-secondary); line-height: 1.6; }

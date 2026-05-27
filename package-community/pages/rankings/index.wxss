@@ -1,0 +1,16 @@
+.rankings-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.tabs { display: flex; background: var(--mb-card-bg); padding: 0 30rpx; border-bottom: 1rpx solid var(--mb-border-subtle); }
+.tab { flex: 1; text-align: center; padding: 24rpx 0; font-size: 28rpx; color: var(--mb-text-secondary); position: relative; }
+.tab.active { color: var(--mb-mint); font-weight: 600; }
+.tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40rpx; height: 4rpx; background: var(--mb-mint); border-radius: 2rpx; }
+.ranking-list { padding: 20rpx; }
+.rank-item { display: flex; align-items: center; background: var(--mb-card-bg); border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
+.rank-num { width: 60rpx; text-align: center; font-size: 32rpx; font-weight: 700; color: var(--mb-text-muted); }
+.rank-num.top { color: #e6a23c; }
+.rank-cover { width: 100rpx; height: 100rpx; border-radius: 12rpx; margin: 0 20rpx; background: var(--mb-card-bg); }
+.rank-info { flex: 1; }
+.rank-title { display: block; font-size: 30rpx; color: var(--mb-text-primary); font-weight: 500; }
+.rank-author { display: block; font-size: 24rpx; color: var(--mb-text-muted); margin-top: 8rpx; }
+.rank-play { text-align: right; }
+.play-count { display: block; font-size: 24rpx; color: var(--mb-text-muted); }
+.play-icon { display: block; width: 28rpx; height: 28rpx; margin-top: 8rpx; }

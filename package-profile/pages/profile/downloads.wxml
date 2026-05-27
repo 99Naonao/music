@@ -1,0 +1,45 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body dl-container">
+    <view class="dl-header">
+      <text class="dl-count" wx:if="{{items.length}}">共 {{items.length}} 首（已保存到本机）</text>
+      <text class="dl-count" wx:else>暂无下载</text>
+    </view>
+
+    <view class="dl-list">
+      <view
+        class="dl-item"
+        wx:for="{{items}}"
+        wx:key="id"
+        bindtap="onTapItem"
+        data-index="{{index}}"
+      >
+        <image
+          class="dl-cover"
+          src="{{item.cover}}"
+          mode="aspectFill"
+          binderror="onCoverError"
+          data-index="{{index}}"
+        />
+        <view class="dl-info">
+          <text class="dl-title">{{item.title}}</text>
+          <view class="dl-tags" wx:if="{{item.tags.length}}">
+            <text class="dl-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">{{tag}}</text>
+          </view>
+          <text class="dl-time" wx:if="{{item.timeText}}">下载于 {{item.timeText}}</text>
+        </view>
+        <view class="dl-actions">
+          <text class="dl-duration" wx:if="{{item.durationText}}">{{item.durationText}}</text>
+          <image class="dl-play-icon" src="/static/new_logo/play.png" mode="aspectFit" />
+          <text class="dl-remove" catchtap="onRemove" data-index="{{index}}">删除</text>
+        </view>
+      </view>
+
+      <view class="dl-empty" wx:if="{{!loading && items.length === 0}}">
+        <text class="dl-empty-title">还没有下载</text>
+        <text class="dl-empty-hint">在播放页点击「下载」，作品会保存到本机，可离线播放</text>
+      </view>
+    </view>
+  </view>
+</view>

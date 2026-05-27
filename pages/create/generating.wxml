@@ -1,0 +1,64 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="generating-page mb-theme-{{mbTheme}}">
+  <view class="generating-page-bg"></view>
+
+  <scroll-view
+    wx:if="{{!error}}"
+    class="generating-scroll"
+    scroll-y
+    show-scrollbar="{{false}}"
+    style="height: {{scrollHeight}}px;"
+  >
+    <view class="generating-scroll-body">
+      <view class="gen-header">
+        <text class="gen-title">正在为你生成专属音乐</text>
+        <text class="gen-subtitle">- AI 正在匹配最适合你的声音配方 -</text>
+      </view>
+
+      <view class="gen-hero">
+        <view class="gen-hero-glow"></view>
+        <image class="gen-hero-img" src="/static/new_logo/logo_bg.png" mode="aspectFit" />
+      </view>
+
+      <view class="gen-progress-block">
+        <text class="gen-progress-label">生成中 {{progress}}%</text>
+        <view class="gen-track">
+          <view class="gen-track-rail">
+            <view class="gen-track-fill" style="width: {{progress}}%;"></view>
+          </view>
+          <view class="gen-nodes">
+            <view
+              class="gen-node {{index <= activeStepIndex ? 'gen-node--on' : ''}}"
+              wx:for="{{stepLabels}}"
+              wx:key="*this"
+            >
+              <view class="gen-node-dot"></view>
+              <text class="gen-node-label">{{item}}</text>
+            </view>
+          </view>
+        </view>
+        <text class="gen-status" wx:if="{{statusText}}">{{statusText}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{!error}}" class="gen-footer-fixed" style="bottom: {{tabBarOffsetPx}}px;">
+    <button class="gen-cancel-btn" bindtap="cancelGeneration">取消生成</button>
+  </view>
+
+  <view class="generating-body generating-body--error" wx:else>
+    <view class="gen-header">
+      <text class="gen-title">生成失败</text>
+      <text class="gen-subtitle gen-subtitle--error">{{error}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="gen-footer-fixed gen-footer-fixed--stack" style="bottom: {{tabBarOffsetPx}}px;">
+    <view class="gen-error-actions">
+      <button class="gen-cancel-btn" bindtap="retry">重新生成</button>
+      <button class="gen-outline-btn" bindtap="goHome">返回首页</button>
+    </view>
+  </view>
+  <custom-tab-bar id="custom-tab-bar" />
+  <points-reward-modal id="points-reward-modal" />
+</view>

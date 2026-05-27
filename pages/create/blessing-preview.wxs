@@ -1,0 +1,79 @@
+var MUSIC_CHARS_PER_LINE = 15
+
+function body(msg, recipient) {
+  if (!msg) return ''
+  msg = ('' + msg).trim()
+  var name = recipient ? ('' + recipient).trim() : ''
+  if (!name || !msg) return msg
+  var pairs = [
+    '亲爱的' + name + '：',
+    '亲爱的' + name + ':',
+    '亲爱的' + name + '，',
+    '亲爱的' + name + ',',
+    name + '：',
+    name + ':',
+    name + '，',
+    name + ','
+  ]
+  var i = 0
+  for (i = 0; i < pairs.length; i++) {
+    var p = pairs[i]
+    if (msg.indexOf(p) === 0) {
+      return msg.substring(p.length).trim()
+    }
+  }
+  return msg
+}
+
+function isMusic(templateId, categoryId) {
+  var cat = categoryId ? ('' + categoryId) : ''
+  if (cat === 'music') return true
+  var id = templateId ? ('' + templateId) : ''
+  return id.indexOf('tpl_music_') === 0
+}
+
+function stripNewlines(text) {
+  if (!text) return ''
+  text = '' + text
+  var out = ''
+  var i = 0
+  var c = ''
+  for (i = 0; i < text.length; i++) {
+    c = text.charAt(i)
+    if (c !== '\n' && c !== '\r') {
+      out += c
+    }
+  }
+  return out
+}
+
+function wrapEvery(text, n) {
+  if (!text) return ''
+  text = stripNewlines(text)
+  if (!text) return ''
+  var out = ''
+  var count = 0
+  var i = 0
+  for (i = 0; i < text.length; i++) {
+    if (count >= n) {
+      out += '\n'
+      count = 0
+    }
+    out += text.charAt(i)
+    count++
+  }
+  return out
+}
+
+function display(msg, recipient, templateId, categoryId) {
+  var t = body(msg, recipient)
+  if (!t) t = '愿这份音乐带给你宁静与好眠'
+  if (isMusic(templateId, categoryId)) {
+    t = wrapEvery(t, MUSIC_CHARS_PER_LINE)
+  }
+  return t
+}
+
+module.exports.body = body
+module.exports.display = display
+module.exports.isMusic = isMusic

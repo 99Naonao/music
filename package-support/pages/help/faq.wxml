@@ -1,0 +1,17 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body faq-container">
+  <view class="faq-list">
+    <view class="faq-item" wx:for="{{faqs}}" wx:key="id">
+      <view class="faq-q" bindtap="toggleItem" data-id="{{item.id}}">
+        <text class="q-text">Q: {{item.question}}</text>
+        <text class="q-icon {{item.open?'open':''}}">▼</text>
+      </view>
+      <view class="faq-a {{item.open?'show':''}}">
+        <text>{{item.answer}}</text>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

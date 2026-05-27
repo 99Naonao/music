@@ -1,0 +1,153 @@
+.library-container {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.library-header {
+  padding: 40rpx 30rpx 24rpx;
+}
+
+.library-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--mb-text-primary);
+  margin-bottom: 24rpx;
+}
+
+.search-bar {
+  position: relative;
+}
+
+.search-input {
+  height: 80rpx;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 40rpx;
+  padding: 0 32rpx;
+  color: var(--mb-text-primary);
+  font-size: 28rpx;
+}
+
+.search-placeholder {
+  color: var(--mb-text-muted);
+}
+
+.category-tabs {
+  display: flex;
+  padding: 0 20rpx 20rpx;
+  gap: 16rpx;
+  overflow-x: auto;
+}
+
+.cat-tab {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 28rpx;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 32rpx;
+}
+
+.cat-tab.active {
+  background: linear-gradient(135deg, var(--mb-mint-30), var(--mb-mist-30));
+  border-color: var(--mb-mint);
+}
+
+.cat-emoji {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.cat-name {
+  font-size: 26rpx;
+  color: var(--mb-text-secondary);
+}
+
+.cat-tab.active .cat-name {
+  color: var(--mb-text-primary);
+}
+
+.music-list {
+  padding: 0 20rpx;
+}
+
+.music-item {
+  display: flex;
+  align-items: center;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.music-cover {
+  width: 100rpx;
+  height: 100rpx;
+  background: var(--mb-card-bg);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.music-info {
+  flex: 1;
+  margin-left: 20rpx;
+}
+
+.music-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--mb-text-primary);
+  font-weight: 500;
+  margin-bottom: 10rpx;
+}
+
+.music-tags {
+  display: flex;
+  gap: 12rpx;
+}
+
+.tag {
+  padding: 4rpx 14rpx;
+  background: var(--mb-mint-15);
+  color: var(--mb-mint);
+  font-size: 22rpx;
+  border-radius: 12rpx;
+}
+
+.music-meta {
+  text-align: right;
+}
+
+.meta-duration {
+  display: block;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  margin-bottom: 8rpx;
+}
+
+.meta-play {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  background: var(--mb-card-bg);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.meta-play-icon {
+  width: 22rpx;
+  height: 22rpx;
+}

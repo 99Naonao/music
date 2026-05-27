@@ -1,0 +1,75 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body topic-page">
+  <!-- 顶部标题栏 -->
+  <view class="topic-header">
+    <view class="header-top">
+      <text class="topic-name">睡眠社区</text>
+      <view class="publish-btn" bindtap="goToCreate">
+        <image class="publish-icon" src="/static/icon_edit.png" mode="aspectFit"/>
+        <text class="publish-text">发布</text>
+      </view>
+    </view>
+    <text class="topic-count">{{postCount}} 篇分享 · 一起好眠</text>
+  </view>
+
+  <!-- 话题筛选 -->
+  <view class="topic-filter">
+    <scroll-view scroll-x class="filter-scroll">
+      <view class="filter-list">
+        <view class="filter-item active" bindtap="filterTopic" data-topic="">
+          <text>全部</text>
+        </view>
+        <view class="filter-item" wx:for="{{topics}}" wx:key="*this" bindtap="filterTopic" data-topic="{{item}}">
+          <text>#{{item}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 帖子列表 -->
+  <view class="post-list">
+    <view class="post-card" wx:for="{{posts}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="card-header">
+        <image class="card-avatar" src="{{item.avatar || '/static/mine.png'}}" mode="aspectFill"/>
+        <view class="card-user">
+          <text class="card-name">{{item.author || '匿名用户'}}</text>
+          <text class="card-time">{{item.created_at}}</text>
+        </view>
+      </view>
+      <view wx:if="{{item.topic}}" class="card-topic">#{{item.topic}}</view>
+      <text class="card-text">{{item.content}}</text>
+      <view class="card-images" wx:if="{{item.images && item.images.length > 0}}">
+        <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" class="card-img {{item.images.length === 1 ? 'single' : ''}}" src="{{img}}" mode="aspectFill"/>
+      </view>
+      <view class="card-footer">
+        <view class="card-stat">
+          <image class="stat-icon" src="/static/new_logo/thumbs.png" mode="aspectFit"/>
+          <text>{{item.likes || 0}}</text>
+        </view>
+        <view class="card-stat">
+          <image class="stat-icon" src="/static/new_logo/comments.png" mode="aspectFit"/>
+          <text>{{item.comments || 0}}</text>
+        </view>
+        <view class="card-stat">
+          <image class="stat-icon" src="/static/new_logo/share.png" mode="aspectFit"/>
+          <text>分享</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="load-more" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    <view class="load-more" wx:if="{{!hasMore && posts.length > 0}}">
+      <text>已经到底了</text>
+    </view>
+    <view class="empty-state" wx:if="{{!loading && posts.length === 0}}">
+      <image class="empty-icon" src="/static/icon_empty.png" mode="aspectFit"/>
+      <text class="empty-text">还没有帖子，来做第一个分享者吧</text>
+    </view>
+  </view>
+  </view>
+</view>

@@ -1,0 +1,38 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body library-container">
+  <view class="library-header">
+    <text class="library-title">疗愈曲库</text>
+    <view class="search-bar">
+      <input class="search-input" placeholder="搜索音乐、频率、场景" placeholder-class="search-placeholder" bindinput="onSearch"/>
+    </view>
+  </view>
+
+  <view class="category-tabs">
+    <view class="cat-tab {{activeCategory==index?'active':''}}" wx:for="{{categories}}" wx:key="id" bindtap="switchCategory" data-index="{{index}}">
+      <image class="cat-emoji" src="{{item.img || item.icon}}" mode="aspectFit"/>
+      <text class="cat-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <view class="music-list">
+    <view class="music-item" wx:for="{{musicList}}" wx:key="id" bindtap="playMusic" data-id="{{item.id}}">
+      <view class="music-cover">
+        <image class="cover-icon" src="{{item.img || item.icon}}" mode="aspectFit"/>
+      </view>
+      <view class="music-info">
+        <text class="music-title">{{item.title}}</text>
+        <view class="music-tags">
+          <text class="tag">{{item.frequency}}</text>
+          <text class="tag">{{item.bpm}}BPM</text>
+        </view>
+      </view>
+      <view class="music-meta">
+        <text class="meta-duration">{{item.duration}}</text>
+        <view class="meta-play"><image class="meta-play-icon" src="/static/new_logo/play.png" mode="aspectFit"/> {{item.plays}}</view>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

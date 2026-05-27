@@ -1,0 +1,93 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body create-post">
+  <textarea
+    class="content-input"
+    placeholder="分享你的睡眠心得，帮助更多失眠的朋友..."
+    placeholder-class="input-ph-{{mbTheme}}"
+    maxlength="500"
+    bindinput="onInput"
+    value="{{content}}"
+  />
+  <text class="word-count">{{content.length}}/500</text>
+
+  <!-- 关联作品 -->
+  <view class="work-section" wx:if="{{works.length > 0}}">
+    <text class="section-label">关联作品</text>
+    <view wx:if="{{!selectedWork}}" class="work-add" bindtap="toggleWorkPicker">
+      <image class="work-add-icon" src="/static/icon_music.png" mode="aspectFit"/>
+      <text class="work-add-text">选择刚刚创作的曲子</text>
+      <text class="work-add-arrow">▼</text>
+    </view>
+    <view wx:if="{{selectedWork}}" class="work-selected">
+      <view class="work-info">
+        <image class="work-icon" src="/static/icon_music.png" mode="aspectFit"/>
+        <view class="work-text">
+          <text class="work-title">{{selectedWork.title || '未命名作品'}}</text>
+          <text class="work-meta">{{selectedWork.main_instrument}}</text>
+        </view>
+      </view>
+      <view class="work-remove" bindtap="removeWork">
+        <image class="remove-icon" src="/static/create_step/delete.png" mode="aspectFit"/>
+      </view>
+    </view>
+  </view>
+
+  <!-- 作品选择弹层 -->
+  <view class="work-picker-mask" wx:if="{{showWorkPicker}}" bindtap="toggleWorkPicker">
+    <view class="work-picker" catchtap="preventBubble">
+      <view class="picker-title">选择作品</view>
+      <scroll-view scroll-y class="picker-list">
+        <view class="picker-item" wx:for="{{works}}" wx:key="id" bindtap="selectWork" data-id="{{item.id}}">
+          <image class="picker-icon" src="/static/icon_music.png" mode="aspectFit"/>
+          <view class="picker-info">
+            <text class="picker-name">{{item.title || '未命名作品'}}</text>
+            <text class="picker-meta">{{item.main_instrument}} · {{item.created_at}}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="picker-close" bindtap="toggleWorkPicker">取消</view>
+    </view>
+  </view>
+
+  <!-- 图片区域 -->
+  <view class="image-section">
+    <view class="image-list">
+      <view class="image-item" wx:for="{{images}}" wx:key="*this">
+        <image src="{{item}}" mode="aspectFill"/>
+        <view class="remove-btn" bindtap="removeImage" data-index="{{index}}">
+          <image class="remove-icon" src="/static/create_step/delete.png" mode="aspectFit"/>
+        </view>
+      </view>
+      <view class="add-image" bindtap="chooseImage" wx:if="{{images.length < 9}}">
+        <image class="add-icon" src="/static/music_library/camera.png" mode="aspectFit"/>
+        <text class="add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 话题选择 -->
+  <view class="topic-section">
+    <text class="section-label">选择话题</text>
+    <view class="topic-list">
+      <view
+        class="topic-tag {{topic === item ? 'active' : ''}}"
+        wx:for="{{topics}}"
+        wx:key="*this"
+        bindtap="selectTopic"
+        data-topic="{{item}}"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <!-- 底部发布按钮 -->
+  <view class="submit-bar">
+    <view class="submit-btn {{!canSubmit ? 'disabled' : ''}}" bindtap="submitPost">
+      <text wx:if="{{!isLogin}}">登录后发布</text>
+      <text wx:elif="{{submitting}}">发布中...</text>
+      <text wx:else>发布</text>
+    </view>
+  </view>
+  </view>
+</view>

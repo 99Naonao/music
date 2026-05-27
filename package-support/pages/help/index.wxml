@@ -1,0 +1,38 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body help-container">
+  <view class="help-search">
+    <input class="search-input" placeholder="搜索问题关键词" bindinput="onSearch"/>
+  </view>
+
+  <view class="help-grid">
+    <view class="help-card" bindtap="goToFaq">
+      <image class="help-icon" src="/static/help_center/icon_faq.png" mode="aspectFit"/>
+      <text class="help-name">常见问题</text>
+    </view>
+    <view class="help-card" bindtap="goToGuide">
+      <image class="help-icon" src="/static/help_center/icon_guide.png" mode="aspectFit"/>
+      <text class="help-name">使用指南</text>
+    </view>
+    <view class="help-card" bindtap="goToFeedback">
+      <image class="help-icon" src="/static/help_center/icon_feedback.png" mode="aspectFit"/>
+      <text class="help-name">意见反馈</text>
+    </view>
+    <view class="help-card" bindtap="goToContact">
+      <image class="help-icon" src="/static/help_center/icon_contact.png" mode="aspectFit"/>
+      <text class="help-name">联系客服</text>
+    </view>
+  </view>
+
+  <view class="hot-section">
+    <view class="section-title">热门问题</view>
+    <view class="hot-list">
+      <view class="hot-item" wx:for="{{hotFaqs}}" wx:key="id" bindtap="goToFaqDetail" data-id="{{item.id}}">
+        <text class="hot-q">{{item.question}}</text>
+        <text class="hot-arrow">></text>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

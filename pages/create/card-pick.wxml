@@ -1,0 +1,63 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body card-pick-page">
+
+    <view class="card-pick-header">
+      <text class="card-pick-title">选择一张贺卡</text>
+      <text class="card-pick-sub">把温暖的声音送给在乎的人</text>
+    </view>
+
+    <scroll-view class="card-pick-tabs" scroll-x enable-flex show-scrollbar="{{false}}">
+      <view
+        class="card-pick-tab {{activeCategory === item.id ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onTapCategory"
+      >{{item.name}}</view>
+    </scroll-view>
+
+    <view wx:if="{{loading}}" class="card-pick-loading">
+      <text>加载贺卡模板…</text>
+    </view>
+
+    <view wx:elif="{{loadError}}" class="card-pick-empty">
+      <text>{{loadError}}</text>
+      <view class="card-pick-retry" bindtap="loadAll">重试</view>
+    </view>
+
+    <view wx:elif="{{templates.length === 0}}" class="card-pick-empty">
+      <text>该分类模板即将上线</text>
+      <text class="card-pick-empty-hint" wx:if="{{activeCategory === 'all'}}">请在后端 images/card/ 上传 PNG 并执行 sync:cards</text>
+      <text class="card-pick-empty-hint" wx:else>可先选「全部」或「常规」使用已有贺卡</text>
+    </view>
+
+    <view wx:else class="card-pick-grid">
+      <view
+        class="card-pick-item"
+        wx:for="{{templates}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onPickTemplate"
+      >
+        <view class="card-pick-thumb-wrap">
+          <view
+            wx:if="{{item.defaultGradient}}"
+            class="card-pick-thumb-inner card-pick-thumb--gradient style-{{item.gradientTemplate || 1}}"
+          />
+          <image
+            wx:elif="{{item.coverUrl}}"
+            class="card-pick-thumb-inner card-pick-thumb-img"
+            src="{{item.coverUrl}}"
+            mode="aspectFill"
+            lazy-load="{{true}}"
+          />
+          <view wx:else class="card-pick-thumb-inner card-pick-thumb-placeholder">图片待上传</view>
+        </view>
+        <text class="card-pick-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+</view>

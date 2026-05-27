@@ -1,0 +1,32 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body mall-container">
+  <view class="points-banner">
+    <view class="points-info">
+      <text class="points-label">我的积分</text>
+      <text class="points-value">{{userPoints}}</text>
+    </view>
+    <view class="points-actions">
+      <view class="points-btn" bindtap="goToHistory">积分明细</view>
+      <view class="points-btn" bindtap="goToTasks">赚积分</view>
+    </view>
+  </view>
+
+  <view class="product-section">
+    <view class="section-header">
+      <text class="section-title">热门兑换</text>
+    </view>
+    <view class="product-grid">
+      <view class="product-card" wx:for="{{products}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+        <image class="product-img" src="{{item.image}}" mode="aspectFill"/>
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-points">
+          <image class="point-icon" src="/static/icon_star.png" mode="aspectFit"/>
+          <text class="point-num">{{item.points}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

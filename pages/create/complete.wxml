@@ -1,0 +1,121 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="complete-page mb-theme-{{mbTheme}}">
+  <view class="complete-page-bg"></view>
+
+  <scroll-view
+    class="complete-scroll"
+    scroll-y
+    show-scrollbar="{{false}}"
+    style="height: {{scrollHeight}}px;"
+  >
+    <view class="complete-body">
+      <view class="complete-inner">
+      <view class="complete-header">
+        <text class="complete-title">你的专属音乐已生成</text>
+        <text class="complete-subtitle">希望它能陪你度过美好的夜晚</text>
+      </view>
+
+      <view class="complete-cover-section" bindtap="chooseWorkCover">
+        <view class="complete-cover-box">
+          <image
+            class="complete-cover-img"
+            src="{{coverImage || defaultCover}}"
+            mode="{{coverImage ? 'aspectFill' : 'aspectFit'}}"
+          />
+          <view class="complete-cover-mask">
+            <text class="complete-cover-hint">{{coverImage ? '点击更换封面' : '点击选择作品封面'}}</text>
+          </view>
+        </view>
+        <text class="complete-cover-tip">选一张喜欢的图作为封面</text>
+      </view>
+
+      <view class="complete-work" bindtap="editWorkTitle">
+        <text class="work-name">{{workTitle}}</text>
+        <text class="complete-work-edit-hint">点击修改名称</text>
+        <view class="work-tags" wx:if="{{workTags.length}}">
+          <text class="work-tag" wx:for="{{workTags}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="complete-actions">
+        <view
+          class="complete-btn complete-btn--primary"
+          hover-class="complete-btn-press"
+          hover-stay-time="80"
+          bindtap="playNow"
+        >立即播放</view>
+        <view
+          class="complete-btn complete-btn--secondary"
+          hover-class="complete-btn-press"
+          hover-stay-time="80"
+          bindtap="recreate"
+        >重新创作</view>
+      </view>
+
+      <view
+        class="complete-mianjia"
+        wx:if="{{showMianjiaEntry && showMianjiaTip}}"
+        bindtap="goToMianjia"
+      >
+        <view class="complete-mianjia-text">
+          <text class="complete-mianjia-title">搭配眠家深睡产品</text>
+          <text class="complete-mianjia-desc">睡得更稳 · 探索眠加商城精选</text>
+        </view>
+        <text class="complete-mianjia-link">去看看 ›</text>
+        <view class="complete-mianjia-close" catchtap="onCloseMianjiaTip">
+          <image class="complete-mianjia-close-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+        </view>
+      </view>
+
+      <view class="complete-card-section">
+        <view class="complete-card-head">
+          <text class="complete-card-title">制作贺卡</text>
+          <text class="complete-card-desc">选一张样式，配上祝福送给在乎的人</text>
+        </view>
+
+        <view wx:if="{{cardPreviewsLoading}}" class="complete-card-loading">
+          <text>加载贺卡样式…</text>
+        </view>
+        <scroll-view
+          wx:else
+          class="complete-card-scroll"
+          scroll-x
+          enhanced
+          show-scrollbar="{{false}}"
+        >
+          <view class="complete-card-scroll-inner">
+            <view
+              class="complete-card-thumb-item"
+              wx:for="{{cardPreviews}}"
+              wx:key="pickId"
+              data-id="{{item.pickId}}"
+              bindtap="onPickCardPreview"
+            >
+              <view class="complete-card-thumb-wrap">
+                <view
+                  wx:if="{{item.defaultGradient}}"
+                  class="complete-card-thumb-inner complete-card-thumb--gradient style-{{item.gradientTemplate || 1}}"
+                />
+                <image
+                  wx:else
+                  class="complete-card-thumb-inner complete-card-thumb-img"
+                  src="{{item.coverUrl}}"
+                  mode="aspectFill"
+                  lazy-load="{{true}}"
+                />
+              </view>
+              <text class="complete-card-thumb-name">{{item.name}}</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="complete-card-more" bindtap="goMoreCards">
+          <text>查看更多贺卡</text>
+          <text class="complete-card-more-arrow">›</text>
+        </view>
+      </view>
+      </view>
+    </view>
+  </scroll-view>
+  <custom-tab-bar id="custom-tab-bar" />
+</view>

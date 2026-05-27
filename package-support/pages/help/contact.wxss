@@ -1,0 +1,10 @@
+.contact-container { background: var(--mb-gradient-page); min-height: 100vh; padding: 20rpx; }
+.contact-card { background: var(--mb-card-bg); border-radius: 16rpx; padding: 0 24rpx; margin-bottom: 40rpx; }
+.contact-item { padding: 28rpx 0; border-bottom: 1rpx solid var(--mb-border-subtle); }
+.contact-item:last-child { border-bottom: none; }
+.contact-label { display: block; font-size: 26rpx; color: var(--mb-text-muted); margin-bottom: 8rpx; }
+.contact-row { display: flex; align-items: center; justify-content: space-between; }
+.contact-value { font-size: 30rpx; color: var(--mb-text-primary); }
+.contact-action { font-size: 26rpx; color: var(--mb-mint); padding: 8rpx 20rpx; background: var(--mb-mint-15); border-radius: 24rpx; }
+.contact-btn { width: 100%; height: 96rpx; background: var(--mb-mint); color: #fff; font-size: 32rpx; border-radius: 48rpx; }
+.contact-btn::after { border: none; }

@@ -1,0 +1,16 @@
+.mall-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.points-banner { background: var(--mb-gradient-cta-to-night); padding: 40rpx 30rpx; display: flex; justify-content: space-between; align-items: center; }
+.points-label { display: block; font-size: 26rpx; color: var(--mb-text-secondary); }
+.points-value { display: block; font-size: 56rpx; color: var(--mb-text-primary); font-weight: 700; margin-top: 8rpx; }
+.points-actions { display: flex; gap: 16rpx; }
+.points-btn { padding: 12rpx 24rpx; background: rgba(255,255,255,0.15); color: var(--mb-text-primary); font-size: 26rpx; border-radius: 28rpx; }
+.product-section { padding: 0 20rpx; }
+.section-header { padding: 24rpx 10rpx 16rpx; }
+.section-title { font-size: 32rpx; font-weight: 600; color: var(--mb-text-primary); }
+.product-grid { display: flex; flex-wrap: wrap; justify-content: space-between; }
+.product-card { width: 48%; margin-bottom: 20rpx; background: var(--mb-card-bg); border-radius: 16rpx; overflow: hidden; }
+.product-img { width: 100%; height: 280rpx; background: var(--mb-card-bg); }
+.product-name { display: block; font-size: 28rpx; color: var(--mb-text-primary); padding: 16rpx 20rpx 8rpx; }
+.product-points { display: flex; align-items: center; gap: 8rpx; padding: 0 20rpx 20rpx; }
+.point-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; display: block; }
+.point-num { font-size: 30rpx; color: #e6a23c; font-weight: 600; }

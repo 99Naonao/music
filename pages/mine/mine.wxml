@@ -1,0 +1,174 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mine-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mine-body">
+
+    <!-- 未登录：顶部登录区 -->
+    <view wx:if="{{!isLoggedIn}}" class="mine-login-card">
+      <image class="mine-login-avatar" src="/static/self_icon/avatar_default.png" mode="aspectFit"/>
+      <text class="mine-login-tip">登录后享受更多功能</text>
+      <button class="btn-wechat-login" open-type="getPhoneNumber" bind:getphonenumber="onPhoneLogin">
+        <text>手机号快捷登录</text>
+      </button>
+    </view>
+
+    <!-- 已登录：资料与统计 -->
+    <block wx:if="{{isLoggedIn}}">
+    <!-- 资料区 -->
+    <view class="mine-profile">
+      <view class="mine-profile-main">
+        <view class="avatar-container">
+          <view class="avatar-circle">
+            <image
+              class="user-avatar"
+              src="{{userInfo.avatarUrl || '/static/self_icon/avatar_default.png'}}"
+              mode="aspectFill"
+            />
+            <button
+              class="avatar-choose-btn"
+              open-type="chooseAvatar"
+              bind:chooseavatar="onChooseAvatar"
+            />
+          </view>
+          <view class="avatar-edit" bindtap="chooseAvatarFromAlbum">
+            <image class="avatar-edit-icon" src="/static/music_library/camera.png" mode="aspectFit"/>
+          </view>
+        </view>
+        <view class="mine-profile-text">
+          <text class="user-name">{{userInfo.nickName || '微信用户'}}</text>
+          <text class="user-id">ID: {{userInfo.userId || userInfo.shopSn || '----'}}</text>
+        </view>
+      </view>
+      <!-- <view class="mine-profile-settings" bindtap="goToSettings">
+        <image class="mine-settings-icon" src="/static/new_logo/setting.png" mode="aspectFit"/>
+      </view> -->
+    </view>
+
+    <!-- 数据统计：声波 / 收藏 / 关注 / 粉丝 / 积分 -->
+    <view class="mine-stats">
+      <view class="mine-stat-item" bindtap="goToWorks">
+        <text class="mine-stat-num">{{user.worksCount || 0}}</text>
+        <text class="mine-stat-label">作品</text>
+      </view>
+      <view class="mine-stat-item" bindtap="onTapFavorites">
+        <text class="mine-stat-num">{{user.favoritesCount || 0}}</text>
+        <text class="mine-stat-label">收藏</text>
+      </view>
+      <view class="mine-stat-item" bindtap="onTapFollow">
+        <text class="mine-stat-num">{{user.followCount || 0}}</text>
+        <text class="mine-stat-label">关注</text>
+      </view>
+      <view class="mine-stat-item" bindtap="onTapFans">
+        <text class="mine-stat-num">{{user.fansCount || 0}}</text>
+        <text class="mine-stat-label">粉丝</text>
+      </view>
+      <view class="mine-stat-item" bindtap="goToPoints">
+        <text class="mine-stat-num mine-stat-num--points">{{user.points || 0}}</text>
+        <text class="mine-stat-label">积分</text>
+      </view>
+    </view>
+    </block>
+
+    <!-- 功能菜单：未登录也可浏览，需登录项点击后提示 -->
+    <view class="mine-menu-card {{!isLoggedIn ? 'mine-menu-card--guest' : ''}}">
+      <view class="mine-menu-item" bindtap="goToWorks">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_works.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">我的作品</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item" bindtap="goToPosts">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_posts.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">我的帖子</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item" bindtap="goToFavorites">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/collect.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">我的收藏</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item mine-menu-item--last" bindtap="onTapDownloads">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/download.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">我的下载</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="mine-menu-card">
+      <view class="mine-menu-item" bindtap="goToNotifications">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/notice.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">消息通知</text>
+        <view class="mine-menu-extra">
+          <text wx:if="{{isLoggedIn && unreadCount > 0}}" class="mine-menu-badge">{{unreadCount}}</text>
+          <text class="mine-menu-arrow">›</text>
+        </view>
+      </view>
+      <!-- <view class="mine-menu-item" bindtap="onTapTimer">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_tasks.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">定时设置</text>
+        <text class="mine-menu-arrow">›</text>
+      </view> -->
+      <view class="mine-menu-item mine-menu-item--last" bindtap="onTapPlayHistory">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/timing.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">播放记录</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="mine-menu-card" wx:if="{{showMianjiaEntry}}">
+      <view class="mine-menu-item mine-menu-item--last" bindtap="goToMianjia">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/shopping.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">眠家产品</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="mine-menu-card">
+      <view class="mine-menu-item" bindtap="goToTasks">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_tasks.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">每日任务</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item" bindtap="goToMall">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_score_shop.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">积分商城</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item" bindtap="goToHelp">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/self_icon/icon_help.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">帮助中心</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item mine-menu-item--last" bindtap="goToSettings">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/new_logo/setting.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">设置</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="mine-bottom-space"></view>
+  </view>
+</view>

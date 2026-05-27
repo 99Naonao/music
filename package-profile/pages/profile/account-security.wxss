@@ -1,0 +1,34 @@
+/* 注销按钮样式与 pages/mine/mine 退出登录（.logout-section / .btn-logout）保持一致 */
+
+.acc-container {
+  min-height: 100vh;
+    padding-top: 32rpx;
+  box-sizing: border-box;
+}
+
+.acc-hint {
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: var(--mb-text-muted);
+  margin-bottom: 8rpx;
+  padding: 0 20rpx;
+}
+
+.logout-section {
+  margin-top: 30rpx;
+  padding: 0 20rpx;
+}
+
+.btn-logout {
+  width: 100%;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 48rpx;
+  color: var(--mb-text-muted);
+  padding: 28rpx 0;
+  font-size: 28rpx;
+}
+
+.btn-logout::after {
+  border: none;
+}

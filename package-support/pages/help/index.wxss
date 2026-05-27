@@ -1,0 +1,13 @@
+.help-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.help-search { padding: 20rpx 30rpx; background: var(--mb-card-bg); }
+.search-input { height: 72rpx; background: var(--mb-card-bg); border-radius: 36rpx; padding: 0 30rpx; font-size: 28rpx; }
+.help-grid { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 20rpx; }
+.help-card { width: 48%; margin-bottom: 20rpx; background: var(--mb-card-bg); border-radius: 16rpx; padding: 30rpx; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
+.help-icon { width: 56rpx; height: 56rpx; margin-bottom: 12rpx; }
+.help-name { font-size: 28rpx; color: var(--mb-text-primary); }
+.hot-section { padding: 0 20rpx; }
+.section-title { font-size: 32rpx; font-weight: 600; color: var(--mb-text-primary); padding: 20rpx 10rpx; }
+.hot-list { background: var(--mb-card-bg); border-radius: 16rpx; overflow: hidden; }
+.hot-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 24rpx; border-bottom: 1rpx solid var(--mb-border-subtle); }
+.hot-q { font-size: 28rpx; color: var(--mb-text-primary); flex: 1; }
+.hot-arrow { font-size: 28rpx; color: rgba(255,255,255,0.3); margin-left: 16rpx; }

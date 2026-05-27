@@ -1,0 +1,45 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body mj-container">
+    <view class="mj-hero">
+      <text class="mj-hero-title">眠家深睡 · 产品推荐</text>
+      <text class="mj-hero-sub">音乐助眠之外，搭配眠加好物，让好梦更完整</text>
+    </view>
+
+    <view class="mj-list">
+      <view class="mj-card" wx:for="{{products}}" wx:key="goodsId" wx:for-index="index">
+        <image
+          class="mj-card-img"
+          src="{{item.image}}"
+          mode="aspectFill"
+          binderror="onCoverError"
+          data-index="{{index}}"
+        />
+        <view class="mj-card-body">
+          <text class="mj-card-name">{{item.name}}</text>
+          <text class="mj-card-desc">{{item.description}}</text>
+          <view class="mj-card-actions">
+            <view
+              class="mj-card-btn"
+              catchtap="onTapLook"
+              data-goods-id="{{item.goodsId}}"
+              data-index="{{index}}"
+            >购买方式</view>
+            <view
+              class="mj-card-btn mj-card-btn--ghost"
+              wx:if="{{item.showVoucher}}"
+              catchtap="onTapQrcode"
+              data-index="{{index}}"
+            >查看二维码</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="mj-empty" wx:if="{{!loading && products.length === 0}}">
+        <text>暂无推荐商品</text>
+      </view>
+    </view>
+  </view>
+  <product-qrcode-modal id="productQrcodeModal" />
+</view>

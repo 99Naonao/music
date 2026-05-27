@@ -1,0 +1,69 @@
+.works-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.works-hint, .works-empty { padding: 32rpx; font-size: 26rpx; color: var(--mb-text-muted); text-align: center; }
+.works-grid { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 20rpx; }
+.work-card { width: 48%; margin-bottom: 20rpx; background: var(--mb-card-bg); border-radius: 16rpx; overflow: hidden; position: relative; }
+/* 固定高度 + wxml 使用 aspectFit：小图标占位图不会被 aspectFill 裁成「巨大模糊块」 */
+.work-cover-wrap { position: relative; width: 100%; background: var(--mb-card-bg); border-radius: 16rpx 16rpx 0 0; overflow: hidden; }
+.work-cover { width: 100%; height: 220rpx; display: block; background: var(--mb-card-bg); }
+.work-cover-change {
+  position: absolute;
+  left: 12rpx;
+  bottom: 12rpx;
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8rpx;
+}
+
+.work-audio-bad {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  padding: 8rpx 14rpx;
+  font-size: 22rpx;
+  color: #fff;
+  background: rgba(192, 57, 43, 0.88);
+  border-radius: 8rpx;
+  z-index: 2;
+}
+
+.work-delete {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8rpx;
+}
+.work-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 16rpx 20rpx 8rpx;
+}
+.work-title {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--mb-text-primary);
+  line-height: 1.4;
+  word-break: break-all;
+}
+.work-title-edit {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--mb-accent, #568fd1);
+  padding: 4rpx 0;
+}
+.work-meta { display: flex; justify-content: space-between; padding: 0 20rpx 20rpx; }
+.work-date { font-size: 22rpx; color: var(--mb-text-muted); }
+.work-plays-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+.work-plays { font-size: 22rpx; color: var(--mb-text-muted); }
+.work-play-icon { width: 48rpx; height: 48rpx; flex-shrink: 0; }

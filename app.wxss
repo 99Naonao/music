@@ -1,0 +1,138 @@
+/**app.wxss**/
+@import './styles/design-tokens.wxss';
+@import './styles/theme-skins.wxss';
+
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--mb-text-primary);
+  background: var(--mb-gradient-page);
+  min-height: 100vh;
+}
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 200rpx 0;
+  box-sizing: border-box;
+}
+
+/* 全局卡片样式 */
+.card {
+  background: var(--mb-card-bg, rgba(255, 255, 255, 0.05));
+  border: 1rpx solid var(--mb-card-border, transparent);
+  border-radius: 24rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--mb-text-primary);
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+/* 主按钮（晨雾 #568fd1 / 眠夜渐变，见 utils/theme.js） */
+.btn-primary {
+  background: var(--mb-btn-primary, var(--mb-gradient-cta)) !important;
+  color: #fff;
+  border: none;
+  border-radius: 48rpx;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx var(--mb-btn-shadow, rgba(111, 143, 207, 0.35));
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+/* 次按钮 */
+.btn-secondary {
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-border-subtle);
+  color: var(--mb-text-primary);
+  border: none;
+  border-radius: 48rpx;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+}
+
+.btn-secondary::after {
+  border: none;
+}
+
+/* 步骤指示器 - 圆点样式 */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.step-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: all 0.3s;
+}
+
+.step-dot.active {
+  background: var(--mb-gradient-cta);
+  width: 48rpx;
+  border-radius: 8rpx;
+}
+
+/* 输入框 */
+.input-field {
+  width: 100%;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-border-subtle);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  color: var(--mb-text-primary);
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.input-field::placeholder {
+  color: var(--mb-text-muted);
+}
+
+/* 选中态通用 */
+.selected {
+  border-color: var(--mb-mint) !important;
+  background: var(--mb-mint-15) !important;
+}
+
+/* 滚动提示 */
+.scroll-hint {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(to right, transparent, var(--mb-night-fade-80));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mb-mint);
+  font-size: 40rpx;
+  pointer-events: none;
+  opacity: 0.8;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}

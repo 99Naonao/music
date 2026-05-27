@@ -1,0 +1,219 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="tracks-page mb-theme-{{mbTheme}}">
+  <view class="tracks-page-bg"></view>
+
+  <scroll-view
+    class="tracks-scroll"
+    style="height: {{scrollHeight}}px;"
+    scroll-y
+    show-scrollbar="{{false}}"
+  >
+    <view class="tracks-page-body" style="padding-bottom: {{scrollContentBottomPx}}px;">
+      <view class="step-indicator">
+        <view class="step-dot active"></view>
+        <view class="step-dot active"></view>
+        <view class="step-dot"></view>
+        <view class="step-dot"></view>
+      </view>
+
+      <view class="card card--instrument">
+        <view class="card-title">
+          <text>主乐器</text>
+        </view>
+        <text class="instrument-change-hint">在此切换，无需返回上一步</text>
+        <scroll-view class="instrument-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+          <view class="instrument-list">
+            <view
+              class="instrument-item {{selectedInstrument === item.id ? 'selected' : ''}}"
+              wx:for="{{instruments}}"
+              wx:key="id"
+              data-id="{{item.id}}"
+              bindtap="selectInstrument"
+            >
+              <image class="instrument-icon" src="{{item.icon}}" mode="aspectFit"/>
+              <text class="instrument-name">{{item.name}}</text>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="scroll-hint">›</view>
+      </view>
+
+      <view class="card">
+        <view class="card-title">
+          <image class="card-title-icon" src="/static/new_logo/timing.png" mode="aspectFit"/>
+          <text>音轨时间轴（{{timelineHeadline}}）</text>
+        </view>
+        <view class="timeline-hint">对照上方刻度看入点。拖<text class="hint-strong">中间</text>平移整条；拖<text class="hint-strong">两侧白条</text>改入点与出点。持续时长不超过整首作品，无其它秒数上限。</view>
+
+        <view class="timeline-scale-row" wx:if="{{timelineScaleLabels.length}}">
+          <view class="track-label timeline-scale-label-gap"></view>
+          <view class="timeline-scale-track">
+            <view class="timeline-scale-inner">
+              <text wx:for="{{timelineScaleLabels}}" wx:key="index" class="timeline-scale-tick">{{item.text}}</text>
+            </view>
+          </view>
+          <view class="timeline-scale-delete-gap"></view>
+        </view>
+
+        <view class="track-row track-row--main" bindtap="focusInstrumentPicker">
+          <view class="track-label">主乐器</view>
+          <view class="track-timeline">
+            <view class="track-block main">
+              <image class="track-tag-icon" src="{{mainTrack.instrumentIcon}}" mode="aspectFit"/>
+              <text>{{mainTrack.instrument}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="track-settings">
+          <view class="setting-row">
+            <text class="setting-label">音量</text>
+            <slider class="setting-slider" value="{{mainTrack.volume}}" min="0" max="100" show-value bindchange="updateMainVolume"/>
+          </view>
+        </view>
+
+        <view wx:for="{{timelineEffects}}" wx:key="id" class="effect-track-wrapper">
+          <view class="track-row">
+            <view class="track-label track-label--with-icon">
+              <image class="track-label-icon" src="{{item.icon}}" mode="aspectFit"/>
+              <text class="track-label-name">{{item.name}}</text>
+            </view>
+            <view class="track-timeline track-timeline-effect" id="tl-{{item.id}}">
+              <view
+                class="track-block effect {{item.enabled ? '' : 'disabled'}} {{item.enabled && item.duration <= 0 ? 'effect-bar-collapsed' : ''}} {{item.enabled && item.duration > 0 ? 'effect-bar-has-duration' : ''}}"
+                style="{{item.blockStyle}}"
+              >
+                <block wx:if="{{item.enabled}}">
+                  <view
+                    class="effect-handle effect-handle-left"
+                    data-id="{{item.id}}"
+                    data-handle="left"
+                    catchtouchstart="onEffectTrimTouchStart"
+                    catchtouchmove="onEffectTrimTouchMove"
+                    catchtouchend="onEffectTrimTouchEnd"
+                  ></view>
+                  <view
+                    class="effect-block-center"
+                    data-id="{{item.id}}"
+                    data-handle="body"
+                    catchtouchstart="onEffectTrimTouchStart"
+                    catchtouchmove="onEffectTrimTouchMove"
+                    catchtouchend="onEffectTrimTouchEnd"
+                  >
+                    <image class="track-effect-icon effect-bar-icon" src="{{item.icon}}" mode="aspectFit"/>
+                  </view>
+                  <view
+                    class="effect-handle effect-handle-right"
+                    data-id="{{item.id}}"
+                    data-handle="right"
+                    catchtouchstart="onEffectTrimTouchStart"
+                    catchtouchmove="onEffectTrimTouchMove"
+                    catchtouchend="onEffectTrimTouchEnd"
+                  ></view>
+                </block>
+                <view wx:else class="effect-disabled-body">
+                  <image class="track-effect-icon" src="{{item.icon}}" mode="aspectFit"/>
+                </view>
+              </view>
+            </view>
+            <view class="track-delete" data-id="{{item.id}}" bindtap="removeEffect">
+              <image class="delete-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+            </view>
+          </view>
+          <view class="track-settings">
+            <view class="effect-time-readout" wx:if="{{item.enabled}}">
+              <block wx:if="{{item.duration > 0}}">
+                <text class="effect-time-readout-text">白噪音：第 {{item.startTime}} 秒开始，持续 {{item.duration}} 秒（到第 {{item.startTime + item.duration}} 秒）</text>
+              </block>
+              <block wx:else>
+                <text class="effect-time-readout-text">白噪音：入点在第 {{item.startTime}} 秒；向右拖右侧白条可拉出持续时间，中间条会随时长变宽</text>
+              </block>
+            </view>
+            <view class="setting-row">
+              <switch class="effect-switch" checked="{{item.enabled}}" data-id="{{item.id}}" bindchange="toggleEffect" color="#2E8B57"/>
+              <text class="setting-label">音量</text>
+              <slider class="setting-slider" value="{{item.volume}}" min="0" max="100" show-value bindchange="updateEffectVolume" data-id="{{item.id}}"/>
+            </view>
+          </view>
+        </view>
+
+        <view
+          class="track-row track-row--noise-add"
+          wx:if="{{timelineEffects.length < maxEffects}}"
+          bindtap="onTapAddNoise"
+        >
+          <view class="track-label track-label--with-icon track-label--add">
+            <image class="track-label-icon" src="/static/new_logo/add.png" mode="aspectFit"/>
+            <text class="track-label-name track-label-name--add">添加白噪音</text>
+          </view>
+        </view>
+
+        <view class="track-row">
+          <view class="track-label">人声</view>
+          <view class="track-timeline voice-track">
+            <view wx:if="{{!voiceTrack.type && !recording}}" class="voice-options">
+              <view class="voice-option" bindtap="startRecording">
+                <image class="record-icon" src="/static/create_step/record.png" mode="aspectFit"/>
+                <text>录制人声</text>
+              </view>
+              <view class="voice-divider"></view>
+              <view class="voice-option" bindtap="chooseVoiceFile">
+                <image class="record-icon" src="/static/create_step/upload.png" mode="aspectFit"/>
+                <text>上传音频</text>
+              </view>
+            </view>
+
+            <view wx:if="{{recording}}" class="voice-recording">
+              <image class="recording-icon" src="/static/create_step/recording.png" mode="aspectFit"/>
+              <text>录音中 {{formatTime(recordingTime)}}</text>
+              <button class="btn-stop" catchtap="stopRecording">停止</button>
+            </view>
+
+            <view wx:if="{{voiceTrack.type && !recording}}" class="voice-selected">
+              <view class="voice-info">
+                <image class="voice-type-icon" src="/static/create_step/{{voiceTrack.type === 'record' ? 'record' : 'file'}}.png" mode="aspectFit"/>
+                <view class="voice-text">
+                  <text class="voice-name">{{voiceTrack.name}}</text>
+                  <text wx:if="{{voiceTrack.duration > 0}}" class="voice-duration">{{formatTime(voiceTrack.duration)}}</text>
+                </view>
+              </view>
+              <view class="voice-actions">
+                <view class="voice-remove" bindtap="removeVoice">
+                  <image class="delete-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 原底部「添加白噪音」卡片：已移至时间轴左侧
+      <view class="card">
+        <view class="card-title">
+          <image class="card-title-icon" src="/static/create_step/sound_effect.png" mode="aspectFit"/>
+          <text>添加白噪音</text>
+          <text class="effect-count">{{timelineEffects.length}}/{{maxEffects}}</text>
+        </view>
+        <view class="effects-row">
+          <view
+            class="effect-btn {{timelineEffects.length >= maxEffects ? 'disabled' : ''}}"
+            wx:for="{{effects}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="addEffect"
+          >
+            <image class="effect-btn-icon" src="{{item.icon}}" mode="aspectFit"/>
+            <text>{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+      -->
+    </view>
+  </scroll-view>
+
+  <view class="bottom-actions" style="bottom: {{tabBarOffsetPx}}px;">
+    <button class="btn-secondary" bindtap="goBack">上一步</button>
+    <button class="btn-primary" bindtap="generateMusic">开始生成音乐</button>
+  </view>
+
+  <custom-tab-bar id="custom-tab-bar" />
+</view>

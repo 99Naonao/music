@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "盒友圈",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#e8f4ff"
+}

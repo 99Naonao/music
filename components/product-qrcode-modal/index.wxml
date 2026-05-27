@@ -1,0 +1,20 @@
+<view
+  class="pqm-mask {{visible ? 'pqm-mask--show' : ''}}"
+  catchtouchmove="noop"
+  bindtap="onMaskTap"
+>
+  <view class="pqm-card {{visible ? 'pqm-card--show' : ''}}" catchtap="noop">
+    <text class="pqm-title">商品二维码</text>
+    <text class="pqm-name" wx:if="{{name}}">{{name}}</text>
+    <view class="pqm-img-wrap">
+      <image
+        class="pqm-img"
+        src="{{qrcodeUrl}}"
+        mode="aspectFit"
+        show-menu-by-longpress="{{true}}"
+      />
+    </view>
+    <text class="pqm-hint">长按识别小程序码</text>
+    <button class="pqm-btn" catchtap="onCloseTap">关闭</button>
+  </view>
+</view>

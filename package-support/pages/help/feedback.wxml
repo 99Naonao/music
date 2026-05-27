@@ -1,0 +1,26 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body feedback-container">
+  <view class="fb-type">
+    <text class="fb-label">反馈类型</text>
+    <view class="type-list">
+      <view class="type-tag {{selectedType==item?'active':''}}" wx:for="{{types}}" wx:key="*this" bindtap="selectType" data-type="{{item}}">{{item}}</view>
+    </view>
+  </view>
+
+  <view class="fb-content">
+    <textarea class="fb-input" placeholder="请描述你遇到的问题或建议..." maxlength="300" bindinput="onInput" value="{{content}}"/>
+    <text class="fb-count">{{content.length}}/300</text>
+  </view>
+
+  <view class="fb-contact">
+    <text class="fb-label">联系方式（选填）</text>
+    <input class="fb-input-line" placeholder="手机号或邮箱" value="{{contact}}" bindinput="onContactInput"/>
+  </view>
+
+  <button class="fb-submit" bindtap="submit" disabled="{{submitting}}">
+    <text class="fb-submit-text">提交反馈</text>
+  </button>
+  </view>
+</view>

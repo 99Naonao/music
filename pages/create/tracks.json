@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "custom-tab-bar": "/custom-tab-bar/index"
+  },
+  "navigationBarTitleText": "配置音轨",
+  "navigationBarBackgroundColor": "#e1f0ff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#e8f2fc"
+}

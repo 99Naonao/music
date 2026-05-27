@@ -1,0 +1,96 @@
+/**
+ * 眠音盒 · 色彩规划系统（设计令牌）
+ * 依据：项目内《指导.txt》第五章「色彩系统规划」5.1～5.4
+ *
+ * 已在 app.wxss 通过 @import 接入；渐变与透明度变量见文件内「渐变与半透明扩展」一节。
+ *
+ * 命名前缀 mb = 眠音盒 (Mian Yin Box) 缩写，避免与第三方或旧变量冲突。
+ */
+
+page {
+  /* ---------- 5.1 主色 ---------- */
+
+  /* 眠夜蓝 · 主背景、启动感、品牌底 */
+  --mb-night-deep: #202b48;
+  --mb-night-mid: #2d3a5c;
+
+  /* 星尘金 · 按钮强调、权益、高光（文档要求少用，约 10% 面积） */
+  --mb-gold: #d4af37;
+  --mb-gold-soft: #e6c76a;
+
+  /* 月光白 · 主文/卡片底/留白（约 25%） */
+  --mb-moon-0: #fffdf5;
+  --mb-moon-1: #f5f5f0;
+
+  /* ---------- 5.2 辅助色 ---------- */
+
+  --mb-lavender: #9b8fbf;
+  --mb-mint: #7fb3a3;
+  --mb-coral: #e8a598;
+  --mb-mist-blue: #6f8fcf;
+  /* 晨雾主按钮 #568fd1 由 page-meta（utils/theme.js dawn）注入 */
+  --mb-btn-primary: linear-gradient(135deg, #7fb3a3 0%, #6f8fcf 100%);
+  --mb-btn-shadow: rgba(111, 143, 207, 0.35);
+
+  /* ---------- 语义层（默认晨雾，与 utils/theme.js DEFAULT_THEME=dawn 一致；眠夜由 page-meta 覆盖） ---------- */
+
+  --mb-bg-page: #e8f2fc;
+  --mb-bg-page-alt: #f5faff;
+  --mb-bg-elevated: rgba(255, 255, 255, 0.92);
+
+  --mb-text-primary: #1e3a5f;
+  --mb-text-secondary: rgba(30, 58, 95, 0.72);
+  --mb-text-muted: rgba(30, 58, 95, 0.45);
+
+  --mb-accent: var(--mb-gold);
+  --mb-accent-soft: var(--mb-gold-soft);
+
+  --mb-theme-heal: var(--mb-lavender);
+  --mb-theme-nature: var(--mb-mint);
+  --mb-theme-warm: var(--mb-coral);
+  --mb-theme-tech: var(--mb-mist-blue);
+
+  --mb-border-subtle: rgba(30, 58, 95, 0.08);
+  --mb-border-strong: rgba(30, 58, 95, 0.16);
+
+  /* 成功态（可与薄荷绿呼应，与文档「自然放松」一致） */
+  --mb-success: var(--mb-mint);
+
+  /* ---------- 渐变与半透明扩展（app.wxss / 各页引用；缺失会导致背景透明、整页发白） ---------- */
+  --mb-gradient-page: linear-gradient(135deg, #d1e9ff 0%, #e8f4ff 42%, #f7faff 72%, #ffffff 100%);
+
+  --mb-gradient-cta: #568fd1;
+  --mb-btn-primary: #568fd1;
+  --mb-btn-shadow: rgba(86, 143, 209, 0.35);
+  --mb-gradient-cta-h: linear-gradient(90deg, #6f8fcf 0%, #e6c76a 48%, #7fb3a3 100%);
+
+  --mb-gradient-cta-to-night: linear-gradient(180deg, #2d3a5c 0%, #202b48 100%);
+  --mb-gradient-cta-to-night-h: linear-gradient(90deg, #7fb3a3 0%, #2d3a5c 50%, #202b48 100%);
+
+  --mb-mint-08: rgba(127, 179, 163, 0.08);
+  --mb-mint-12: rgba(127, 179, 163, 0.12);
+  --mb-mint-15: rgba(127, 179, 163, 0.15);
+  --mb-mint-20: rgba(127, 179, 163, 0.2);
+  --mb-mint-30: rgba(127, 179, 163, 0.3);
+  --mb-mint-40: rgba(127, 179, 163, 0.4);
+
+  --mb-mist-30: rgba(111, 143, 207, 0.3);
+
+  --mb-night-fade-80: rgba(255, 255, 255, 0.85);
+  --mb-night-fade-95: rgba(245, 250, 255, 0.98);
+
+  --mb-card-bg: rgba(255, 255, 255, 0.72);
+  --mb-card-border: rgba(111, 143, 207, 0.2);
+
+  /* ---------- 5.3 使用比例（实施时自查，非 CSS 强制） ---------- ----------
+   * 眠夜蓝 ~45% ｜ 月光白 ~25% ｜ 星尘金 ~10% ｜ 薰衣草紫 ~8%
+   * 薄荷绿 ~6% ｜ 珊瑚粉 ~4% ｜ 星雾蓝 ~2%
+   * ------------------------------------------------------------------ */
+
+  /* ---------- 5.4 禁忌（设计评审用） ---------- ----------
+   * · 避免整屏纯黑 (#000)，保持「深夜温柔」
+   * · 金色仅用于关键 CTA / 高光，忌大面积像充值手游
+   * · 辅助粉紫忌堆满一屏（忌单一恋爱 App 气质）
+   * · 等级/积分等忌高饱和游戏化堆色
+   * -------------------------------------------- */
+}

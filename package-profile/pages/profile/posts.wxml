@@ -1,0 +1,28 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body posts-container">
+  <view class="post-item" wx:for="{{posts}}" wx:key="id">
+    <view class="post-main" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="post-top">
+        <text class="post-text">{{item.content}}</text>
+        <view class="post-imgs" wx:if="{{item.images && item.images.length}}">
+          <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" src="{{img}}" mode="aspectFill"/>
+        </view>
+      </view>
+    </view>
+    <view class="post-bottom">
+      <text class="post-time">{{item.time}}</text>
+      <view class="post-bottom-right">
+        <view class="post-stats">
+          <image class="post-stat-icon" src="/static/new_logo/thumbs.png" mode="aspectFit"/>
+          <text>{{item.likes}}</text>
+          <image class="post-stat-icon" src="/static/new_logo/comments.png" mode="aspectFit"/>
+          <text>{{item.comments}}</text>
+        </view>
+        <text class="post-delete" catchtap="onDeletePost" data-id="{{item.id}}">删除</text>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

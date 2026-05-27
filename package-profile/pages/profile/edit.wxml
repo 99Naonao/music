@@ -1,0 +1,40 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body edit-container">
+
+  <!-- 头像区域 -->
+  <view class="avatar-section">
+    <view class="avatar-circle">
+      <image class="edit-avatar" src="{{user.avatar}}" mode="aspectFill"/>
+      <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar"/>
+    </view>
+    <text class="avatar-tip">点击使用微信头像</text>
+    <text class="avatar-or">或</text>
+    <text class="avatar-alt" bindtap="chooseAvatar">从相册选择 / 拍照</text>
+  </view>
+
+  <view class="form-group">
+    <view class="form-item">
+      <text class="form-label">昵称</text>
+      <input
+        class="form-input"
+        type="nickname"
+        value="{{user.nickname}}"
+        placeholder="请输入昵称"
+        maxlength="20"
+        bindinput="onNicknameInput"
+        bindblur="onNicknameBlur"
+      />
+    </view>
+    <view class="form-item">
+      <text class="form-label">性别</text>
+      <picker mode="selector" range="{{genders}}" value="{{genderIndex}}" bindchange="onGenderChange">
+        <view class="form-input">{{genders[genderIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <button class="save-btn {{loading ? 'disabled' : ''}}" bindtap="save">保存</button>
+  </view>
+</view>

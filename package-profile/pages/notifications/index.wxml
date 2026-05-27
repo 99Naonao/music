@@ -1,0 +1,31 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body notif-container">
+  <view class="notif-header">
+    <view class="notif-tabs">
+      <view class="n-tab {{activeTab==index?'active':''}}" wx:for="{{tabLabels}}" wx:key="*this" bindtap="switchTab" data-index="{{index}}">{{item}}</view>
+    </view>
+    <text class="mark-all" bindtap="markAllRead">全部已读</text>
+  </view>
+
+  <view class="notif-list">
+    <view class="notif-item {{!item.read?'unread':''}}" wx:for="{{notifications}}" wx:key="id" bindtap="readNotif" data-id="{{item.id}}">
+      <view class="notif-dot" wx:if="{{!item.read}}"></view>
+      <view class="notif-content">
+        <text class="notif-title">{{item.title}}</text>
+        <text class="notif-body">{{item.body}}</text>
+        <text class="notif-time">{{item.time}}</text>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{!loading && notifications.length === 0}}">
+      <text class="empty-text">暂无消息</text>
+    </view>
+
+    <view class="load-more" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+  </view>
+  </view>
+</view>

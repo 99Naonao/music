@@ -1,0 +1,205 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body post-detail">
+  <!-- 帖子加载中（仅正文区，不挡整页） -->
+  <view class="loading-state" wx:if="{{postLoading && !post}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 帖子内容 -->
+  <view wx:if="{{post && !postLoading}}">
+    <view class="post-header">
+      <image class="avatar" src="{{post.avatar || '/static/mine.png'}}" mode="aspectFill"/>
+      <view class="user-info">
+        <text class="nickname">{{post.author || '匿名用户'}}</text>
+        <text class="time">{{post.timeText}}</text>
+      </view>
+      <view
+        wx:if="{{showFollowBtn}}"
+        class="follow-btn {{isFollowing ? 'follow-btn--done' : ''}}"
+        bindtap="toggleFollow"
+      >{{isFollowing ? '已关注' : '+ 关注'}}</view>
+      <!-- <view wx:if="{{isAuthor}}" class="post-delete-btn" bindtap="deletePost">删除</view> -->
+      <view wx:if="{{post.topic}}" class="post-topic">#{{post.topic}}</view>
+    </view>
+
+    <view class="post-content">
+      <text class="post-text">{{post.content}}</text>
+      <view class="post-images" wx:if="{{post.images && post.images.length > 0}}">
+        <image wx:for="{{post.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="post-img {{post.images.length === 1 ? 'single' : ''}}"/>
+      </view>
+    </view>
+
+    <!-- 关联音乐 -->
+    <view class="music-card" wx:if="{{post.music_id}}" bindtap="toggleMusic">
+      <view class="music-main">
+        <image class="music-play-icon" src="{{isPlayingMusic ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}" mode="aspectFit"/>
+        <view class="music-info">
+          <text class="music-label">关联作品</text>
+          <text class="music-name">点击播放</text>
+        </view>
+      </view>
+      <slider
+        wx:if="{{isPlayingMusic || musicDuration > 0}}"
+        class="music-slider"
+        value="{{musicProgress}}"
+        min="0"
+        max="100"
+        block-size="10"
+        activeColor="#7FB3A3"
+        backgroundColor="rgba(255,255,255,0.15)"
+        bindchanging="seekMusic"
+        catchtap="preventBubble"
+      />
+      <view wx:if="{{isPlayingMusic || musicDuration > 0}}" class="music-time">
+        <text>{{formatTime(musicCurrentTime)}}</text>
+        <text>{{formatTime(musicDuration)}}</text>
+      </view>
+    </view>
+
+    <view class="post-actions">
+      <view class="action-item {{isLiked ? 'liked' : ''}}" bindtap="toggleLike">
+        <image class="action-icon" src="{{isLiked ? '/static/new_logo/like.png' : '/static/new_logo/thumbs.png'}}" mode="aspectFit"/>
+        <text class="action-count">{{post.likes || 0}}</text>
+      </view>
+      <view class="action-item" bindtap="focusCommentInput">
+        <image class="action-icon" src="/static/new_logo/comments.png" mode="aspectFit"/>
+        <text class="action-count">{{post.comments || 0}}</text>
+      </view>
+      <button class="action-item share-btn" open-type="share">
+        <image class="action-icon" src="/static/new_logo/share.png" mode="aspectFit"/>
+        <text class="action-count">分享</text>
+      </button>
+    </view>
+
+    <!-- 评论区 -->
+    <view class="comment-section">
+      <view class="section-title">
+        <view class="section-title-left">
+          <text>评论</text>
+          <text class="comment-count">{{post.comments || 0}}</text>
+        </view>
+        <view class="comment-sort-picker" catchtap="openCommentSortPicker">
+          <text class="comment-sort-label">{{commentSortLabel}}</text>
+          <text class="comment-sort-arrow">▾</text>
+        </view>
+      </view>
+
+      <view class="comment-list">
+        <view class="comment-item" wx:for="{{commentList}}" wx:key="id" wx:for-index="index">
+          <image class="comment-avatar" src="{{item.avatar || '/static/mine.png'}}" mode="aspectFill"/>
+          <view class="comment-main">
+            <view class="comment-header">
+              <text class="comment-name">{{item.name || '匿名用户'}}</text>
+              <text
+                wx:if="{{isAuthor || item.openid === userId}}"
+                class="comment-delete-btn"
+                catchtap="deleteComment"
+                data-id="{{item.id}}"
+              >删除</text>
+            </view>
+            <text class="comment-text">{{item.content}}</text>
+            <view class="comment-foot">
+              <text class="comment-time">{{item.timeText}}</text>
+              <text class="comment-reply-btn" catchtap="onReplyComment" data-index="{{index}}">回复</text>
+            </view>
+
+            <view class="comment-replies" wx:if="{{item.visibleReplies && item.visibleReplies.length}}">
+              <view
+                class="comment-reply-item"
+                wx:for="{{item.visibleReplies}}"
+                wx:for-item="reply"
+                wx:for-index="replyIndex"
+                wx:key="id"
+              >
+                <image class="comment-reply-avatar" src="{{reply.avatar || '/static/mine.png'}}" mode="aspectFill"/>
+                <view class="comment-reply-body">
+                  <text class="comment-reply-name">{{reply.name || '匿名用户'}}</text>
+                  <text class="comment-reply-text">{{reply.content}}</text>
+                  <view class="comment-foot comment-reply-foot">
+                    <text class="comment-time">{{reply.timeText}}</text>
+                    <text class="comment-reply-btn" catchtap="onReplyComment" data-index="{{index}}" data-reply-id="{{reply.id}}">回复</text>
+                  </view>
+                </view>
+                <view class="comment-like-col" catchtap="toggleCommentLike" data-id="{{reply.id}}">
+                  <image
+                    class="comment-like-icon"
+                    src="{{reply.isLiked ? '/static/new_logo/like.png' : '/static/new_logo/thumbs.png'}}"
+                    mode="aspectFit"
+                  />
+                  <text class="comment-like-count {{reply.isLiked ? 'comment-like-count--on' : ''}}">{{reply.likes || 0}}</text>
+                </view>
+                <text
+                  wx:if="{{isAuthor || reply.openid === userId}}"
+                  class="comment-delete-btn comment-delete-btn--reply"
+                  catchtap="deleteComment"
+                  data-id="{{reply.id}}"
+                >删除</text>
+              </view>
+              <view
+                wx:if="{{item.collapsedReplyCount > 0 && !item.repliesExpanded}}"
+                class="replies-expand"
+                catchtap="expandReplies"
+                data-index="{{index}}"
+              >
+                <view class="replies-expand-line"></view>
+                <text class="replies-expand-text">展开 {{item.collapsedReplyCount}} 条回复</text>
+              </view>
+              <view
+                wx:if="{{item.repliesExpanded && item.collapsedReplyCount > 0}}"
+                class="replies-expand replies-expand--collapse"
+                catchtap="expandReplies"
+                data-index="{{index}}"
+              >
+                <text class="replies-expand-text">收起回复</text>
+              </view>
+            </view>
+          </view>
+          <view class="comment-like-col comment-like-col--root" catchtap="toggleCommentLike" data-id="{{item.id}}">
+            <image
+              class="comment-like-icon"
+              src="{{item.isLiked ? '/static/new_logo/like.png' : '/static/new_logo/thumbs.png'}}"
+              mode="aspectFit"
+            />
+            <text class="comment-like-count {{item.isLiked ? 'comment-like-count--on' : ''}}">{{item.likes || 0}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-comments" wx:if="{{!commentsLoading && commentList.length === 0}}">
+        <image class="empty-icon" src="/static/icon_empty.png" mode="aspectFit"/>
+        <text class="empty-text">暂无评论，在页面底部输入框写评论吧</text>
+      </view>
+      <view class="loading-state loading-state--inline" wx:if="{{commentsLoading && commentList.length === 0}}">
+        <text class="loading-text">评论加载中...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部评论输入（固定底栏；有 postId 即可显示，不必等帖子详情） -->
+  <view class="comment-bar" wx:if="{{postId}}">
+    <view wx:if="{{replyTarget}}" class="reply-hint-bar" catchtap="cancelReply">
+      <text class="reply-hint-text">回复 {{replyTarget.name}}</text>
+      <text class="reply-hint-cancel">取消</text>
+    </view>
+    <view class="comment-bar-row">
+      <input
+        id="commentInput"
+        class="comment-input"
+        placeholder="{{commentPlaceholder}}"
+        placeholder-class="input-placeholder"
+        value="{{commentText}}"
+        bindinput="onCommentInput"
+        confirm-type="send"
+        bindconfirm="submitComment"
+        adjust-position="{{true}}"
+        cursor-spacing="24"
+      />
+      <view class="send-btn {{canSubmitComment ? 'active' : ''}}" bindtap="submitComment">
+        <text class="send-btn-text">发送</text>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

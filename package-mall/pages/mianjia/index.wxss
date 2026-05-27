@@ -1,0 +1,131 @@
+.mj-container {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.mj-hero {
+  padding: 28rpx 24rpx 32rpx;
+  margin-bottom: 16rpx;
+  border-radius: 24rpx;
+  background: var(--mb-mint-08);
+  border: 1rpx solid var(--mb-border-subtle);
+}
+
+.mj-hero-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--mb-text-primary);
+  margin-bottom: 10rpx;
+}
+
+.mj-hero-sub {
+  display: block;
+  font-size: 26rpx;
+  color: var(--mb-text-secondary);
+  line-height: 1.5;
+}
+
+.mj-hero-tip {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #b8741a;
+  line-height: 1.5;
+}
+
+.mj-hero-link {
+  display: inline-block;
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: var(--mb-mint);
+  padding: 12rpx 0;
+  min-height: 44rpx;
+  line-height: 1.4;
+}
+
+.mj-hero-link:active {
+  opacity: 0.75;
+}
+
+.mj-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.mj-card {
+  display: flex;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.mj-card-img {
+  width: 220rpx;
+  height: 220rpx;
+  flex-shrink: 0;
+  background: var(--mb-card-bg);
+}
+
+.mj-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 20rpx 20rpx 20rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.mj-card-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--mb-text-primary);
+  margin-bottom: 10rpx;
+}
+
+.mj-card-desc {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--mb-text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.mj-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.mj-card-btn {
+  align-self: flex-start;
+  padding: 12rpx 32rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, var(--mb-mint), #5a9a88);
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.mj-card-btn:active {
+  opacity: 0.85;
+}
+
+.mj-card-btn--ghost {
+  background: transparent;
+  color: var(--mb-mint);
+  border: 1rpx solid var(--mb-mint);
+}
+
+.mj-empty {
+  padding: 80rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--mb-text-muted);
+}

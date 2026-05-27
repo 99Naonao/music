@@ -1,0 +1,25 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body tasks-container">
+  <view class="tasks-header">
+    <text class="header-title">每日任务</text>
+    <text class="header-sub">完成任务赚取积分</text>
+  </view>
+
+  <view class="task-list">
+    <view class="task-item {{item.completed?'completed':''}}" wx:for="{{tasks}}" wx:key="taskKey">
+      <view class="task-icon">{{item.icon}}</view>
+      <view class="task-info">
+        <text class="task-name">{{item.name}}</text>
+        <text class="task-desc">{{item.desc}}</text>
+      </view>
+      <view class="task-right">
+        <text class="task-reward">+{{item.points}}</text>
+        <button class="task-btn {{item.completed?'done':''}}" disabled="{{item.completed}}" bindtap="onTaskBtn" data-key="{{item.taskKey}}" data-completed="{{item.completed}}">{{item.btnText}}</button>
+      </view>
+    </view>
+  </view>
+  </view>
+  <points-reward-modal id="points-reward-modal" />
+</view>

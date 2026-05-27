@@ -1,0 +1,130 @@
+{
+  "pages": [
+    "pages/create/create",
+    "pages/splash/splash",
+
+    "pages/create/ai",
+    "pages/create/config",
+    "pages/create/tracks",
+    "pages/create/generating",
+    "pages/create/complete",
+    "pages/create/player",
+    "pages/create/card-pick",
+    "pages/create/card-edit",
+    "pages/create/share",
+    "pages/communites/communites",
+    "pages/library/library",
+    "pages/mine/mine",
+    "pages/follow/list",
+    "pages/logs/logs"
+  ],
+  "subPackages": [
+    {
+      "root": "package-community",
+      "pages": [
+        "pages/post/detail",
+        "pages/post/create",
+        "pages/topic/index",
+        "pages/rankings/index"
+      ],
+      "name": "community"
+    },
+    {
+      "root": "package-mall",
+      "pages": [
+        "pages/mall/index",
+        "pages/mall/product-detail",
+        "pages/mianjia/index",
+        "pages/mianjia/detail",
+        "pages/points/history",
+        "pages/points/tasks"
+      ],
+      "name": "mall"
+    },
+    {
+      "root": "package-profile",
+      "pages": [
+        "pages/profile/works",
+        "pages/profile/posts",
+        "pages/profile/settings",
+        "pages/profile/account-security",
+        "pages/notifications/index",
+        "pages/profile/edit",
+        "pages/profile/play-history",
+        "pages/profile/favorites",
+        "pages/profile/downloads"
+      ],
+      "name": "profile-ext"
+    },
+    {
+      "root": "package-support",
+      "pages": [
+        "pages/help/index",
+        "pages/help/faq",
+        "pages/help/guide",
+        "pages/help/feedback",
+        "pages/help/contact",
+        "pages/help/about"
+      ],
+      "name": "support"
+    }
+  ],
+  "window": {
+    "navigationBarTitleText": "眠音盒",
+    "navigationBarBackgroundColor": "#e1f0ff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#e8f2fc",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#6b7a8c",
+    "selectedColor": "#2d5a8e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "iconPath": "static/home.png",
+        "selectedIconPath": "static/home_selected.png",
+        "text": "首页",
+        "pagePath": "pages/create/create"
+      },
+      {
+        "iconPath": "static/ai.png",
+        "selectedIconPath": "static/ai_selected.png",
+        "text": "AI生成",
+        "pagePath": "pages/create/config"
+      },
+      {
+        "iconPath": "static/friend.png",
+        "selectedIconPath": "static/friend_selected.png",
+        "text": "盒友圈",
+        "pagePath": "pages/communites/communites"
+      },
+      {
+        "iconPath": "static/mine.png",
+        "selectedIconPath": "static/mine_selected.png",
+        "text": "我的",
+        "pagePath": "pages/mine/mine"
+      }
+    ]
+  },
+  "preloadRule": {
+    "pages/mine/mine": {
+      "network": "all",
+      "packages": ["profile-ext", "mall", "support"]
+    },
+    "pages/communites/communites": {
+      "network": "all",
+      "packages": ["community"]
+    },
+    "pages/create/create": {
+      "network": "all",
+      "packages": ["profile-ext", "community"]
+    }
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

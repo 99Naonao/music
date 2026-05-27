@@ -1,0 +1,36 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body about-page">
+  <view class="about-hero">
+    <image class="about-logo" src="/static/mine.png" mode="aspectFit"/>
+    <text class="about-name">眠音盒</text>
+    <text class="about-slogan">AI 为你定制专属助眠音乐</text>
+  </view>
+
+  <view class="about-card">
+    <text class="about-lead">
+      我们专注于将脑波频率、自然声景与疗愈器乐结合，帮助你在睡前放松、入睡更深。你可以在创作流程中选择乐器、脑波与节拍，叠加白噪音与人声，生成属于自己的睡眠配乐。
+    </text>
+  </view>
+
+  <view class="about-card">
+    <text class="section-title">产品亮点</text>
+    <view class="feature-list">
+      <view class="feature-item" wx:for="{{features}}" wx:key="title">
+        <text class="feature-title">{{item.title}}</text>
+        <text class="feature-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="about-card muted">
+    <text class="legal-line">使用本小程序即表示你理解音乐内容为辅助放松用途，如有长期睡眠障碍请咨询专业医疗机构。</text>
+  </view>
+
+  <view class="about-footer">
+    <text class="version-text">版本 {{version}} · {{envLabel}}</text>
+    <text class="copyright">© 眠音盒</text>
+  </view>
+  </view>
+</view>

@@ -1,0 +1,173 @@
+.card-pick-page {
+  padding: 16rpx 28rpx calc(32rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.card-pick-header {
+  text-align: center;
+  padding: 16rpx 0 28rpx;
+}
+
+.card-pick-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--mb-text-primary);
+  margin-bottom: 12rpx;
+}
+
+.card-pick-sub {
+  display: block;
+  font-size: 26rpx;
+  color: var(--mb-text-muted);
+}
+
+.card-pick-tabs {
+  white-space: nowrap;
+  margin-bottom: 28rpx;
+  height: 72rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-pick-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14rpx 32rpx;
+  margin-right: 16rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  color: var(--mb-text-secondary);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1rpx solid var(--mb-card-border);
+  box-sizing: border-box;
+}
+
+.card-pick-tab.active {
+  color: #fff;
+  background: var(--mb-btn-primary, #568fd1);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.card-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 16rpx;
+  row-gap: 24rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-pick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.card-pick-thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 0.72;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #eef5fc;
+  border: 3rpx solid transparent;
+  box-sizing: border-box;
+}
+
+/* 小程序里子节点 height:100% 常无效，须 absolute 铺满 */
+.card-pick-thumb-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.card-pick-thumb-img {
+  width: 100%;
+  height: 100%;
+}
+
+.card-pick-thumb-placeholder {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  background: rgba(111, 143, 207, 0.1);
+  box-sizing: border-box;
+  padding: 12rpx;
+  text-align: center;
+}
+
+.card-pick-thumb--gradient.style-1 {
+  background: linear-gradient(135deg, #2e8b57 0%, #4682b4 100%);
+}
+
+.card-pick-thumb--gradient.style-2 {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.card-pick-thumb--gradient.style-3 {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.card-pick-thumb--gradient.style-4 {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.card-pick-item:active .card-pick-thumb-wrap {
+  border-color: var(--mb-btn-primary, #568fd1);
+}
+
+.card-pick-name {
+  display: block;
+  width: 100%;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--mb-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.card-pick-loading,
+.card-pick-empty {
+  text-align: center;
+  padding: 80rpx 32rpx;
+  font-size: 28rpx;
+  color: var(--mb-text-muted);
+}
+
+.card-pick-empty-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--mb-text-muted);
+}
+
+.card-pick-retry {
+  display: inline-block;
+  margin-top: 24rpx;
+  padding: 16rpx 40rpx;
+  border-radius: 40rpx;
+  background: var(--mb-btn-primary, #568fd1);
+  color: #fff;
+  font-size: 28rpx;
+}

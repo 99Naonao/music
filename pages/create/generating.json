@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "custom-tab-bar": "/custom-tab-bar/index",
+    "points-reward-modal": "/components/points-reward-modal/index"
+  },
+  "navigationBarTitleText": "生成中",
+  "navigationBarBackgroundColor": "#e1f0ff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#e8f2fc"
+}

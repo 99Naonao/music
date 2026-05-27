@@ -1,0 +1,107 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<wxs src="./time-format.wxs" module="tf" />
+
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body player-page" style="padding-bottom: {{pageBottomPaddingPx}}px;">
+
+    <view class="player-nav" style="padding-top: {{statusBarHeight}}px;">
+      <view class="player-back" bindtap="goBack">
+        <text class="player-back-icon">‹</text>
+      </view>
+    </view>
+
+    <view class="player-header">
+      <text class="player-title">{{workTitle}}</text>
+      <view class="player-tags" wx:if="{{workTags.length}}">
+        <text class="player-tag" wx:for="{{workTags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="player-disc-wrap">
+      <view class="player-disc-glow"></view>
+      <view class="player-disc {{isPlaying ? 'player-disc--spin' : ''}}">
+        <image class="player-disc-img" src="{{coverImage || '/static/music_library/icon_category_sleep.png'}}" mode="aspectFill"/>
+      </view>
+    </view>
+
+    <view class="player-progress">
+      <text class="player-time">{{tf.formatTime(currentTime)}}</text>
+      <slider
+        class="player-slider"
+        min="0"
+        max="{{duration > 0 ? duration : 1}}"
+        value="{{currentTime}}"
+        block-size="14"
+        activeColor="#568fd1"
+        backgroundColor="rgba(86, 143, 209, 0.2)"
+        block-color="#ffffff"
+        bindchanging="onProgressChanging"
+        bindchange="onProgressChange"
+      />
+      <text class="player-time">{{tf.formatTime(duration)}}</text>
+    </view>
+
+    <view class="player-controls">
+      <view class="player-ctrl-side" bindtap="onTapTimer">
+        <image class="player-ctrl-icon player-ctrl-icon--sm {{timerActive ? 'player-ctrl-icon--on' : ''}}" src="/static/new_logo/timing.png" mode="aspectFit"/>
+      </view>
+      <view class="player-ctrl-side" bindtap="onPrevTrack">
+        <image class="player-ctrl-icon" src="/static/new_logo/pre_song.png" mode="aspectFit"/>
+      </view>
+      <view class="player-ctrl-play" bindtap="togglePlay">
+        <image
+          class="player-ctrl-play-icon"
+          src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}"
+          mode="aspectFit"
+        />
+      </view>
+      <view class="player-ctrl-side" bindtap="onNextTrack">
+        <image class="player-ctrl-icon" src="/static/new_logo/next_song.png" mode="aspectFit"/>
+      </view>
+      <view class="player-ctrl-side player-ctrl-side--loop" bindtap="onToggleLoop">
+        <image
+          class="player-ctrl-icon player-ctrl-icon--sm {{loopMode !== 'off' ? 'player-ctrl-icon--on' : ''}} {{loopMode === 'all' ? 'player-ctrl-icon--list' : ''}}"
+          src="/static/new_logo/random_play.png"
+          mode="aspectFit"
+        />
+        <text class="player-loop-label {{loopMode !== 'off' ? 'player-loop-label--on' : ''}}">{{loopModeLabel}}</text>
+      </view>
+    </view>
+
+    <view class="player-actions">
+      <view class="player-action-btn" bindtap="goToCardPick">制作贺卡</view>
+      <view class="player-action-btn" bindtap="recreate">重新创作</view>
+      <view class="player-action-btn player-action-btn--ghost" bindtap="goBack">返回首页</view>
+    </view>
+
+    <view class="player-toolbar">
+      <view class="player-tool player-tool--timer" bindtap="onTapTimer">
+        <image class="player-tool-icon {{timerActive ? 'player-tool-icon--on' : ''}}" src="/static/new_logo/timing.png" mode="aspectFit"/>
+        <text class="player-tool-label {{timerActive ? 'player-tool-label--on' : ''}}">{{timerLabel}}</text>
+      </view>
+      <view class="player-tool" bindtap="onToggleFavorite">
+        <image
+          class="player-tool-icon {{isFavorited ? 'player-tool-icon--on' : ''}}"
+          src="/static/new_logo/collect.png"
+          mode="aspectFit"
+        />
+        <text class="player-tool-label">收藏</text>
+      </view>
+      <view class="player-tool" bindtap="onTapDownload">
+        <image class="player-tool-icon" src="/static/new_logo/download.png" mode="aspectFit"/>
+        <text class="player-tool-label">下载</text>
+      </view>
+    </view>
+
+    <view class="player-mianjia-tip" wx:if="{{showMianjiaEntry && showMianjiaTip}}" bindtap="goToMianjia">
+      <text class="player-mianjia-text">搭配眠家深睡产品，睡得更稳</text>
+      <text class="player-mianjia-arrow">›</text>
+      <view class="player-mianjia-close" catchtap="onCloseMianjiaTip">
+        <image class="player-mianjia-close-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+      </view>
+    </view>
+
+  </view>
+  <custom-tab-bar id="custom-tab-bar" />
+</view>

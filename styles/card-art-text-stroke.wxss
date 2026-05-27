@@ -1,0 +1,14 @@
+/* PNG 贺卡叠加文案白色描边（编辑/分享预览共用） */
+.card-art-text-stroke {
+  text-shadow:
+    0 0 8rpx #fff,
+    0 0 8rpx #fff,
+    2rpx 0 0 #fff,
+    -2rpx 0 0 #fff,
+    0 2rpx 0 #fff,
+    0 -2rpx 0 #fff,
+    2rpx 2rpx 0 #fff,
+    -2rpx 2rpx 0 #fff,
+    2rpx -2rpx 0 #fff,
+    -2rpx -2rpx 0 #fff;
+}

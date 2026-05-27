@@ -1,0 +1,142 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view
+  class="create-home mb-theme-{{mbTheme}} {{miniPlayer ? 'create-home--has-player' : ''}}"
+  style="{{miniPlayer ? 'padding-bottom: ' + homeBottomPaddingPx + 'px;' : ''}}"
+>
+  <view class="create-home-bg"></view>
+
+  <view class="create-home-content">
+    <!-- 顶部问候 -->
+    <view class="home-header" style="padding-top: {{statusBarHeight}}px;">
+      <view class="home-header-text">
+        <text class="home-greeting">{{greeting}}</text>
+        <text class="home-subtitle">{{greetingSub}}</text>
+      </view>
+      <!-- <view class="home-header-actions">
+        <view class="home-icon-btn" bindtap="onTapSearch">
+          <image class="home-icon-img" src="/static/create_step/library.png" mode="aspectFit"/>
+        </view>
+        <view class="home-icon-btn" bindtap="onTapCards">
+          <image class="home-icon-img" src="/static/self_icon/icon_posts.png" mode="aspectFit"/>
+        </view>
+      </view> -->
+    </view>
+
+    <!-- AI 智能生成 -->
+    <view class="ai-card">
+      <view class="ai-card-body">
+        <view class="ai-card-copy">
+          <text class="ai-card-title">AI智能生成</text>
+          <text class="ai-card-desc">为你生成专属助眠音乐</text>
+          <view class="ai-card-btn" bindtap="goToCreate">开始生成</view>
+        </view>
+        <image class="ai-card-mascot" src="/static/new_logo/logo_bg.png" mode="aspectFit"/>
+      </view>
+    </view>
+
+    <!-- 眠家产品 -->
+    <view class="mianjia-entry" wx:if="{{showMianjiaEntry}}" bindtap="goToMianjia">
+      <view class="mianjia-entry-text">
+        <text class="mianjia-entry-title">眠家深睡 · 好物推荐</text>
+        <text class="mianjia-entry-desc">搭配助眠音乐，探索眠加商城精选</text>
+      </view>
+      <text class="mianjia-entry-link">去看看 ›</text>
+    </view>
+
+    <!-- 推荐音景（原推荐场景） -->
+    <view class="soundscape-section">
+      <view class="section-head">
+        <text class="section-head-title">推荐音景</text>
+        <!-- <text class="section-head-more" bindtap="goToLibrary">更多 ></text> -->
+      </view>
+      <view class="soundscape-list">
+        <view class="soundscape-row" wx:for="{{sceneRows}}" wx:key="index">
+          <view
+            class="soundscape-item"
+            wx:for="{{item}}"
+            wx:for-item="scene"
+            wx:key="id"
+            bindtap="quickCreate"
+            data-id="{{scene.id}}"
+          >
+            <image class="soundscape-thumb" src="{{scene.img}}" mode="aspectFit"/>
+            <view class="soundscape-info">
+              <text class="soundscape-name">{{scene.name}}</text>
+              <text class="soundscape-meta">{{scene.desc}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 疗愈曲库（后台官方上传，非用户 AI 作品） -->
+    <view class="home-library-section">
+      <view class="section-head">
+        <text class="section-head-title">疗愈曲库</text>
+        <text class="section-head-more" bindtap="goToLibrary">更多 ›</text>
+      </view>
+      <view wx:if="{{libraryLoading}}" class="home-library-hint">加载中…</view>
+      <view wx:elif="{{!libraryPreview.length}}" class="home-library-hint">暂无官方曲目，敬请期待</view>
+      <scroll-view
+        wx:else
+        class="home-library-scroll"
+        scroll-x
+        enhanced
+        show-scrollbar="{{false}}"
+      >
+        <view class="home-library-inner">
+          <view
+            class="home-library-card"
+            wx:for="{{libraryPreview}}"
+            wx:key="id"
+            bindtap="playLibraryTrack"
+            data-id="{{item.id}}"
+          >
+            <view class="home-library-cover">
+              <image class="home-library-icon" src="{{item.img}}" mode="aspectFit"/>
+            </view>
+            <text class="home-library-name">{{item.title}}</text>
+            <text class="home-library-meta">{{item.frequency}} · {{item.durationText}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 辅助入口 -->
+    <view class="home-shortcuts">
+      <view class="shortcut-item" bindtap="goToWorks">
+        <text>我的音乐</text>
+      </view>
+      <view class="shortcut-item" bindtap="goToCreate">
+        <text>送TA晚安</text>
+      </view>
+      <view class="shortcut-item" bindtap="goToCommunity">
+        <text>盒友圈精选</text>
+      </view>
+    </view>
+
+    <text class="home-footer-hint">AI为你生成一首专属助眠音乐</text>
+  </view>
+
+  <!-- 底部迷你播放条：固定在 TabBar 上方 -->
+  <view
+    class="mini-player"
+    wx:if="{{miniPlayer}}"
+    style="bottom: {{miniPlayerBottom}}px;"
+  >
+    <view class="mini-player-main" bindtap="openMiniPlayer">
+      <image class="mini-player-cover" src="{{miniPlayer.cover}}" mode="aspectFill"/>
+      <view class="mini-player-info">
+        <text class="mini-player-title">{{miniPlayer.title}}</text>
+        <text class="mini-player-status">{{miniPlayerStatusText}}</text>
+      </view>
+    </view>
+    <view class="mini-player-play" catchtap="toggleMiniPlay">
+      <image
+        class="mini-player-btn-icon"
+        src="{{miniPlayerPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}"
+        mode="aspectFit"
+      />
+    </view>
+  </view>
+</view>

@@ -1,0 +1,13 @@
+<view class="prm-mask {{visible ? 'prm-mask--show' : ''}}" catchtouchmove="noop">
+  <view class="prm-card {{visible ? 'prm-card--show' : ''}}" catchtap="noop">
+    <view class="prm-badge" wx:if="{{badge}}">{{badge}}</view>
+    <text class="prm-title">{{title}}</text>
+    <view class="prm-points-wrap">
+      <text class="prm-points-sign">+</text>
+      <text class="prm-points-num">{{points}}</text>
+      <text class="prm-points-unit">积分</text>
+    </view>
+    <text class="prm-desc" wx:if="{{desc}}">{{desc}}</text>
+    <button class="prm-btn" bindtap="onConfirm">{{confirmText}}</button>
+  </view>
+</view>

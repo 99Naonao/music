@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "product-qrcode-modal": "/components/product-qrcode-modal/index"
+  },
+  "navigationBarTitleText": "眠家产品",
+  "enablePullDownRefresh": true
+}

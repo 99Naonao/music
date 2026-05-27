@@ -1,0 +1,55 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body settings-container">
+
+  <view class="setting-group">
+    <view class="setting-item" bindtap="goToEdit">
+      <text class="item-label">编辑资料</text>
+      <text class="item-arrow">›</text>
+    </view>
+    <view class="setting-item" bindtap="goToAccountSecurity">
+      <text class="item-label">账户与安全</text>
+      <text class="item-arrow">›</text>
+    </view>
+    <view class="setting-item setting-item--last">
+      <text class="item-label">通知设置</text>
+      <switch class="item-switch" checked color="#568fd1"/>
+    </view>
+  </view>
+
+  <view class="setting-group setting-group--theme">
+    <view class="setting-section-title">外观主题</view>
+    <view
+      wx:for="{{themeOptions}}"
+      wx:key="id"
+      class="theme-option {{mbTheme === item.id ? 'theme-option-active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="onSelectTheme"
+    >
+      <view class="theme-preview theme-preview-{{item.id}}"></view>
+      <view class="theme-option-text">
+        <text class="theme-option-name">{{item.name}}</text>
+        <text class="theme-option-desc">{{item.desc}}</text>
+      </view>
+      <text wx:if="{{mbTheme === item.id}}" class="theme-option-check">✓</text>
+    </view>
+  </view>
+
+  <view class="setting-group">
+    <view class="setting-item" bindtap="goToAbout">
+      <text class="item-label">关于我们</text>
+      <text class="item-arrow">›</text>
+    </view>
+    <view class="setting-item setting-item--last" bindtap="goToHelp">
+      <text class="item-label">帮助中心</text>
+      <text class="item-arrow">›</text>
+    </view>
+  </view>
+
+  <view wx:if="{{isLoggedIn}}" class="logout-wrap">
+    <button class="btn-logout" bindtap="logout">退出登录</button>
+  </view>
+
+  </view>
+</view>

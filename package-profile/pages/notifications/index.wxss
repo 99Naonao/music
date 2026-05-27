@@ -1,0 +1,18 @@
+.notif-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.notif-header { display: flex; align-items: center; justify-content: space-between; background: var(--mb-card-bg); border-bottom: 1rpx solid var(--mb-border-subtle); }
+.notif-tabs { display: flex; flex: 1; padding: 0 30rpx; }
+.mark-all { font-size: 24rpx; color: var(--mb-mint); padding: 0 30rpx; white-space: nowrap; }
+.n-tab { flex: 1; text-align: center; padding: 24rpx 0; font-size: 28rpx; color: var(--mb-text-secondary); position: relative; }
+.n-tab.active { color: var(--mb-mint); font-weight: 600; }
+.n-tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40rpx; height: 4rpx; background: var(--mb-mint); border-radius: 2rpx; }
+.notif-list { padding: 20rpx; }
+.notif-item { display: flex; align-items: flex-start; background: var(--mb-card-bg); border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
+.notif-item.unread { background: rgba(70,130,180,0.15); }
+.notif-dot { width: 16rpx; height: 16rpx; background: #e74c3c; border-radius: 50%; margin-right: 16rpx; margin-top: 8rpx; flex-shrink: 0; }
+.notif-content { flex: 1; }
+.notif-title { display: block; font-size: 30rpx; color: var(--mb-text-primary); font-weight: 500; margin-bottom: 8rpx; }
+.notif-body { display: block; font-size: 26rpx; color: var(--mb-text-secondary); line-height: 1.4; margin-bottom: 8rpx; }
+.notif-time { display: block; font-size: 22rpx; color: var(--mb-text-muted); }
+.empty-state { display: flex; align-items: center; justify-content: center; padding: 120rpx 0; }
+.empty-text { font-size: 28rpx; color: var(--mb-text-muted); }
+.load-more { text-align: center; padding: 40rpx 0; font-size: 26rpx; color: var(--mb-text-muted); }

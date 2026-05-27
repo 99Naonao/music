@@ -1,0 +1,123 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body circle-page">
+
+    <view class="circle-top" style="padding-top: {{statusBarHeight}}px;">
+      <view class="circle-tabs">
+        <view
+          class="circle-tab {{activeFeed === 'recommend' ? 'active' : ''}}"
+          bindtap="switchFeed"
+          data-feed="recommend"
+        >推荐</view>
+        <view
+          class="circle-tab {{activeFeed === 'following' ? 'active' : ''}}"
+          bindtap="switchFeed"
+          data-feed="following"
+        >关注</view>
+        <view
+          class="circle-tab {{activeFeed === 'latest' ? 'active' : ''}}"
+          bindtap="switchFeed"
+          data-feed="latest"
+        >最新</view>
+      </view>
+      <view class="circle-notice" bindtap="goToNotifications">
+        <image class="circle-notice-icon" src="/static/new_logo/notice.png" mode="aspectFit"/>
+        <view wx:if="{{unreadCount > 0}}" class="circle-notice-dot"></view>
+      </view>
+    </view>
+
+    <view class="circle-sort-row">
+      <view
+        wx:for="{{sortOptions}}"
+        wx:key="id"
+        class="circle-sort-chip {{activeSort === item.id ? 'active' : ''}}"
+        bindtap="switchSort"
+        data-sort="{{item.id}}"
+      >{{item.label}}</view>
+    </view>
+
+    <scroll-view
+      class="circle-scroll"
+      style="height: {{scrollHeight}}px;"
+      scroll-y
+      show-scrollbar="{{false}}"
+      refresher-enabled
+      refresher-triggered="{{refreshing}}"
+      bindrefresherrefresh="onRefresh"
+      bindscrolltolower="onReachBottom"
+    >
+      <view class="circle-feed">
+        <view
+          class="circle-card"
+          wx:for="{{posts}}"
+          wx:key="id"
+          bindtap="goToDetail"
+          data-id="{{item.id}}"
+        >
+          <view class="circle-card-head">
+            <image class="circle-avatar" src="{{item.avatar || '/static/self_icon/avatar_default.png'}}" mode="aspectFill"/>
+            <view class="circle-user">
+              <text class="circle-name">{{item.author || '盒友'}}</text>
+              <text class="circle-time">{{item.timeText}}</text>
+            </view>
+            <view class="circle-more" catchtap="onPostMore" data-id="{{item.id}}" data-index="{{index}}">
+              <text class="circle-more-dots">···</text>
+            </view>
+          </view>
+
+          <text class="circle-content">{{item.content}}</text>
+
+          <view
+            wx:if="{{item.hasMusic}}"
+            class="circle-audio"
+            catchtap="playFeedMusic"
+            data-id="{{item.id}}"
+            data-url="{{item.musicAudioUrl}}"
+          >
+            <image class="circle-audio-cover" src="{{item.musicCover}}" mode="aspectFill"/>
+            <view class="circle-audio-meta">
+              <text class="circle-audio-title">{{item.musicTitle}}</text>
+              <text class="circle-audio-dur">{{item.musicDurationText}}</text>
+            </view>
+            <image
+              class="circle-audio-play"
+              src="{{playingPostId === item.id ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}"
+              mode="aspectFit"
+            />
+          </view>
+
+          <view class="circle-actions" catchtap="preventBubble">
+            <view class="circle-action" catchtap="toggleLike" data-id="{{item.id}}" data-index="{{index}}">
+              <image
+                class="circle-action-icon {{item.isLiked ? 'liked' : ''}}"
+                src="{{item.isLiked ? '/static/new_logo/like.png' : '/static/new_logo/thumbs.png'}}"
+                mode="aspectFit"
+              />
+              <text class="circle-action-num">{{item.likes || 0}}</text>
+            </view>
+            <view class="circle-action" catchtap="goToDetail" data-id="{{item.id}}">
+              <image class="circle-action-icon" src="/static/new_logo/comments.png" mode="aspectFit"/>
+              <text class="circle-action-num">{{item.comments || 0}}</text>
+            </view>
+            <button class="circle-action circle-share-btn" open-type="share" data-id="{{item.id}}" data-content="{{item.content}}">
+              <image class="circle-action-icon" src="/static/new_logo/share.png" mode="aspectFit"/>
+              <text class="circle-action-label">分享</text>
+            </button>
+          </view>
+        </view>
+
+        <view class="circle-footer-hint" wx:if="{{loading}}">加载中…</view>
+        <view class="circle-footer-hint" wx:elif="{{!hasMore && posts.length > 0}}">已经到底了</view>
+        <view class="circle-empty" wx:elif="{{!loading && posts.length === 0}}">
+          <text wx:if="{{activeFeed === 'following'}}">暂无关注动态，去「推荐」关注感兴趣的盒友吧</text>
+          <text wx:else>还没有动态，点击底部「+」或去发布第一条分享吧</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="circle-fab" bindtap="goToCreate">
+      <text class="circle-fab-plus">+</text>
+    </view>
+  </view>
+</view>

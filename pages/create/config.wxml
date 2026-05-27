@@ -1,0 +1,116 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="config-page mb-theme-{{mbTheme}}">
+  <view class="config-page-bg"></view>
+  <scroll-view
+    class="config-scroll"
+    style="height: {{scrollHeight}}px;"
+    scroll-y
+    show-scrollbar="{{false}}"
+  >
+  <view class="config-page-body" style="padding-bottom: {{scrollContentBottomPx}}px;">
+  <!-- 步骤指示器 - 圆点样式 -->
+  <view class="step-indicator">
+    <view class="step-dot active"></view>
+    <view class="step-dot"></view>
+    <view class="step-dot"></view>
+    <view class="step-dot"></view>
+  </view>
+
+  <!-- 选择乐器 -->
+  <view class="card">
+    <view class="card-title">
+      <image class="card-title-icon" src="/static/create_step/instrument.png" mode="aspectFit"/>
+      <text>选择主乐器</text>
+    </view>
+    <scroll-view class="instrument-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="instrument-list">
+        <view
+          class="instrument-item {{selectedInstrument === item.id ? 'selected' : ''}}"
+          wx:for="{{instruments}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="selectInstrument"
+        >
+          <image class="instrument-icon" src="{{item.icon}}" mode="aspectFit"/>
+          <text class="instrument-name">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="scroll-hint">›</view>
+  </view>
+
+  <!-- 选择脑波频率 -->
+  <view class="card">
+    <view class="card-title">
+      <image class="card-title-icon" src="/static/create_step/brainwave.png" mode="aspectFit"/>
+      <text>选择脑波频率</text>
+    </view>
+    <view class="frequency-grid">
+      <view
+        class="frequency-item {{selectedFrequency === item.name ? 'selected' : ''}}"
+        wx:for="{{frequencies}}"
+        wx:key="name"
+        data-name="{{item.name}}"
+        bindtap="selectFrequency"
+      >
+        <view class="frequency-badge">{{item.badge}}</view>
+        <text class="frequency-label">{{item.label}}</text>
+      </view>
+    </view>
+    <view class="frequency-help" wx:if="{{frequencyHelp}}">
+      <text class="frequency-help-text">{{frequencyHelp}}</text>
+    </view>
+  </view>
+  <view class="card">
+    <view class="card-title">
+      <image class="card-title-icon" src="/static/new_logo/timing.png" mode="aspectFit"/>
+      <text>作品时长</text>
+    </view>
+    <view class="duration-grid">
+      <view
+        class="duration-item {{selectedDurationSec === item.sec ? 'selected' : ''}}"
+        wx:for="{{durationOptions}}"
+        wx:key="sec"
+        data-sec="{{item.sec}}"
+        bindtap="selectDuration"
+      >
+        <text class="duration-label">{{item.label}}</text>
+      </view>
+    </view>
+    <view class="duration-hint">决定音轨时间轴总长度与生成音乐的参考时长</view>
+  </view>
+
+  <!-- 选择BPM -->
+  <view class="card">
+    <view class="card-title">
+      <image class="card-title-icon" src="/static/create_step/instrument.png" mode="aspectFit"/>
+      <text>BPM节拍选择</text>
+      <text class="card-required">必选</text>
+    </view>
+    <view class="bpm-grid">
+      <view
+        class="bpm-item {{selectedBPM === item.value ? 'selected' : ''}} {{item.highlighted ? 'highlighted' : ''}}"
+        wx:for="{{bpmList}}"
+        wx:key="value"
+        data-value="{{item.value}}"
+        bindtap="selectBPM"
+      >
+        <!-- <text class="bpm-label">{{item.label}}</text> -->
+        <text class="bpm-value">{{item.value}}</text>
+        <text class="bpm-unit">BPM</text>
+        <text class="bpm-recommend" wx:if="{{item.recommend}}">{{item.recommend}}</text>
+      </view>
+    </view>
+    <!-- 专家建议 -->
+    <view class="expert-tips">
+      <image class="tips-icon" src="/static/create_step/tips.png" mode="aspectFit"/>
+      <text class="tips-text">{{expertTip}}</text>
+    </view>
+  </view>
+
+  </view>
+  </scroll-view>
+  <view class="bottom-action" style="bottom: {{tabBarOffsetPx}}px;">
+    <button class="btn-primary" bindtap="goToTracks">下一步：配置音轨</button>
+  </view>
+</view>

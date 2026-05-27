@@ -1,0 +1,35 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body works-container">
+  <view wx:if="{{worksLoading}}" class="works-hint">作品加载中…</view>
+
+  <view wx:if="{{!worksLoading && works.length === 0}}" class="works-empty">暂无已完成的作品。创作中的任务或失败记录不会显示在这里。</view>
+  <view class="works-grid">
+    <view class="work-card" wx:for="{{works}}" wx:key="id" bindtap="playWork" data-work="{{item}}">
+      <view class="work-cover-wrap" catchtap="changeWorkCover" data-id="{{item.id}}">
+        <image class="work-cover" src="{{item.cover}}" mode="{{item.coverMode}}"/>
+        <view class="work-cover-change">换封面</view>
+        <view class="work-delete" catchtap="confirmDeleteWork" data-work="{{item}}">删除</view>
+        <view class="work-audio-bad" wx:if="{{!item.audioUrl}}">暂无音频</view>
+      </view>
+      <view class="work-title-row">
+        <text class="work-title">{{item.title}}</text>
+        <text
+          class="work-title-edit"
+          catchtap="editWorkTitle"
+          data-id="{{item.id}}"
+          data-title="{{item.title}}"
+        >改名</text>
+      </view>
+      <view class="work-meta">
+        <text class="work-date">{{item.date}}</text>
+        <view class="work-plays-wrap">
+          <image class="work-play-icon" src="/static/new_logo/play.png" mode="aspectFit"/>
+          <text class="work-plays">{{item.plays}}次播放</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

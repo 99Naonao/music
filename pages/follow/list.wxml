@@ -1,0 +1,43 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body fl-container">
+    <view class="fl-list">
+      <view class="fl-item" wx:for="{{users}}" wx:key="openid">
+        <image class="fl-avatar" src="{{item.avatar || '/static/self_icon/avatar_default.png'}}" mode="aspectFill" />
+        <view class="fl-info">
+          <text class="fl-name">{{item.nickname}}</text>
+          <text class="fl-time">{{item.timeText}}</text>
+        </view>
+        <view
+          wx:if="{{listType === 'following'}}"
+          class="fl-btn fl-btn--muted"
+          bindtap="unfollowUser"
+          data-openid="{{item.openid}}"
+          data-index="{{index}}"
+        >已关注</view>
+        <view
+          wx:elif="{{item.isFollowing}}"
+          class="fl-btn fl-btn--muted"
+          bindtap="unfollowUser"
+          data-openid="{{item.openid}}"
+          data-index="{{index}}"
+        >已关注</view>
+        <view
+          wx:else
+          class="fl-btn"
+          bindtap="followUser"
+          data-openid="{{item.openid}}"
+          data-index="{{index}}"
+        >回关</view>
+      </view>
+
+      <view class="fl-empty" wx:if="{{!loading && users.length === 0}}">
+        <text wx:if="{{listType === 'following'}}">还没有关注任何人</text>
+        <text wx:else>还没有粉丝</text>
+      </view>
+      <view class="fl-hint" wx:if="{{loading}}">加载中…</view>
+      <view class="fl-hint" wx:elif="{{!hasMore && users.length > 0}}">已经到底了</view>
+    </view>
+  </view>
+</view>

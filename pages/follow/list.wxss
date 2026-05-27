@@ -1,0 +1,72 @@
+.fl-container {
+  min-height: 100vh;
+  padding: 20rpx;
+}
+
+.fl-list {
+  padding-bottom: 40rpx;
+}
+
+.fl-item {
+  display: flex;
+  align-items: center;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.fl-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--mb-card-bg);
+}
+
+.fl-info {
+  flex: 1;
+  min-width: 0;
+  margin: 0 20rpx;
+}
+
+.fl-name {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--mb-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fl-time {
+  display: block;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  margin-top: 6rpx;
+}
+
+.fl-btn {
+  flex-shrink: 0;
+  padding: 12rpx 28rpx;
+  font-size: 26rpx;
+  color: #fff;
+  background: var(--mb-mint);
+  border-radius: 32rpx;
+}
+
+.fl-btn--muted {
+  color: var(--mb-text-secondary);
+  background: transparent;
+  border: 1rpx solid var(--mb-border-subtle);
+}
+
+.fl-empty,
+.fl-hint {
+  text-align: center;
+  padding: 80rpx 40rpx;
+  font-size: 28rpx;
+  color: var(--mb-text-muted);
+}

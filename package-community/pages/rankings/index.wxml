@@ -1,0 +1,25 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body rankings-container">
+  <view class="tabs">
+    <view class="tab {{activeTab==0?'active':''}}" bindtap="switchTab" data-index="0">热门榜</view>
+    <view class="tab {{activeTab==1?'active':''}}" bindtap="switchTab" data-index="1">新作榜</view>
+    <view class="tab {{activeTab==2?'active':''}}" bindtap="switchTab" data-index="2">飙升榜</view>
+  </view>
+  <view class="ranking-list">
+    <view class="rank-item" wx:for="{{rankings}}" wx:key="id">
+      <text class="rank-num {{index<3?'top':''}}">{{index+1}}</text>
+      <image class="rank-cover" src="{{item.cover}}" mode="aspectFill"/>
+      <view class="rank-info">
+        <text class="rank-title">{{item.title}}</text>
+        <text class="rank-author">{{item.author}}</text>
+      </view>
+      <view class="rank-play">
+        <text class="play-count">{{item.plays}}</text>
+        <image class="play-icon" src="/static/new_logo/play.png" mode="aspectFit"/>
+      </view>
+    </view>
+  </view>
+  </view>
+</view>

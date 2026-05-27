@@ -1,0 +1,16 @@
+.tasks-container { background: var(--mb-gradient-page); min-height: 100vh; }
+.tasks-header { background: var(--mb-gradient-cta-to-night); padding: 40rpx 30rpx; color: var(--mb-text-primary); }
+.header-title { display: block; font-size: 40rpx; font-weight: 700; }
+.header-sub { display: block; font-size: 26rpx; opacity: 0.7; margin-top: 8rpx; }
+.task-list { padding: 20rpx; }
+.task-item { display: flex; align-items: center; background: var(--mb-card-bg); border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
+.task-item.completed { opacity: 0.6; }
+.task-icon { width: 80rpx; height: 80rpx; background: var(--mb-mint-15); color: var(--mb-mint); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24rpx; }
+.task-info { flex: 1; margin-left: 20rpx; }
+.task-name { display: block; font-size: 30rpx; color: var(--mb-text-primary); font-weight: 500; }
+.task-desc { display: block; font-size: 24rpx; color: var(--mb-text-muted); margin-top: 6rpx; }
+.task-right { text-align: right; }
+.task-reward { display: block; font-size: 28rpx; color: #e6a23c; font-weight: 600; margin-bottom: 8rpx; }
+.task-btn { width: 140rpx; height: 56rpx; line-height: 56rpx; background: var(--mb-mint); color: var(--mb-text-primary); font-size: 24rpx; border-radius: 28rpx; padding: 0; }
+.task-btn.done { background: rgba(255,255,255,0.15); }
+.task-btn::after { border: none; }

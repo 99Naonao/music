@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "product-qrcode-modal": "/components/product-qrcode-modal/index"
+  },
+  "navigationBarTitleText": "商品详情"
+}

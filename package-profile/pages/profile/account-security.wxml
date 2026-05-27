@@ -1,0 +1,11 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body acc-container">
+  <view class="acc-hint">注销后，你的帖子、作品、积分等数据将永久删除且无法恢复。退出登录请前往「我的」页。</view>
+  <view class="logout-section">
+    <button class="btn-logout" bindtap="deleteAccount">注销账号</button>
+  </view>
+  <view style="height: 40rpx;"></view>
+  </view>
+</view>

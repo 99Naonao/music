@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "points-reward-modal": "/components/points-reward-modal/index"
+  },
+  "navigationBarTitleText": "积分任务"
+}

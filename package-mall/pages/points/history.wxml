@@ -1,0 +1,40 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body history-container">
+  <view wx:if="{{loading}}" class="history-loading">加载中…</view>
+
+  <view class="summary-bar">
+    <view class="summary-item" bindtap="setFilter" data-filter="income" hover-class="summary-hover">
+      <text class="summary-label">总收入</text>
+      <text class="summary-value income">+{{totalIncome}}</text>
+    </view>
+    <view class="summary-item" bindtap="setFilter" data-filter="expense" hover-class="summary-hover">
+      <text class="summary-label">总支出</text>
+      <text class="summary-value expense">-{{totalExpense}}</text>
+    </view>
+  </view>
+
+  <view class="filter-tabs">
+    <view class="f-tab {{filter=='all'?'active':''}}" bindtap="setFilter" data-filter="all">全部</view>
+    <view class="f-tab {{filter=='income'?'active':''}}" bindtap="setFilter" data-filter="income">收入</view>
+    <view class="f-tab {{filter=='expense'?'active':''}}" bindtap="setFilter" data-filter="expense">支出</view>
+  </view>
+
+  <view wx:if="{{!loading && records.length===0}}" class="history-empty">
+    <text wx:if="{{filter=='all'}}">暂无积分流水；兑换或完成任务后会在此展示。</text>
+    <text wx:elif="{{filter=='income'}}">暂无收入记录</text>
+    <text wx:else>暂无支出记录</text>
+  </view>
+
+  <view class="record-list">
+    <view class="record-item" wx:for="{{records}}" wx:key="id">
+      <view class="record-left">
+        <text class="record-title">{{item.title}}</text>
+        <text class="record-time">{{item.time}}</text>
+      </view>
+      <text class="record-amount {{item.type}}">{{item.type==='income'?'+':'-'}}{{item.amount}}</text>
+    </view>
+  </view>
+  </view>
+</view>

@@ -1,0 +1,84 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="ai-page mb-theme-{{mbTheme}}">
+  <view class="ai-page-bg"></view>
+
+  <view class="ai-page-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="ai-nav">
+      <view class="ai-nav-back" bindtap="onTapBack">
+        <text class="ai-nav-back-icon">‹</text>
+      </view>
+      <view class="ai-nav-center">
+        <text class="ai-nav-title">AI生成专属声波</text>
+        <text class="ai-nav-sub">告诉我音盒，你想要怎样的陪伴</text>
+      </view>
+      <view class="ai-nav-placeholder"></view>
+    </view>
+  </view>
+
+  <scroll-view
+    class="ai-scroll"
+    style="height: {{scrollHeight}}px;"
+    scroll-y
+    show-scrollbar="{{false}}"
+  >
+    <view class="ai-scroll-inner">
+      <view class="prompt-card">
+        <view class="prompt-editor">
+          <view class="prompt-hint" wx:if="{{promptLen === 0}}">
+            <text class="prompt-hint-line">例如：想要雨声和钢琴的结合，</text>
+            <text class="prompt-hint-line">帮助我放松入睡…</text>
+          </view>
+          <textarea
+            class="prompt-input"
+            placeholder=""
+            maxlength="{{promptMax}}"
+            value="{{promptText}}"
+            bindinput="onPromptInput"
+            show-confirm-bar="{{false}}"
+            cursor-spacing="24"
+          />
+        </view>
+        <text class="prompt-count">{{promptLen}}/{{promptMax}}</text>
+      </view>
+
+      <view class="block">
+        <text class="block-label">选择场景（可多选）</text>
+        <view class="scene-grid">
+          <view
+            wx:for="{{sceneList}}"
+            wx:key="id"
+            class="scene-chip {{item.selected ? 'scene-chip--on' : ''}} {{item.isToggleMore ? 'scene-chip--toggle' : ''}}"
+            data-id="{{item.id}}"
+            hover-class="scene-chip--active"
+            hover-stay-time="80"
+            bindtap="toggleScene"
+          >
+            {{item.name}}
+          </view>
+        </view>
+      </view>
+
+      <view class="block">
+        <text class="block-label">心情状态</text>
+        <scroll-view class="mood-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+          <view class="mood-row">
+            <view
+              wx:for="{{moods}}"
+              wx:key="id"
+              class="mood-chip {{selectedMood === item.id ? 'mood-chip--on' : ''}}"
+              data-id="{{item.id}}"
+              bindtap="selectMood"
+            >
+              <text class="mood-emoji">{{item.emoji}}</text>
+              <text class="mood-label">{{item.label}}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="ai-bottom">
+    <button class="ai-submit" bindtap="goToInstrumentConfig">下一步：选择乐器</button>
+  </view>
+</view>

@@ -1,0 +1,135 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<wxs src="./blessing-preview.wxs" module="bp" />
+
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body card-edit-page">
+
+    <!-- <view class="card-edit-head">
+      <text class="card-edit-title">编辑贺卡</text>
+    </view> -->
+
+    <view class="card-editor">
+      <view class="cover-section">
+        <view class="section-label-row">
+          <view class="section-label">
+            <image class="section-label-icon" src="/static/music_library/cover.png" mode="aspectFit"/>
+            <text>自定义封面</text>
+          </view>
+          <text class="badge-free">免费</text>
+        </view>
+        <text class="cover-section-hint">上传的图片仅替换下方贺卡背景，不会影响作品播放器封面。</text>
+        <view class="cover-options">
+          <view class="cover-option" bindtap="takeCoverPhoto">
+            <image class="cover-option-icon" src="/static/music_library/camera_color.png" mode="aspectFit"/>
+            <text class="cover-option-text">拍照</text>
+          </view>
+          <view class="cover-option" bindtap="chooseCoverImage">
+            <image class="cover-option-icon" src="/static/music_library/photos.png" mode="aspectFit"/>
+            <text class="cover-option-text">相册</text>
+          </view>
+          <view class="cover-option" bindtap="goReselectTemplate">
+            <image class="cover-option-icon" src="/static/music_library/greeting_card.png" mode="aspectFit"/>
+            <text class="cover-option-text">换贺卡</text>
+          </view>
+          <view class="cover-option" wx:if="{{!useDefaultBg}}" bindtap="useDefaultBackground">
+            <image class="cover-option-icon" src="/static/music_library/panel_color.png" mode="aspectFit"/>
+            <text class="cover-option-text">默认背景</text>
+          </view>
+        </view>
+        <view class="cover-preview-container" wx:if="{{coverImage}}">
+          <view class="cover-preview">
+            <image class="cover-preview-img" src="{{coverImage}}" mode="aspectFill"/>
+            <image class="cover-remove" src="/static/create_step/delete.png" mode="aspectFit" bindtap="removeCover"/>
+          </view>
+        </view>
+      </view>
+
+      <view class="gradient-section" wx:if="{{useDefaultBg}}">
+        <view class="section-label">
+          <image class="section-label-icon" src="/static/music_library/panel.png" mode="aspectFit"/>
+          <text>贺卡底色（无配图）</text>
+        </view>
+        <text class="gradient-section-hint">选择一种渐变作为贺卡背景，不叠加 PNG 配图。</text>
+        <view class="gradient-grid">
+          <view
+            class="gradient-item style-{{item.id}} {{selectedTemplate === item.id ? 'selected' : ''}}"
+            wx:for="{{gradientOptions}}"
+            wx:key="id"
+            data-gradient="{{item.id}}"
+            bindtap="selectGradient"
+          />
+        </view>
+      </view>
+
+      <view class="card-preview-section">
+        <view class="card-preview style-{{selectedTemplate}} {{cardPreviewBgImage || coverImage ? 'with-art-bg' : ''}}">
+          <block wx:if="{{coverImage}}">
+            <view class="card-preview-art-frame">
+              <image class="card-preview-bg-photo" src="{{coverImage}}" mode="widthFix"/>
+              <view class="preview-to-slot" style="{{cardOverlayStyle.to}}">
+                <text class="preview-to-line card-art-text-stroke" style="font-size: {{previewToFontSize}}rpx;">TO: {{recipientName || '亲爱的朋友'}}</text>
+              </view>
+              <view class="card-preview-content card-preview-content--art" style="{{cardOverlayStyle.message}}">
+                <view class="preview-message-wrap" style="font-size: {{previewMsgFontSize}}rpx;">
+                  <block wx:for="{{previewMessageLines}}" wx:key="index">
+                    <view wx:if="{{item === ''}}" class="preview-message-gap"></view>
+                    <text wx:else class="preview-message-line card-art-text-stroke">{{item}}</text>
+                  </block>
+                </view>
+              </view>
+            </view>
+          </block>
+          <block wx:elif="{{cardPreviewBgImage}}">
+            <view class="card-preview-art-frame">
+              <image class="card-preview-bg-photo" src="{{cardPreviewBgImage}}" mode="widthFix"/>
+              <view class="preview-to-slot" style="{{cardOverlayStyle.to}}">
+                <text class="preview-to-line card-art-text-stroke" style="font-size: {{previewToFontSize}}rpx;">TO: {{recipientName || '亲爱的朋友'}}</text>
+              </view>
+              <view class="card-preview-content card-preview-content--art" style="{{cardOverlayStyle.message}}">
+                <view class="preview-message-wrap" style="font-size: {{previewMsgFontSize}}rpx;">
+                  <block wx:for="{{previewMessageLines}}" wx:key="index">
+                    <view wx:if="{{item === ''}}" class="preview-message-gap"></view>
+                    <text wx:else class="preview-message-line card-art-text-stroke">{{item}}</text>
+                  </block>
+                </view>
+              </view>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="card-preview-bg"></view>
+            <view class="card-preview-content">
+              <view class="preview-to">致 <text>{{recipientName || '亲爱的朋友'}}</text>：</view>
+              <view class="preview-message-wrap preview-message-wrap--gradient" style="font-size: {{previewMsgFontSize}}rpx;">
+                <block wx:for="{{previewMessageLines}}" wx:key="index">
+                  <view wx:if="{{item === ''}}" class="preview-message-gap"></view>
+                  <text wx:else class="preview-message-line">{{item}}</text>
+                </block>
+              </view>
+              <view class="preview-from">—— <text>眠音盒</text></view>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <view class="form-section">
+        <input class="form-input" placeholder="收件人姓名" value="{{recipientName}}" bindinput="inputRecipient"/>
+        <textarea
+          class="form-textarea"
+          placeholder="写下祝福语（最多{{messageMaxLength}}字，回车分段）"
+          value="{{message}}"
+          maxlength="{{messageMaxLength}}"
+          bindinput="inputMessage"
+        />
+        <button class="btn-ai-generate {{aiGenerating ? 'generating' : ''}}" bindtap="generateAIMessage">
+          <image class="ai-icon" src="/static/create_step/ai_magic.png" mode="aspectFit"/>
+          <text>{{aiGenerating ? 'AI思考中...' : 'AI生成祝福语'}}</text>
+        </button>
+      </view>
+
+      <button class="btn-primary" bindtap="createCard">
+        <text class="btn-primary-text">生成贺卡</text>
+      </button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,45 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body fav-container">
+    <view class="fav-header">
+      <text class="fav-count" wx:if="{{items.length}}">共 {{items.length}} 首</text>
+      <text class="fav-count" wx:else>暂无收藏</text>
+    </view>
+
+    <view class="fav-list">
+      <view
+        class="fav-item"
+        wx:for="{{items}}"
+        wx:key="id"
+        bindtap="onTapItem"
+        data-index="{{index}}"
+      >
+        <image
+          class="fav-cover"
+          src="{{item.cover}}"
+          mode="aspectFill"
+          binderror="onCoverError"
+          data-index="{{index}}"
+        />
+        <view class="fav-info">
+          <text class="fav-title">{{item.title}}</text>
+          <view class="fav-tags" wx:if="{{item.tags.length}}">
+            <text class="fav-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">{{tag}}</text>
+          </view>
+          <text class="fav-time" wx:if="{{item.timeText}}">收藏于 {{item.timeText}}</text>
+        </view>
+        <view class="fav-actions">
+          <text class="fav-duration" wx:if="{{item.durationText}}">{{item.durationText}}</text>
+          <image class="fav-play-icon" src="/static/new_logo/play.png" mode="aspectFit" />
+          <text class="fav-remove" catchtap="onRemove" data-index="{{index}}">移除</text>
+        </view>
+      </view>
+
+      <view class="fav-empty" wx:if="{{!loading && items.length === 0}}">
+        <text class="fav-empty-title">还没有收藏</text>
+        <text class="fav-empty-hint">在播放页点击「收藏」即可添加到这里</text>
+      </view>
+    </view>
+  </view>
+</view>

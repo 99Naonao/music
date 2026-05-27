@@ -1,0 +1,673 @@
+.tracks-page {
+  position: relative;
+  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tracks-page-bg {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.mb-theme-dawn .tracks-page-bg {
+  background: linear-gradient(135deg, #d1e9ff 0%, #e8f4ff 42%, #f7faff 72%, #ffffff 100%);
+}
+
+.mb-theme-night .tracks-page-bg {
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -8%, rgba(111, 143, 207, 0.35) 0%, transparent 55%),
+    linear-gradient(180deg, #202b48 0%, #2d3a5c 45%, #1a2238 100%);
+}
+
+.tracks-scroll {
+  flex: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tracks-page-body {
+  position: relative;
+  z-index: 1;
+  padding: 30rpx;
+  /* padding-bottom 由 scrollContentBottomPx 动态设置，避让底部固定按钮 */
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.step-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--mb-border-subtle);
+  transition: all 0.3s;
+}
+
+.step-dot.active {
+  background: linear-gradient(135deg, #7fb3a3 0%, #6f8fcf 100%);
+  width: 48rpx;
+  border-radius: 8rpx;
+}
+
+.tracks-page-body .card {
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(30, 58, 95, 0.06);
+}
+
+.mb-theme-night .tracks-page-body .card {
+  box-shadow: none;
+}
+
+.card--instrument {
+  position: relative;
+}
+
+.instrument-change-hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  line-height: 1.45;
+  margin-bottom: 16rpx;
+}
+
+.instrument-scroll {
+  white-space: nowrap;
+}
+
+.instrument-list {
+  display: inline-flex;
+}
+
+.instrument-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 28rpx;
+  margin-right: 16rpx;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 16rpx;
+  border: 2rpx solid var(--mb-card-border);
+  min-width: 120rpx;
+}
+
+.mb-theme-night .instrument-item {
+  background: var(--mb-card-bg);
+}
+
+.instrument-item.selected {
+  border-color: rgba(111, 143, 207, 0.55);
+  background: rgba(111, 143, 207, 0.18);
+}
+
+.instrument-icon {
+  width: 56rpx;
+  height: 56rpx;
+  margin-bottom: 12rpx;
+}
+
+.instrument-name {
+  font-size: 24rpx;
+  color: var(--mb-text-primary);
+}
+
+.card--instrument .scroll-hint {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mb-mist-blue);
+  font-size: 36rpx;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.track-row--main:active {
+  opacity: 0.85;
+}
+
+.tracks-page-body .card-title {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--mb-text-primary);
+  margin-bottom: 20rpx;
+}
+
+.card-title-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.timeline-hint {
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+  line-height: 1.45;
+  margin-bottom: 16rpx;
+}
+
+.timeline-hint .hint-strong {
+  color: var(--mb-text-secondary);
+  font-weight: 600;
+}
+
+.timeline-scale-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 10rpx;
+}
+
+.timeline-scale-label-gap {
+  width: 100rpx;
+  flex-shrink: 0;
+}
+
+.timeline-scale-delete-gap {
+  width: 60rpx;
+  flex-shrink: 0;
+}
+
+.timeline-scale-track {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-scale-inner {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 4rpx;
+}
+
+.timeline-scale-tick {
+  font-size: 20rpx;
+  color: var(--mb-text-muted);
+}
+
+.effect-count {
+  margin-left: auto;
+  font-size: 24rpx;
+  color: var(--mb-text-muted);
+  font-weight: 400;
+}
+
+/* 轨道 */
+.track-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.track-label {
+  width: 100rpx;
+  font-size: 22rpx;
+  color: var(--mb-text-secondary);
+  text-align: center;
+}
+
+/* 白噪音：图标与名称同一行（与主乐器/人声标签列同宽） */
+.track-label--with-icon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  box-sizing: border-box;
+  padding: 0 4rpx;
+}
+
+.track-label-icon {
+  width: 28rpx;
+  height: 28rpx;
+  flex-shrink: 0;
+}
+
+.track-label-name {
+  font-size: 22rpx;
+  line-height: 1.2;
+  color: var(--mb-text-secondary);
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* 「添加白噪音」：排在已添加白噪音行下方，样式与轨道名一致 */
+.track-row--noise-add {
+  align-items: flex-start;
+  margin-bottom: 16rpx;
+}
+
+.track-row--noise-add:active {
+  opacity: 0.88;
+}
+
+.track-label--add .track-label-name--add {
+  color: var(--mb-mist-blue, #6f8fcf);
+  font-size: 20rpx;
+}
+
+.track-timeline {
+  flex: 1;
+  height: 60rpx;
+  background: rgba(30, 58, 95, 0.08);
+  border-radius: 8rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.mb-theme-night .track-timeline {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* 白噪音时间轴：白条固定宽时略可超出槽外，避免被裁掉无法点 */
+.track-timeline.track-timeline-effect {
+  overflow: visible;
+  min-height: 88rpx;
+  height: 88rpx;
+}
+
+.track-block {
+  position: absolute;
+  height: 100%;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+}
+
+.track-block.main {
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(46, 139, 87, 0.6), rgba(70, 130, 180, 0.6));
+  color: var(--mb-text-primary);
+}
+
+.track-tag-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 8rpx;
+  flex-shrink: 0;
+}
+
+.track-block.effect {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
+  /* 与 .track-timeline-effect 高度 88rpx、条高 72rpx 对齐 */
+  top: 8rpx;
+  transform: none;
+  height: 72rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.92);
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.35);
+}
+
+/* 时长为 0 时略留占位；max-width 由行内样式限制在「入点→时间轴右端」内 */
+.track-block.effect.effect-bar-collapsed {
+  min-width: 140rpx;
+}
+
+/* 有时长时整条至少容纳两侧固定像素白条 + 一条窄中间区，避免缩成一条线难拖 */
+.track-block.effect.effect-bar-has-duration {
+  min-width: 56px;
+}
+
+.effect-handle {
+  flex: 0 0 12px;
+  width: 12px;
+  min-width: 12px;
+  max-width: 12px;
+  box-sizing: border-box;
+  background: #ffffff;
+  z-index: 2;
+}
+
+.effect-block-center {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(26, 52, 38, 0.98) 0%, rgba(18, 42, 30, 0.98) 100%);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.25);
+}
+
+.effect-bar-icon {
+  width: 24rpx !important;
+  height: 24rpx !important;
+  max-width: 100%;
+  max-height: 100%;
+  flex-shrink: 1;
+  opacity: 0.95;
+}
+
+.effect-disabled-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(46, 139, 87, 0.35);
+}
+
+.track-block.effect:active {
+  opacity: 0.92;
+}
+
+.track-block.effect.disabled {
+  background: rgba(128, 128, 128, 0.35);
+  border-color: rgba(255, 255, 255, 0.25);
+  opacity: 0.55;
+  min-width: 36rpx;
+  top: 0;
+  transform: none;
+  height: 100%;
+  box-shadow: none;
+}
+
+.track-delete {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12rpx;
+}
+
+.delete-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 音轨设置 */
+.track-settings {
+  background: rgba(111, 143, 207, 0.1);
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  margin: -8rpx 0 16rpx 112rpx;
+  border-left: 3rpx solid #7fb3a3;
+}
+
+.mb-theme-night .track-settings {
+  background: rgba(0, 0, 0, 0.15);
+  border-left-color: #2e8b57;
+}
+
+.effect-track-wrapper:last-child .track-settings {
+  margin-bottom: 0;
+}
+
+.effect-time-readout {
+  margin-bottom: 12rpx;
+}
+
+.effect-time-readout-text {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: var(--mb-text-secondary);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.setting-label {
+  font-size: 22rpx;
+  color: var(--mb-text-secondary);
+  width: 80rpx;
+  flex-shrink: 0;
+}
+
+.setting-slider {
+  flex: 1;
+}
+
+.effect-switch {
+  transform: scale(0.8);
+  margin-right: -8rpx;
+}
+
+/* 人声轨道 */
+.voice-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-options {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.voice-option {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  color: var(--mb-text-secondary);
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  background: rgba(111, 143, 207, 0.12);
+  border-radius: 8rpx;
+}
+
+.mb-theme-night .voice-option {
+  background: var(--mb-card-bg);
+}
+
+.voice-option:active {
+  background: rgba(111, 143, 207, 0.22);
+}
+
+.voice-divider {
+  width: 1rpx;
+  height: 32rpx;
+  background: var(--mb-border-subtle);
+}
+
+.record-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.voice-recording {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  color: #ff6b6b;
+  font-size: 24rpx;
+}
+
+.recording-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.btn-stop {
+  background: #ff6b6b;
+  color: var(--mb-text-primary);
+  font-size: 22rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  border: none;
+}
+
+.voice-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16rpx;
+}
+
+.voice-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.voice-type-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.voice-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.voice-name {
+  color: var(--mb-text-primary);
+  font-size: 24rpx;
+}
+
+.voice-duration {
+  color: var(--mb-text-muted);
+  font-size: 20rpx;
+}
+
+.voice-actions {
+  display: flex;
+  align-items: center;
+}
+
+.voice-remove {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 音效选择 - 横向标签 */
+.effects-row {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+  max-height: 220rpx;
+  overflow-y: auto;
+}
+
+.effect-btn {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 40rpx;
+  padding: 16rpx 28rpx;
+  font-size: 24rpx;
+  color: var(--mb-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.mb-theme-night .effect-btn {
+  background: var(--mb-card-bg);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.effect-btn:active {
+  background: rgba(111, 143, 207, 0.22);
+  border-color: rgba(111, 143, 207, 0.55);
+}
+
+.effect-btn.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.effect-btn-icon {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.track-effect-icon {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.bottom-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 12rpx 30rpx;
+  box-sizing: border-box;
+  background: transparent;
+  border-top: none;
+  display: flex;
+  gap: 20rpx;
+}
+
+.mb-theme-night .bottom-actions {
+  background: transparent;
+  border-top: none;
+}
+
+.btn-secondary {
+  flex: 1;
+  margin: 0;
+  background: rgba(111, 143, 207, 0.15);
+  color: var(--mb-text-primary);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 48rpx;
+  padding: 22rpx 0;
+  font-size: 30rpx;
+  line-height: 1.2;
+}
+
+.mb-theme-night .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--mb-text-primary);
+  border: none;
+}
+
+.btn-primary {
+  flex: 2;
+  margin: 0;
+  background: var(--mb-btn-primary, var(--mb-gradient-cta));
+  color: #fff;
+  border: none;
+  border-radius: 48rpx;
+  padding: 22rpx 0;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.2;
+  box-shadow: 0 8rpx 24rpx var(--mb-btn-shadow, rgba(111, 143, 207, 0.35));
+}
+
+.btn-secondary::after,
+.btn-primary::after {
+  border: none;
+}

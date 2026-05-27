@@ -1,0 +1,16 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="splash-page splash-page--{{variant}}" bindtap="onTapSkip">
+  <view class="splash-body {{showContent ? 'splash-body-in' : ''}}">
+    <view class="splash-hero-wrap">
+      <image
+        class="splash-hero"
+        src="{{heroSrc}}"
+        mode="aspectFit"
+        show-menu-by-longpress="{{false}}"
+      />
+    </view>
+    <text class="splash-title">眠音盒</text>
+    <text class="splash-subtitle">AI声波音乐盒</text>
+    <text class="splash-slogan">让每一夜都被温柔守护</text>
+  </view>
+</view>

@@ -1,0 +1,13 @@
+/** WXML 专用：页面方法无法在 {{ }} 中调用，时长格式化必须用 wxs */
+function formatTime(seconds) {
+  var s = parseInt(seconds, 10)
+  if (isNaN(s) || s < 0) {
+    s = 0
+  }
+  var mins = Math.floor(s / 60)
+  var secs = s % 60
+  var secStr = secs < 10 ? '0' + secs : '' + secs
+  return mins + ':' + secStr
+}
+
+module.exports.formatTime = formatTime

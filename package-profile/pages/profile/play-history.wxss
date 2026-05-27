@@ -1,0 +1,127 @@
+.ph-container {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.ph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 30rpx 16rpx;
+}
+
+.ph-count {
+  font-size: 26rpx;
+  color: var(--mb-text-secondary);
+}
+
+.ph-clear {
+  font-size: 26rpx;
+  color: var(--mb-mint);
+  padding: 8rpx 0;
+}
+
+.ph-clear--disabled {
+  color: var(--mb-text-muted);
+  opacity: 0.5;
+}
+
+.ph-list {
+  padding: 0 20rpx;
+}
+
+.ph-item {
+  display: flex;
+  align-items: center;
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-card-border);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.ph-cover {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 16rpx;
+  flex-shrink: 0;
+  background: var(--mb-card-bg);
+}
+
+.ph-info {
+  flex: 1;
+  min-width: 0;
+  margin: 0 20rpx;
+}
+
+.ph-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: var(--mb-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8rpx;
+}
+
+.ph-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.ph-tag {
+  font-size: 22rpx;
+  color: var(--mb-text-secondary);
+  background: var(--mb-card-bg);
+  border: 1rpx solid var(--mb-border-subtle);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+}
+
+.ph-time {
+  display: block;
+  font-size: 22rpx;
+  color: var(--mb-text-muted);
+}
+
+.ph-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 12rpx;
+}
+
+.ph-duration {
+  font-size: 24rpx;
+  color: var(--mb-text-secondary);
+}
+
+.ph-play-icon {
+  width: 36rpx;
+  height: 36rpx;
+  opacity: 0.85;
+}
+
+.ph-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 48rpx;
+  text-align: center;
+}
+
+.ph-empty-title {
+  font-size: 30rpx;
+  color: var(--mb-text-secondary);
+  margin-bottom: 16rpx;
+}
+
+.ph-empty-hint {
+  font-size: 26rpx;
+  color: var(--mb-text-muted);
+  line-height: 1.5;
+}

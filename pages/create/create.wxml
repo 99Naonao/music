@@ -35,12 +35,19 @@
     </view>
 
     <!-- 眠家产品 -->
-    <view class="mianjia-entry" wx:if="{{showMianjiaEntry}}" bindtap="goToMianjia">
+    <view
+      class="mianjia-entry"
+      wx:if="{{showMianjiaEntry && showMianjiaBanner}}"
+      bindtap="goToMianjia"
+    >
       <view class="mianjia-entry-text">
         <text class="mianjia-entry-title">眠家深睡 · 好物推荐</text>
         <text class="mianjia-entry-desc">搭配助眠音乐，探索眠加商城精选</text>
       </view>
       <text class="mianjia-entry-link">去看看 ›</text>
+      <view class="mianjia-entry-close" catchtap="onCloseMianjiaBanner">
+        <image class="mianjia-entry-close-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+      </view>
     </view>
 
     <!-- 推荐音景（原推荐场景） -->

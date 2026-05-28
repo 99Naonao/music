@@ -160,14 +160,38 @@
 
 /* 眠家产品入口 */
 .mianjia-entry {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 36rpx;
-  padding: 28rpx 32rpx;
+  padding: 28rpx 72rpx 28rpx 32rpx;
   border-radius: 24rpx;
   background: var(--mb-mint-08);
   border: 1rpx solid var(--mb-border-subtle);
+  box-sizing: border-box;
+}
+
+.mianjia-entry-close {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.mianjia-entry-close-icon {
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.55;
+}
+
+.mianjia-entry-close:active .mianjia-entry-close-icon {
+  opacity: 0.85;
 }
 
 .mianjia-entry:active {

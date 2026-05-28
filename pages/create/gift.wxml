@@ -1,0 +1,104 @@
+<page-meta page-style="{{pageMetaStyle}}" />
+<view class="mb-page mb-theme-{{mbTheme}}">
+  <view class="mb-page-bg"></view>
+  <view class="mb-page-body share-page">
+    <view class="share-gift-strip">
+      <text class="share-gift-title">晚安贺卡</text>
+      <text class="share-gift-sub">你收到一份专属晚安礼，试听后可为自己或 TA 制作</text>
+    </view>
+
+    <view class="share-load-error" wx:if="{{sharedLoadError}}">
+      <text class="share-load-error-text">{{sharedLoadError}}</text>
+      <button class="share-load-error-retry" bindtap="retryLoad">重新加载</button>
+    </view>
+
+    <view class="share-player-section" wx:if="{{!sharedLoadError}}">
+      <view class="share-cover-container">
+        <view class="share-cover">
+          <image wx:if="{{musicCoverImage}}" class="share-cover-img" src="{{musicCoverImage}}" mode="aspectFill"/>
+          <view wx:else class="share-cover-default">
+            <image class="share-cover-default-icon" src="/static/music_library/panel.png" mode="aspectFit"/>
+          </view>
+          <view class="share-cover-overlay">
+            <view class="share-play-btn" bindtap="togglePlay">
+              <image class="play-btn-icon" src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}" mode="aspectFit"/>
+            </view>
+          </view>
+        </view>
+      </view>
+      <text class="share-music-title">{{shareWorkTitle}}</text>
+      <text class="share-music-info">{{musicInfo.instrument}} · {{musicInfo.frequency}} · {{musicInfo.bpm}}BPM</text>
+      <view class="share-progress">
+        <view class="share-progress-bar" style="width: {{duration > 0 ? currentTime/duration*100 : 0}}%"></view>
+      </view>
+      <view class="share-time">
+        <text>{{formatTime(currentTime)}}</text>
+        <text>{{formatTime(duration)}}</text>
+      </view>
+    </view>
+
+    <view class="share-card-section" wx:if="{{!sharedLoadError}}">
+      <view class="share-card style-{{cardData.template}} {{cardData.artistBgImage || cardCustomCover ? 'with-art-bg' : ''}}">
+        <block wx:if="{{cardCustomCover}}">
+          <view class="share-card-art-frame">
+            <image class="share-card-bg-photo" src="{{cardCustomCover}}" mode="widthFix"/>
+            <view class="share-to-slot" style="{{cardOverlayStyle.to}}">
+              <text class="share-to-line card-art-text-stroke" style="font-size: {{shareToFontSize}}rpx;">TO: {{cardData.recipient}}</text>
+            </view>
+            <view class="share-card-content share-card-content--art" style="{{cardOverlayStyle.message}}">
+              <view class="share-card-message-wrap" style="font-size: {{shareMsgFontSize}}rpx;">
+                <block wx:for="{{shareMessageLines}}" wx:key="index">
+                  <view wx:if="{{item === ''}}" class="share-card-message-gap"></view>
+                  <text wx:else class="share-card-message-line card-art-text-stroke">{{item}}</text>
+                </block>
+              </view>
+            </view>
+          </view>
+        </block>
+        <block wx:elif="{{cardData.artistBgImage}}">
+          <view class="share-card-art-frame">
+            <image class="share-card-bg-photo" src="{{cardData.artistBgImage}}" mode="widthFix"/>
+            <view class="share-to-slot" style="{{cardOverlayStyle.to}}">
+              <text class="share-to-line card-art-text-stroke" style="font-size: {{shareToFontSize}}rpx;">TO: {{cardData.recipient}}</text>
+            </view>
+            <view class="share-card-content share-card-content--art" style="{{cardOverlayStyle.message}}">
+              <view class="share-card-message-wrap" style="font-size: {{shareMsgFontSize}}rpx;">
+                <block wx:for="{{shareMessageLines}}" wx:key="index">
+                  <view wx:if="{{item === ''}}" class="share-card-message-gap"></view>
+                  <text wx:else class="share-card-message-line card-art-text-stroke">{{item}}</text>
+                </block>
+              </view>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="share-card-bg"></view>
+          <view class="share-card-content">
+            <view class="share-card-to">致 <text>{{cardData.recipient}}</text>：</view>
+            <view class="share-card-message-wrap share-card-message-wrap--gradient" style="font-size: {{shareMsgFontSize}}rpx;">
+              <block wx:for="{{shareMessageLines}}" wx:key="index">
+                <view wx:if="{{item === ''}}" class="share-card-message-gap"></view>
+                <text wx:else class="share-card-message-line">{{item}}</text>
+              </block>
+            </view>
+            <view class="share-card-from">—— <text>眠音盒</text></view>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="share-footer">
+      <view class="share-footer-invite">
+        <button class="share-btn-invite-create" bindtap="goToCreateFromGift">
+          <view class="share-invite-btn-inner">
+            <text class="share-invite-btn-title">我也要制作</text>
+            <text class="share-invite-btn-sub">为 TA 或自己制作助眠礼</text>
+          </view>
+        </button>
+      </view>
+      <view class="share-footer-actions">
+        <button class="share-btn share-btn--outline" bindtap="goBack">返回首页</button>
+      </view>
+    </view>
+  </view>
+</view>

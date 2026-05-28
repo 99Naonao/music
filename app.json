@@ -1,8 +1,7 @@
 {
   "pages": [
-    "pages/create/create",
     "pages/splash/splash",
-
+    "pages/create/create",
     "pages/create/ai",
     "pages/create/config",
     "pages/create/tracks",
@@ -12,6 +11,7 @@
     "pages/create/card-pick",
     "pages/create/card-edit",
     "pages/create/share",
+    "pages/create/gift",
     "pages/communites/communites",
     "pages/library/library",
     "pages/mine/mine",

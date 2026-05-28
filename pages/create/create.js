@@ -50,9 +50,33 @@ function buildGreeting() {
   return '晚上好'
 }
 
+const MIANJIA_HOME_BANNER_DISMISS_KEY = 'mb_home_mianjia_entry_dismissed_date'
+
+function cnTodayDate() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date())
+  const y = parts.find((p) => p.type === 'year').value
+  const m = parts.find((p) => p.type === 'month').value
+  const d = parts.find((p) => p.type === 'day').value
+  return `${y}-${m}-${d}`
+}
+
+function isMianjiaHomeBannerDismissedToday() {
+  try {
+    return wx.getStorageSync(MIANJIA_HOME_BANNER_DISMISS_KEY) === cnTodayDate()
+  } catch (e) {
+    return false
+  }
+}
+
 Page({
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
+    showMianjiaBanner: true,
     statusBarHeight: 44,
     greeting: '晚上好',
     greetingSub: '欢迎回家，今天想听点什么呢？',
@@ -117,7 +141,8 @@ Page({
     this.setData({
       statusBarHeight: sys.statusBarHeight || 44,
       greeting: buildGreeting(),
-      sceneRows: buildSceneRows(this.data.scenes)
+      sceneRows: buildSceneRows(this.data.scenes),
+      showMianjiaBanner: !isMianjiaHomeBannerDismissedToday()
     })
     this.loadMiniPlayer()
     this.loadHomeLibrary()
@@ -127,7 +152,10 @@ Page({
   onShow() {
     setTabBarSelected(this, 0)
     this.updateMiniPlayerLayout()
-    this.setData({ greeting: buildGreeting() })
+    this.setData({
+      greeting: buildGreeting(),
+      showMianjiaBanner: !isMianjiaHomeBannerDismissedToday()
+    })
     this.loadMiniPlayer()
     this.loadHomeLibrary()
     this.syncMiniPlayState(globalAudio.getState())
@@ -428,6 +456,26 @@ Page({
   goToMianjia() {
     if (!MIANJIA_ENTRY_ENABLED) return
     wx.navigateTo({ url: '/package-mall/pages/mianjia/index' })
+  },
+
+  onCloseMianjiaBanner() {
+    wx.showActionSheet({
+      itemList: ['仅本次关闭', '今天不再显示'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.setData({ showMianjiaBanner: false })
+          return
+        }
+        if (res.tapIndex === 1) {
+          try {
+            wx.setStorageSync(MIANJIA_HOME_BANNER_DISMISS_KEY, cnTodayDate())
+          } catch (e) {
+            /* ignore */
+          }
+          this.setData({ showMianjiaBanner: false })
+        }
+      }
+    })
   },
 
   goToCommunity() {

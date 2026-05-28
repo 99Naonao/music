@@ -27,6 +27,28 @@ const { resolveCardCustomCover, resolveCardShareCover } = require('../../utils/c
 const { getWorkCoverDisplay } = require('../../utils/work-cover')
 const { markMineStatsStale } = require('../../utils/mine-stats-cache')
 const { resolveWorkDisplayTitle } = require('../../utils/work-meta')
+const {
+  resolveShareIdFromOptions,
+  resolveShareIdFromEntry,
+  isShareUuid
+} = require('../../utils/share-entry')
+const {
+  createCardShareRemote,
+  saveCreatorShareId,
+  readCreatorShareId
+} = require('../../utils/card-share-remote')
+const { fetchSharedCardPayload } = require('../../utils/shared-card-fetch')
+const { log, logWarn } = require('../../utils/log')
+
+function briefShareId(id) {
+  const s = id != null ? String(id).trim() : ''
+  if (!s) return '(空)'
+  if (s.length <= 12) return s
+  return `${s.slice(0, 8)}…`
+}
+
+/** 分享卡片封面兜底（须为包内真实路径） */
+const SHARE_CARD_FALLBACK_IMAGE = '/static/music_library/greeting_card.png'
 
 Page({
   data: {
@@ -56,8 +78,12 @@ Page({
     shareId: null,
     shareWorkTitle: '专属助眠曲',
     isSharedView: false,
+    /** 收礼人拉取贺卡失败时的页内提示（不用弹窗打断） */
+    sharedLoadError: '',
     /** 已登录才可同步贺卡到服务端并生成可转发分享路径 */
     canShare: false,
+    /** 已有云端 shareId，才允许转发小程序卡片（保证好友打开能加载） */
+    shareReady: false,
     shareMsgFontSize: 24,
     shareMessageDisplay: '',
     shareMessageLines: [''],
@@ -93,9 +119,12 @@ Page({
 
   refreshMusicCover() {
     const musicId = this.data.musicId
-    const musicCoverImage = musicId
-      ? getWorkCoverDisplay(musicId, {})
-      : ''
+    let musicCoverImage = ''
+    if (this._sharedMusicCoverUrl) {
+      musicCoverImage = this._sharedMusicCoverUrl
+    } else if (musicId) {
+      musicCoverImage = getWorkCoverDisplay(musicId, {})
+    }
     if (musicCoverImage !== this.data.musicCoverImage) {
       this.setData({ musicCoverImage })
     }
@@ -140,19 +169,45 @@ Page({
   },
 
   onLoad(options) {
-    if (options.shareId) {
+    let incomingShareId = resolveShareIdFromOptions(options)
+    if (!incomingShareId) {
+      incomingShareId = resolveShareIdFromEntry()
+    }
+    const isGiftOpen = options.gift === '1' || options.gift === 1 || options.gift === 'true'
+    const creatorShareId = readCreatorShareId()
+    log('share-page', 'onLoad', {
+      route: 'pages/create/share',
+      incomingShareId: briefShareId(incomingShareId),
+      isGiftOpen,
+      creatorShareId: briefShareId(creatorShareId),
+      optionKeys: options ? Object.keys(options) : []
+    })
+
+    if (incomingShareId) {
+      this._incomingShareId = incomingShareId
       this.setData({
         isSharedView: true,
+        sharedLoadError: '',
         canShare: this.isLoggedInForShare()
       })
-      this.loadSharedCard(options.shareId)
+      this.loadSharedCard(incomingShareId)
+      return
+    }
+
+    if (isGiftOpen) {
+      this.setData({
+        isSharedView: true,
+        sharedLoadError: '贺卡链接无效，请让好友重新分享。'
+      })
       return
     }
 
     const cardData = wx.getStorageSync('cardData')
     const baseMusic = this.data.musicInfo
     const patch = {
-      canShare: this.isLoggedInForShare()
+      canShare: this.isLoggedInForShare(),
+      shareReady: isShareUuid(creatorShareId),
+      shareId: isShareUuid(creatorShareId) ? creatorShareId : null
     }
     if (cardData) {
       const recipient = cardData.recipient || '亲爱的朋友'
@@ -185,20 +240,31 @@ Page({
       patch['musicInfo.instrument'] = title
     }
 
+    log('share-page', '送礼人预览态', {
+      musicId: patch.musicId || '(空)',
+      shareReady: patch.shareReady,
+      canShare: patch.canShare,
+      shareId: briefShareId(patch.shareId)
+    })
+
     this.setData(patch, () => {
       this.updateShareCardTypography()
       this.refreshCardCustomCover()
       this.refreshMusicCover()
       this.refreshShareWorkTitle()
+      if (patch.audioUrl) {
+        this.initAudioPlayer(patch.audioUrl)
+      }
+      if (!patch.canShare) {
+        logWarn('share-page', '未登录，将提示登录')
+        this.promptLoginForShare()
+      } else if (!patch.shareReady) {
+        log('share-page', '开始 primeShareRecord（本地无 shareId）')
+        this.primeShareRecord()
+      } else {
+        this.cacheShareCardImage()
+      }
     })
-
-    if (this.data.audioUrl) {
-      this.initAudioPlayer(this.data.audioUrl)
-    }
-
-    if (!patch.canShare) {
-      this.promptLoginForShare()
-    }
   },
 
   onShow() {
@@ -208,6 +274,17 @@ Page({
       this.refreshShareWorkTitle()
       return
     }
+
+    if (!this._incomingShareId && !this.data.shareId && !this._shareLoading) {
+      const sid = resolveShareIdFromEntry()
+      if (sid && sid !== this._incomingShareId) {
+        this._incomingShareId = sid
+        this.setData({ isSharedView: true, sharedLoadError: '' })
+        this.loadSharedCard(sid)
+        return
+      }
+    }
+
     this.syncCardDataFromStorage()
   },
 
@@ -251,6 +328,127 @@ Page({
   onReady() {
     const ok = this.isLoggedInForShare()
     this.setData({ canShare: ok })
+    if (ok && !this.data.isSharedView) {
+      if (!this.data.shareReady) {
+        this.primeShareRecord()
+      } else {
+        this.cacheShareCardImage()
+      }
+    }
+  },
+
+  /** 从页面 + storage 合并分享所需字段 */
+  getSharePayloadFromPage() {
+    const stored = wx.getStorageSync('cardData') || {}
+    const cardData = {
+      recipient: '亲爱的朋友',
+      message: '愿这份音乐带给你宁静与好眠',
+      template: 1,
+      artistBgImage: '',
+      templateId: '',
+      templateCategoryId: '',
+      textLayout: '',
+      ...(stored && typeof stored === 'object' ? stored : {}),
+      ...(this.data.cardData || {})
+    }
+    const musicInfo = {
+      ...(this.data.musicInfo || {}),
+      ...(stored.musicInfo || {})
+    }
+    return {
+      musicId: this.data.musicId || stored.musicId || null,
+      cardData,
+      musicInfo,
+      coverImage: this.data.coverImage || stored.coverImage || '',
+      audioUrl: this.data.audioUrl || stored.audioUrl || ''
+    }
+  },
+
+  pickShareCardImageUrl() {
+    const { cardData, coverImage } = this.getSharePayloadFromPage()
+    const artistBg = (cardData && cardData.artistBgImage) || ''
+    if (/^https:\/\//i.test(artistBg)) return artistBg
+    const custom = resolveCardCustomCover(coverImage)
+    if (custom && /^https:\/\//i.test(custom)) return custom
+    const musicCover = this.data.musicCoverImage
+    if (musicCover && /^https:\/\//i.test(musicCover)) return musicCover
+    return SHARE_CARD_FALLBACK_IMAGE
+  },
+
+  buildSharePagePath(shareId) {
+    const sid = shareId != null ? String(shareId).trim() : ''
+    if (!sid || !isShareUuid(sid)) return ''
+    return `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
+  },
+
+  /** 预生成分享卡片封面（须同步返回 onShareAppMessage，不能靠 Promise 拖慢 path） */
+  async cacheShareCardImage() {
+    try {
+      const drawn = await this.drawCardToCanvas({ forShare: true })
+      if (drawn) {
+        this._cachedShareCardImage = drawn
+      }
+    } catch (e) {
+      console.warn('[share] cacheShareCardImage', e)
+    }
+  },
+
+  /** 同步组装转发参数，避免微信超时后打开无 shareId 的 share 页 */
+  buildShareAppMessageSync() {
+    const { cardData } = this.getSharePayloadFromPage()
+    const recipient = (cardData.recipient || '朋友').trim() || '朋友'
+    const workTitle = this.data.shareWorkTitle || '专属助眠曲'
+    const title = `${recipient}，送你一份「${workTitle}」`
+    const sid = this.data.shareId || readCreatorShareId()
+    const path = this.buildSharePagePath(sid)
+    const imageUrl = this._cachedShareCardImage || this.pickShareCardImageUrl()
+    const finalPath = path || '/pages/create/share'
+    if (!path) {
+      logWarn('share-page', '转发 path 无 shareId，将退回 share 页', {
+        dataShareId: briefShareId(this.data.shareId),
+        storageShareId: briefShareId(readCreatorShareId())
+      })
+    } else {
+      log('share-page', '组装转发参数', {
+        shareId: briefShareId(sid),
+        path: finalPath
+      })
+    }
+    return { title, path: finalPath, imageUrl }
+  },
+
+  /** 进入页 / 点分享前：先同步云端 shareId，避免转发链接缺参 */
+  async primeShareRecord() {
+    if (this.data.isSharedView) return null
+    if (!this.isLoggedInForShare()) {
+      logWarn('share-page', 'primeShareRecord 跳过：未登录')
+      return null
+    }
+    log('share-page', 'primeShareRecord 开始', {
+      musicId: this.data.musicId || '(空)',
+      shareId: briefShareId(this.data.shareId)
+    })
+    const sid = await this.ensureShareForForwarding()
+    if (sid) {
+      saveCreatorShareId(sid)
+      this.setData({ shareId: sid, shareReady: true })
+      this.cacheShareCardImage()
+      log('share-page', 'primeShareRecord 成功', { shareId: briefShareId(sid) })
+    } else {
+      logWarn('share-page', 'primeShareRecord 失败：未拿到 shareId', {
+        musicId: this.data.musicId || '(空)'
+      })
+    }
+    return sid
+  },
+
+  onShareNotReady() {
+    wx.showToast({
+      title: '分享链接准备中，请稍候再点',
+      icon: 'none',
+      duration: 2500
+    })
+    this.primeShareRecord()
   },
 
   /**
@@ -343,7 +541,14 @@ Page({
 
   onShareAppMessage() {
     const ok = this.data.canShare || this.isLoggedInForShare()
+    log('share-page', 'onShareAppMessage', {
+      canShare: ok,
+      isSharedView: this.data.isSharedView,
+      shareReady: this.data.shareReady,
+      shareId: briefShareId(this.data.shareId || readCreatorShareId())
+    })
     if (!ok) {
+      logWarn('share-page', 'onShareAppMessage 未登录，path=/pages/create/share')
       wx.showModal({
         title: '需要登录',
         content: '请先登录后再使用小程序卡片分享贺卡。',
@@ -355,13 +560,26 @@ Page({
       })
       return {
         title: '眠音盒 · 助眠贺卡',
-        path: '/pages/create/create',
-        imageUrl: '/static/music_library/card.png'
+        path: '/pages/create/share',
+        imageUrl: SHARE_CARD_FALLBACK_IMAGE
       }
     }
 
-    // 基础库 2.14.3+ 支持返回 Promise，用贺卡 Canvas 图作为卡片封面（非用户上传的圆形封面）
-    return this.buildShareAppMessagePayload()
+    const syncPayload = this.buildShareAppMessageSync()
+    const sid = this.data.shareId || readCreatorShareId()
+    if (!this.buildSharePagePath(sid)) {
+      logWarn('share-page', 'onShareAppMessage 无有效 gift path', {
+        shareId: briefShareId(sid)
+      })
+      wx.showToast({
+        title: '请先点「分享小程序卡片」完成同步',
+        icon: 'none',
+        duration: 2800
+      })
+    }
+    log('share-page', 'onShareAppMessage 返回', { path: syncPayload.path })
+    this.cacheShareCardImage()
+    return syncPayload
   },
 
   /**
@@ -381,10 +599,24 @@ Page({
       })
       return
     }
+    wx.showLoading({ title: '准备分享...', mask: true })
     try {
-      await this.ensureShareForForwarding()
+      const sid = await this.primeShareRecord()
+      if (!sid) {
+        showAlert(
+          '暂时无法分享',
+          '贺卡尚未同步到云端，请确认已登录、网络正常后重试。'
+        )
+        return
+      }
+      this.setData({ shareId: sid, shareReady: true })
+      await this.cacheShareCardImage()
     } catch (e) {
-      console.warn('[share] ensureShareForForwarding on tap', e)
+      console.warn('[share] primeShareRecord on tap', e)
+      showAlert('暂时无法分享', '请稍后重试。')
+      return
+    } finally {
+      wx.hideLoading()
     }
     this.tryClaimShareWorkTask()
   },
@@ -435,40 +667,55 @@ Page({
 
   /** 生成分享卡片图：与「发贺卡图片」同一套 Canvas，保证为贺卡视觉 */
   buildShareAppMessagePayload() {
-    const sharePath = this.data.shareId
-      ? `/pages/create/share?shareId=${this.data.shareId}`
-      : '/pages/create/share'
-    const recipient = (this.data.cardData && this.data.cardData.recipient) || '朋友'
+    const { cardData } = this.getSharePayloadFromPage()
+    const recipient = (cardData.recipient || '朋友').trim() || '朋友'
     const workTitle = this.data.shareWorkTitle || '专属助眠曲'
     const title = `${recipient}，送你一份「${workTitle}」`
-    const fallbackNetworkBg =
-      this.data.cardData && this.data.cardData.artistBgImage && /^https:\/\//.test(this.data.cardData.artistBgImage)
-        ? this.data.cardData.artistBgImage
-        : ''
+    const fallbackImage = this.pickShareCardImageUrl()
 
     return (async () => {
+      let imageUrl = fallbackImage
       try {
-        await this.ensureShareForForwarding()
-        const path = this.data.shareId
-          ? `/pages/create/share?shareId=${this.data.shareId}`
-          : sharePath
-        const imageUrl = await this.drawCardToCanvas({ forShare: true })
-        return this.wrapSharePayloadWithReward({ title, path, imageUrl })
+        const drawn = await this.drawCardToCanvas({ forShare: true })
+        if (drawn) imageUrl = drawn
       } catch (e) {
-        console.warn('[share] buildShareAppMessagePayload draw failed', e)
-        if (fallbackNetworkBg) {
-          return this.wrapSharePayloadWithReward({
-            title,
-            path: sharePath,
-            imageUrl: fallbackNetworkBg
-          })
-        }
-        return this.wrapSharePayloadWithReward({
-          title,
-          path: sharePath,
-          imageUrl: '/static/music_library/card.png'
-        })
+        console.warn('[share] drawCardToCanvas forShare', e)
       }
+
+      let sid = this.data.shareId
+      if (!sid) {
+        try {
+          sid = await this.ensureShareForForwarding()
+        } catch (e) {
+          console.warn('[share] ensureShareForForwarding', e)
+        }
+      }
+
+      const finalSid =
+        sid ||
+        this.data.shareId ||
+        readCreatorShareId() ||
+        (await this.ensureShareForForwarding())
+      if (finalSid) {
+        saveCreatorShareId(finalSid)
+        this.setData({ shareId: finalSid, shareReady: true })
+      }
+
+      const path = this.buildSharePagePath(finalSid)
+      if (!path) {
+        wx.showModal({
+          title: '暂时无法分享',
+          content: '贺卡尚未同步到服务器，请检查登录与网络后，先点一次「分享小程序卡片」按钮再转发。',
+          showCancel: false
+        })
+        return {
+          title,
+          path: '/pages/create/share',
+          imageUrl
+        }
+      }
+
+      return this.wrapSharePayloadWithReward({ title, path, imageUrl })
     })()
   },
 
@@ -514,50 +761,87 @@ Page({
     }
   },
 
-  async loadSharedCard(shareId) {
+  retryLoadSharedCard() {
+    const sid =
+      this._incomingShareId ||
+      this.data.shareId ||
+      resolveShareIdFromEntry()
+    if (!sid) {
+      showAlert('提示', '分享链接无效，请让好友重新发送贺卡。')
+      return
+    }
+    this.setData({ isSharedView: true, sharedLoadError: '' })
+    this.loadSharedCard(sid, { showAlertOnFail: true })
+  },
+
+  async loadSharedCard(shareId, opts = {}) {
+    const id = String(shareId || '').trim()
+    if (!id || id === 'undefined' || id === 'null') {
+      this.setData({
+        isSharedView: true,
+        sharedLoadError: '分享链接无效，请让好友重新发送。'
+      })
+      return
+    }
+    if (this._shareLoading) return
+    this._shareLoading = true
+
     wx.showLoading({ title: '加载贺卡...' })
     try {
-      const res = await request({ url: `/api/card/share/${shareId}` })
-      if (res.code === 0) {
-        const data = res.data
-        const recipient = data.recipient || '亲爱的朋友'
-        const rawMsg = truncateCardMessage(
-          data.message || '愿这份音乐带给你宁静与好眠'
-        )
-        this.setData({
-          shareId: data.shareId,
-          cardData: {
-            recipient,
-            message: stripLeadingRecipientSalutation(rawMsg, recipient) || rawMsg,
-            template: data.template || 1,
-            artistBgImage: data.artistBgImage || '',
-            templateId: data.templateId || '',
-            templateCategoryId: data.templateCategoryId || ''
-          },
-          musicInfo: data.musicInfo || this.data.musicInfo,
-          coverImage: data.coverImage || '',
-          musicId: data.musicId || null,
-          audioUrl: data.audioUrl || null,
-          canShare: this.isLoggedInForShare()
-        }, () => {
-          this.applyCardOverlayLayout({
-            templateId: data.templateId || '',
-            templateCategoryId: data.templateCategoryId || '',
-            textLayout: data.textLayout
-          })
-          this.updateShareCardTypography()
-          if (data.audioUrl) {
-            this.initAudioPlayer(data.audioUrl)
-          }
-          this.refreshShareWorkTitle()
-          this.fetchShareWorkTitleFromServer(data.musicId)
+      const result = await fetchSharedCardPayload(id)
+      if (result.ok && result.patch) {
+        const data = result.raw || {}
+        log('share-page', '收礼人加载贺卡成功', {
+          shareId: briefShareId(id),
+          musicId: result.patch.musicId || '(空)'
         })
+        const workTitle =
+          (data.workTitle && String(data.workTitle).trim()) || ''
+        this._sharedMusicCoverUrl = result.musicCoverUrl || ''
+        this.setData(
+          {
+            ...result.patch,
+            shareWorkTitle: workTitle || this.data.shareWorkTitle,
+            canShare: this.isLoggedInForShare()
+          },
+          () => {
+            this.refreshCardCustomCover()
+            this.refreshMusicCover()
+            if (result.patch.audioUrl) {
+              this.initAudioPlayer(result.patch.audioUrl)
+            }
+            if (!workTitle) {
+              this.refreshShareWorkTitle()
+              this.fetchShareWorkTitleFromServer(result.patch.musicId)
+            }
+          }
+        )
       } else {
-        showAlert('提示', '贺卡已过期或不存在。')
+        const msg = result.error || '贺卡已过期或不存在，请让好友重新分享。'
+        logWarn('share-page', '收礼人加载贺卡失败', {
+          shareId: briefShareId(id),
+          error: msg
+        })
+        this.setData({
+          isSharedView: true,
+          sharedLoadError: msg
+        })
+        if (opts.showAlertOnFail) {
+          showAlert('提示', msg)
+        }
       }
     } catch (err) {
-      showAlert('加载失败', '无法加载贺卡内容，请稍后重试。')
+      console.error('[share] loadSharedCard', err)
+      const msg = '无法连接服务器，请检查网络后点击下方重试。'
+      this.setData({
+        isSharedView: true,
+        sharedLoadError: msg
+      })
+      if (opts.showAlertOnFail) {
+        showAlert('加载失败', msg)
+      }
     } finally {
+      this._shareLoading = false
       wx.hideLoading()
     }
   },
@@ -568,41 +852,29 @@ Page({
   async createShare() {
     if (this.data.isSharedView) return null
     if (!this.isLoggedInForShare()) {
-      console.warn('[share] createShare skipped: not logged in')
+      logWarn('share-page', 'createShare 跳过：未登录')
       return null
     }
     if (this._createShareInFlight) {
-      console.warn('[share] createShare skipped: already in flight')
-      return this.data.shareId || null
+      logWarn('share-page', 'createShare 跳过：请求进行中')
+      return this.data.shareId || readCreatorShareId() || null
     }
     this._createShareInFlight = true
-    const { musicId, cardData, musicInfo, coverImage, audioUrl } = this.data
+    const payload = this.getSharePayloadFromPage()
+    log('share-page', 'createShare 调用远端', {
+      musicId: payload.musicId || '(空)'
+    })
 
     try {
-      const res = await request({
-        url: '/api/card/share',
-        method: 'POST',
-        data: {
-          musicId,
-          recipient: cardData.recipient,
-          message: cardData.message,
-          template: cardData.template,
-          musicInstrument: musicInfo.instrument,
-          musicFrequency: musicInfo.frequency,
-          musicBpm: musicInfo.bpm,
-          coverImage,
-          audioUrl,
-          artistBgImage: (cardData && cardData.artistBgImage) || '',
-          templateId: (cardData && cardData.templateId) || ''
-        }
-      })
-      if (res.code === 0 && res.data && res.data.shareId) {
-        const sid = res.data.shareId
-        this.setData({ shareId: sid })
+      const sid = await createCardShareRemote(payload)
+      if (sid) {
+        saveCreatorShareId(sid)
+        this.setData({ shareId: sid, shareReady: true })
         return sid
       }
+      logWarn('share-page', 'createShare 远端未返回 shareId')
     } catch (err) {
-      console.error('[创建分享失败]', err)
+      logWarn('share-page', 'createShare 异常', { err: err && err.message })
     } finally {
       this._createShareInFlight = false
     }

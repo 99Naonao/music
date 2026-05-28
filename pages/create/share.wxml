@@ -10,6 +10,11 @@
     <text class="share-gift-sub" wx:else>好友打开即可看到你的祝福并试听这首曲子</text>
   </view>
 
+  <view class="share-load-error" wx:if="{{isSharedView && sharedLoadError}}">
+    <text class="share-load-error-text">{{sharedLoadError}}</text>
+    <button class="share-load-error-retry" bindtap="retryLoadSharedCard">重新加载</button>
+  </view>
+
   <!-- 音乐播放器 -->
   <view class="share-player-section">
     <view class="share-cover-container">
@@ -103,10 +108,15 @@
       <text class="share-points-hint" wx:if="{{canShare}}">点击分享并发送给好友，每日可得 3 积分</text>
       <view class="share-footer-actions">
         <button
-          wx:if="{{canShare}}"
+          wx:if="{{canShare && shareReady}}"
           class="share-btn share-btn--primary"
           open-type="share"
           bindtap="onShareCardTap"
+        >分享小程序卡片</button>
+        <button
+          wx:elif="{{canShare}}"
+          class="share-btn share-btn--primary"
+          bindtap="onShareNotReady"
         >分享小程序卡片</button>
         <button
           wx:else
@@ -120,10 +130,15 @@
       <text class="share-points-hint" wx:if="{{canShare}}">点击分享并发送给好友，每日可得 3 积分</text>
       <view class="share-footer-actions">
         <button
-          wx:if="{{canShare}}"
+          wx:if="{{canShare && shareReady}}"
           class="share-btn share-btn--primary"
           open-type="share"
           bindtap="onShareCardTap"
+        >分享小程序卡片</button>
+        <button
+          wx:elif="{{canShare}}"
+          class="share-btn share-btn--primary"
+          bindtap="onShareNotReady"
         >分享小程序卡片</button>
         <button
           wx:else

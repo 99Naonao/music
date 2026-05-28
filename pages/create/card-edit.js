@@ -18,6 +18,11 @@ const {
   CARD_TO_LINE_FONT_RPX
 } = require('../../utils/card-text-layout')
 const { resolveWorkDisplayTitle } = require('../../utils/work-meta')
+const {
+  createCardShareRemote,
+  saveCreatorShareId
+} = require('../../utils/card-share-remote')
+const { log, logWarn } = require('../../utils/log')
 
 Page({
   data: {
@@ -379,6 +384,42 @@ Page({
       recipient,
       message,
       cardCustomCover: cardCover
+    })
+
+    let shareId = null
+    const hasToken = !!(
+      wx.getStorageSync('token') &&
+      String(wx.getStorageSync('token')).trim() &&
+      String(wx.getStorageSync('token')) !== 'undefined'
+    )
+    log('card-edit', '生成贺卡完成，准备分享', {
+      musicId: cardPayload.musicId || '(空)',
+      templateId: cardPayload.templateId || '',
+      hasToken
+    })
+    if (hasToken) {
+      wx.showLoading({ title: '准备分享链接…', mask: true })
+      try {
+        shareId = await createCardShareRemote({
+          musicId: cardPayload.musicId,
+          cardData: cardPayload,
+          musicInfo: cardPayload.musicInfo,
+          coverImage: cardPayload.coverImage,
+          audioUrl: cardPayload.audioUrl
+        })
+      } catch (e) {
+        logWarn('card-edit', 'createCardShareRemote 异常', {
+          err: e && e.message
+        })
+      } finally {
+        wx.hideLoading()
+      }
+    } else {
+      logWarn('card-edit', '未登录，跳过创建 shareId，进入 share 页后再试')
+    }
+    saveCreatorShareId(shareId)
+    log('card-edit', '跳转 share 页', {
+      shareId: shareId ? `${String(shareId).slice(0, 8)}…` : '(空)'
     })
 
     wx.navigateTo({ url: '/pages/create/share' })

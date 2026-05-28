@@ -22,6 +22,9 @@ const {
   createCardShareRemote,
   saveCreatorShareId
 } = require('../../utils/card-share-remote')
+const { isShareUuid } = require('../../utils/share-entry')
+
+const INCOMING_GIFT_STORAGE_KEY = 'mb_incoming_gift_share'
 const { log, logWarn } = require('../../utils/log')
 
 Page({
@@ -421,6 +424,24 @@ Page({
     log('card-edit', '跳转 share 页', {
       shareId: shareId ? `${String(shareId).slice(0, 8)}…` : '(空)'
     })
+
+    let returnGiftId = ''
+    try {
+      returnGiftId = String(wx.getStorageSync(INCOMING_GIFT_STORAGE_KEY) || '').trim()
+    } catch (e) {
+      /* ignore */
+    }
+    if (returnGiftId && isShareUuid(returnGiftId)) {
+      try {
+        wx.removeStorageSync(INCOMING_GIFT_STORAGE_KEY)
+      } catch (e) {
+        /* ignore */
+      }
+      wx.redirectTo({
+        url: `/pages/create/gift?shareId=${encodeURIComponent(returnGiftId)}`
+      })
+      return
+    }
 
     wx.navigateTo({ url: '/pages/create/share' })
   }

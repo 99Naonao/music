@@ -87,18 +87,42 @@
       </view>
     </view>
 
-    <view class="share-footer">
+    <view class="share-footer" wx:if="{{!sharedLoadError}}">
       <view class="share-footer-invite">
         <button class="share-btn-invite-create" bindtap="goToCreateFromGift">
           <view class="share-invite-btn-inner">
             <text class="share-invite-btn-title">我也要制作</text>
-            <text class="share-invite-btn-sub">为 TA 或自己制作助眠礼</text>
+            <text class="share-invite-btn-sub">分享贺卡得积分</text>
           </view>
         </button>
       </view>
+      <text class="share-points-hint" wx:if="{{canEarnSharePoints}}">分享你自己制作的贺卡并发送给好友，每日可得 3 积分</text>
+      <text class="share-points-hint" wx:else>先完成自己的贺卡，再点「分享小程序卡片」得积分（转发好友贺卡不计分）</text>
       <view class="share-footer-actions">
+        <button
+          wx:if="{{canEarnSharePoints && ownShareReady}}"
+          class="share-btn share-btn--primary"
+          open-type="share"
+          bindtap="onShareCardTap"
+        >分享小程序卡片</button>
+        <button
+          wx:elif="{{canEarnSharePoints}}"
+          class="share-btn share-btn--primary"
+          bindtap="onShareNotReady"
+        >分享小程序卡片</button>
+        <button
+          wx:elif="{{canShare}}"
+          class="share-btn share-btn--primary"
+          bindtap="onShareCardTap"
+        >分享小程序卡片</button>
+        <button
+          wx:else
+          class="share-btn share-btn--primary"
+          bindtap="goLogin"
+        >分享小程序卡片</button>
         <button class="share-btn share-btn--outline" bindtap="goBack">返回首页</button>
       </view>
     </view>
   </view>
+  <points-reward-modal id="points-reward-modal" />
 </view>

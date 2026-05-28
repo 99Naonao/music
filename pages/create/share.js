@@ -184,13 +184,9 @@ Page({
     })
 
     if (incomingShareId) {
-      this._incomingShareId = incomingShareId
-      this.setData({
-        isSharedView: true,
-        sharedLoadError: '',
-        canShare: this.isLoggedInForShare()
+      wx.redirectTo({
+        url: `/pages/create/gift?shareId=${encodeURIComponent(incomingShareId)}`
       })
-      this.loadSharedCard(incomingShareId)
       return
     }
 

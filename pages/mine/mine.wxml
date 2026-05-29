@@ -171,4 +171,12 @@
 
     <view class="mine-bottom-space"></view>
   </view>
+
+  <promo-popup
+    visible="{{promoVisible}}"
+    payload="{{promoPayload}}"
+    bind:close="onPromoClose"
+    bind:confirm="onPromoConfirm"
+    bind:snooze="onPromoSnooze"
+  />
 </view>

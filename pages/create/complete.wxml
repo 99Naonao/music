@@ -117,5 +117,12 @@
       </view>
     </view>
   </scroll-view>
+  <promo-popup
+    visible="{{promoVisible}}"
+    payload="{{promoPayload}}"
+    bind:close="onPromoClose"
+    bind:confirm="onPromoConfirm"
+    bind:snooze="onPromoSnooze"
+  />
   <custom-tab-bar id="custom-tab-bar" />
 </view>

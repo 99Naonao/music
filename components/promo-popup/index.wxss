@@ -1,0 +1,138 @@
+.pp-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  box-sizing: border-box;
+  background: rgba(30, 58, 95, 0);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.26s ease, background 0.26s ease;
+}
+
+.pp-mask--show {
+  background: rgba(30, 58, 95, 0.5);
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.pp-card {
+  position: relative;
+  width: 100%;
+  max-width: 600rpx;
+  padding: 48rpx 40rpx 36rpx;
+  border-radius: 32rpx;
+  box-sizing: border-box;
+  text-align: center;
+  background: linear-gradient(165deg, #fffdf8 0%, #ffffff 52%, #eef6fc 100%);
+  border: 1rpx solid rgba(100, 149, 237, 0.18);
+  box-shadow: 0 28rpx 72rpx rgba(30, 58, 95, 0.2);
+  transform: scale(0.9) translateY(28rpx);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.64, 1), opacity 0.26s ease;
+}
+
+.pp-card--show {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.pp-close {
+  position: absolute;
+  right: 20rpx;
+  top: 20rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.pp-close-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.55;
+}
+
+.pp-badge {
+  display: inline-block;
+  padding: 8rpx 26rpx;
+  margin-bottom: 20rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #3d6b9a;
+  background: rgba(135, 185, 235, 0.2);
+  letter-spacing: 1rpx;
+}
+
+.pp-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1e3a5f;
+  line-height: 1.45;
+  margin-bottom: 16rpx;
+  padding: 0 8rpx;
+}
+
+.pp-title--compact {
+  font-size: 32rpx;
+  margin-top: 20rpx;
+}
+
+.pp-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: #5a7a9a;
+  line-height: 1.55;
+  margin-bottom: 32rpx;
+  padding: 0 4rpx;
+}
+
+.pp-hero {
+  width: 100%;
+  border-radius: 20rpx;
+  margin-bottom: 8rpx;
+}
+
+.pp-inline-img {
+  width: 100%;
+  max-height: 240rpx;
+  border-radius: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.pp-btn-primary {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  margin: 0 0 20rpx;
+  padding: 0;
+  border: none;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6ba3d6 0%, #4a7fb8 100%);
+  box-shadow: 0 12rpx 32rpx rgba(74, 127, 184, 0.35);
+}
+
+.pp-btn-primary::after {
+  border: none;
+}
+
+.pp-btn-secondary {
+  display: block;
+  font-size: 24rpx;
+  color: #8aa0b8;
+  line-height: 1.5;
+  padding: 8rpx 0 4rpx;
+}

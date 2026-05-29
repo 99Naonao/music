@@ -218,6 +218,11 @@ Page({
       })
 
       if (res.code === 0) {
+        try {
+          require('../../../utils/promo-activity-tracker').touchCommunityPost()
+        } catch (e) {
+          /* ignore */
+        }
         log('post', '发布成功', { postId: res.data && res.data.postId })
         wx.hideLoading()
         this.setData({ submitting: false }, () => {

@@ -8,6 +8,8 @@ const { log, briefUrl } = require('../../utils/log')
 const { getWorkCoverDisplay } = require('../../utils/work-cover')
 const { computeScrollHeightPx } = require('../../utils/page-layout')
 const { setTabBarSelected } = require('../../utils/tab-bar')
+const promoPageBehavior = require('../../behaviors/promo-page')
+const { SCENES } = require('../../utils/promo-constants')
 
 function mapFeedPost(post) {
   const audioUrl =
@@ -88,6 +90,7 @@ function sortFeedPosts(posts, sort) {
 }
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     statusBarHeight: 44,
     activeFeed: 'recommend',
@@ -129,6 +132,7 @@ Page({
     this.updateScrollHeight()
     this.loadUnreadCount()
     this.syncShopAvatarForCommunity()
+    this.tryPromoShow(SCENES.COMMUNITY, { recordVisitAfter: false })
   },
 
   syncShopAvatarForCommunity() {

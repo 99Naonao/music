@@ -34,7 +34,7 @@
       </view>
     </view>
 
-    <!-- 眠家产品 -->
+    <!-- 眠家产品（轻量横幅，与运营弹窗并存） -->
     <view
       class="mianjia-entry"
       wx:if="{{showMianjiaEntry && showMianjiaBanner}}"
@@ -146,4 +146,12 @@
       />
     </view>
   </view>
+
+  <promo-popup
+    visible="{{promoVisible}}"
+    payload="{{promoPayload}}"
+    bind:close="onPromoClose"
+    bind:confirm="onPromoConfirm"
+    bind:snooze="onPromoSnooze"
+  />
 </view>

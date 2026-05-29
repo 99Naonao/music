@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "promo-popup": "/components/promo-popup/index"
+  },
   "navigationStyle": "custom",
   "navigationBarTitleText": "盒友圈",
   "enablePullDownRefresh": false,

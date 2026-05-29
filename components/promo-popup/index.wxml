@@ -1,0 +1,28 @@
+<view class="pp-mask {{visible ? 'pp-mask--show' : ''}}" catchtouchmove="noop">
+  <view class="pp-card pp-card--{{payload.type || 'rich'}} {{visible ? 'pp-card--show' : ''}}" catchtap="noop">
+    <view class="pp-close" catchtap="onTapClose">
+      <image class="pp-close-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+    </view>
+
+    <block wx:if="{{payload.type === 'center_image' && payload.imageUrl}}">
+      <image class="pp-hero" src="{{payload.imageUrl}}" mode="widthFix"/>
+      <text class="pp-title pp-title--compact" wx:if="{{payload.title}}">{{payload.title}}</text>
+      <text class="pp-subtitle" wx:if="{{payload.subtitle}}">{{payload.subtitle}}</text>
+    </block>
+
+    <block wx:else>
+      <view class="pp-badge" wx:if="{{payload.badge}}">{{payload.badge}}</view>
+      <text class="pp-title">{{payload.title}}</text>
+      <text class="pp-subtitle" wx:if="{{payload.subtitle}}">{{payload.subtitle}}</text>
+      <image
+        wx:if="{{payload.imageUrl}}"
+        class="pp-inline-img"
+        src="{{payload.imageUrl}}"
+        mode="widthFix"
+      />
+    </block>
+
+    <button class="pp-btn-primary" bindtap="onTapConfirm">{{payload.buttonText || '去看看'}}</button>
+    <text class="pp-btn-secondary" catchtap="onTapSnooze">{{payload.secondaryText || '7天内不再提示'}}</text>
+  </view>
+</view>

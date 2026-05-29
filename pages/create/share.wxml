@@ -154,4 +154,11 @@
   </view>
   </view>
   <points-reward-modal id="points-reward-modal" />
+  <promo-popup
+    visible="{{promoVisible}}"
+    payload="{{promoPayload}}"
+    bind:close="onPromoClose"
+    bind:confirm="onPromoConfirm"
+    bind:snooze="onPromoSnooze"
+  />
 </view>

@@ -18,6 +18,7 @@ const {
   CARD_TO_LINE_FONT_RPX
 } = require('../../utils/card-text-layout')
 const { resolveWorkDisplayTitle } = require('../../utils/work-meta')
+const promoActivity = require('../../utils/promo-activity-tracker')
 const {
   createCardShareRemote,
   saveCreatorShareId
@@ -381,6 +382,7 @@ Page({
       )
     }
     wx.setStorageSync('cardData', cardPayload)
+    promoActivity.touchCardMake()
     const draft = wx.getStorageSync('playerCardDraft') || {}
     wx.setStorageSync('playerCardDraft', {
       ...draft,

@@ -82,7 +82,9 @@ function routeIncomingShareGift(launchOpts) {
 
 App({
   globalData: {
-    mbTheme: 'dawn'
+    mbTheme: 'dawn',
+    /** splash → 首页 后首次 home_show 不弹「眠家好物」弹窗（其它运营弹窗仍可弹） */
+    skipHomeMianjiaPromoOnce: false
   },
 
   onLaunch(options) {
@@ -96,5 +98,17 @@ App({
   onShow() {
     applyGlobalInnerAudioOptions()
     theme.applyChromeTheme(theme.getTheme())
+    try {
+      const promoScheduler = require('./utils/promo-scheduler')
+      const promoActivity = require('./utils/promo-activity-tracker')
+      if (promoScheduler.shouldDeferVisitRecord()) return
+      const route = promoScheduler.getCurrentRoute()
+      if (promoScheduler.isBlockedRoute(route)) return
+      if (!route.includes('pages/create/create')) {
+        promoActivity.recordVisit()
+      }
+    } catch (e) {
+      /* ignore */
+    }
   }
 })

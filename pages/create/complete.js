@@ -14,6 +14,9 @@ const {
   getWorkCoverDisplay,
   pickUploadAndSetWorkCover
 } = require('../../utils/work-cover')
+const promoPageBehavior = require('../../behaviors/promo-page')
+const promoActivity = require('../../utils/promo-activity-tracker')
+const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const { getDefaultTemplateItem, GRADIENT_OPTIONS } = require('../../utils/card-gradient')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
@@ -55,6 +58,7 @@ function isMianjiaTipDismissedToday() {
 }
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
     showMianjiaTip: true,
@@ -79,11 +83,16 @@ Page({
     setTabBarSelected(this, 1)
     this.updatePageLayout()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
+    // 生成完成进入时只走 after_generate 贺卡弹窗，避免与页内眠家横幅重复推好物
+    if (!this._promoAfterGenerateOnly) {
+      this.tryPromoShow(SCENES.COMPLETE, { recordVisitAfter: false })
+    }
   },
 
   onLoad(options) {
     this.updatePageLayout()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
+    this._promoAfterGenerateOnly = false
     const createConfig = wx.getStorageSync('createConfig') || {}
     const trackConfig = wx.getStorageSync('trackConfig') || {}
     const musicId = options.musicId || options.id || null
@@ -117,7 +126,12 @@ Page({
     })
 
     if (musicId) {
+      this._promoAfterGenerateOnly = true
+      promoActivity.touchMusicGenerate()
       this.loadWorkMetaFromServer(musicId)
+      wx.nextTick(() => {
+        setTimeout(() => this.tryPromoShow(SCENES.AFTER_GENERATE, { recordVisitAfter: false }), 600)
+      })
     }
 
     if (musicId && !hasCustomCover) {

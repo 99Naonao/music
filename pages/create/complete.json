@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "custom-tab-bar": "/custom-tab-bar/index"
+    "custom-tab-bar": "/custom-tab-bar/index",
+    "promo-popup": "/components/promo-popup/index"
   },
   "navigationBarTitleText": "生成完成",
   "navigationBarBackgroundColor": "#e1f0ff",

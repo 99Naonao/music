@@ -9,6 +9,8 @@ const {
   formatDurationSec,
   patchWorkDurationInLibrary
 } = require('../../utils/work-meta')
+const promoPageBehavior = require('../../behaviors/promo-page')
+const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const {
   mapLibraryTrackItem,
@@ -74,6 +76,7 @@ function isMianjiaHomeBannerDismissedToday() {
 }
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
     showMianjiaBanner: true,
@@ -159,6 +162,7 @@ Page({
     this.loadMiniPlayer()
     this.loadHomeLibrary()
     this.syncMiniPlayState(globalAudio.getState())
+    this.tryPromoShow(SCENES.HOME)
   },
 
   onUnload() {

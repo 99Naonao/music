@@ -29,6 +29,8 @@ const playHistory = require('../../utils/play-history')
 
 const favorites = require('../../utils/favorites')
 const downloads = require('../../utils/downloads')
+const promoPageBehavior = require('../../behaviors/promo-page')
+const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 
 const MIANJIA_TIP_DISMISS_KEY = 'mb_player_mianjia_tip_dismissed_date'
@@ -62,6 +64,7 @@ const LOOP_MODE_SHORT = {
 }
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
     showMianjiaTip: true,
@@ -98,6 +101,8 @@ Page({
     setTabBarSelected(this, 1)
     this.updatePageLayout()
     this.syncSleepTimerUI()
+    this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
+    this.tryPromoShow(SCENES.PLAYER, { recordVisitAfter: false })
   },
 
   syncSleepTimerUI() {
@@ -181,7 +186,6 @@ Page({
 
   onLoad(options) {
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
-
     this.updatePageLayout()
     this._playSource = options.from || 'player'
     log('player', '进入播放页', {
@@ -911,7 +915,9 @@ Page({
         if (res.tapIndex === 1) {
           try {
             wx.setStorageSync(MIANJIA_TIP_DISMISS_KEY, cnTodayDate())
-          } catch (e) {}
+          } catch (e) {
+            /* ignore */
+          }
           this.setData({ showMianjiaTip: false })
         }
       }

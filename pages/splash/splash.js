@@ -93,6 +93,14 @@ Page({
       clearTimeout(this._timer)
       this._timer = null
     }
+    try {
+      const app = getApp()
+      if (app && app.globalData) {
+        app.globalData.skipHomeMianjiaPromoOnce = true
+      }
+    } catch (e) {
+      /* ignore */
+    }
     wx.reLaunch({ url: '/pages/create/create' })
   }
 })

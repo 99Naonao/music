@@ -39,6 +39,7 @@ const {
 } = require('../../utils/card-share-remote')
 const { fetchSharedCardPayload } = require('../../utils/shared-card-fetch')
 const { log, logWarn } = require('../../utils/log')
+const promoPageBehavior = require('../../behaviors/promo-page')
 
 function briefShareId(id) {
   const s = id != null ? String(id).trim() : ''
@@ -51,6 +52,7 @@ function briefShareId(id) {
 const SHARE_CARD_FALLBACK_IMAGE = '/static/music_library/greeting_card.png'
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     musicInfo: {
       instrument: '古琴',
@@ -615,6 +617,15 @@ Page({
       wx.hideLoading()
     }
     this.tryClaimShareWorkTask()
+    // 暂时关闭：分享贺卡后的「伴手礼」运营弹窗（恢复时取消下面注释）
+    // if (!this.data.isSharedView) {
+    //   setTimeout(() => {
+    //     this.tryPromoShow(SCENES.AFTER_CARD_SHARE, {
+    //       forceCampaignId: 'after_card_share_gift',
+    //       recordVisitAfter: false
+    //     })
+    //   }, 480)
+    // }
   },
 
   /** 每日任务：分享作品（点击分享按钮时领取，服务端校验每日一次） */

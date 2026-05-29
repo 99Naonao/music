@@ -1,0 +1,236 @@
+================================================================================
+眠音盒小程序 · 运营弹窗测试说明
+================================================================================
+版本：2026-05
+工具：微信开发者工具（建议勾选「不校验合法域名」仅测本地接口时）
+相关代码：utils/promo-scheduler.js、components/promo-popup、behaviors/promo-page
+
+--------------------------------------------------------------------------------
+一、弹窗 vs 眠家横幅（别搞混）
+--------------------------------------------------------------------------------
+
+  类型          表现                              关闭方式
+  ------------  --------------------------------  --------------------------
+  眠家横幅      页面内横条「眠家深睡 · 好物推荐」    各页「今天不再显示」（独立 key）
+  运营弹窗      全屏遮罩 + 居中卡片                「7天内不再提示」/ 右上角 X
+
+  测弹窗时看：是否出现半透明遮罩 + 居中 promo-popup 卡片。
+
+--------------------------------------------------------------------------------
+二、测试前：清空频控（否则 7 天内可能什么都不弹）
+--------------------------------------------------------------------------------
+
+开发者工具 → Storage → 本地存储，删除或清空下列 key：
+
+  mb_promo_last_show_at          上次弹窗时间
+  mb_promo_snooze_until         「7天内不再提示」截止时间
+  mb_promo_session_closed_ids   本次启动已关闭的 campaign 列表
+  mb_promo_remote_cache         远程活动缓存（改后端配置后建议删）
+
+【可选】测「久未 7 天」类弹窗时，再改行为时间（见第四节）。
+
+清空后：点击「编译」或完全关闭模拟器再打开。
+
+--------------------------------------------------------------------------------
+三、最快：控制台强制弹出（推荐日常 UI 测试）
+--------------------------------------------------------------------------------
+
+【必须先满足】
+  1. 当前页是「带运营弹窗」的页面，不是闪屏 splash。
+     首页 create、我的 mine、盒友圈、播放页、完成页、分享 share 均可。
+  2. 在模拟器里先点进该 Tab，再执行命令（getCurrentPages().pop() 才是当前页）。
+  3. page.tryPromoShow 必须存在；若为 undefined，说明当前页未接入弹窗。
+
+【推荐一键命令（复制整段，在首页 Console 执行）】
+
+  const page = getCurrentPages().pop()
+  console.log('当前页', page && page.route, '有tryPromoShow=', !!(page && page.tryPromoShow))
+  page && page.tryPromoShow && page.tryPromoShow('home_show', {
+    forceCampaignId: 'inactive_music',
+    recordVisitAfter: false
+  }).then((ok) => console.log('[promo] 强制弹窗结果', ok))
+
+  · 约 0.3 秒后出现弹窗；ok 为 true 表示成功。
+  · forceCampaignId 现已绕过 7 天频控（仍须在正确页面、scene 与活动匹配）。
+
+【通用写法】
+  const page = getCurrentPages().pop()
+  page.tryPromoShow('场景名', {
+    forceCampaignId: '活动id',
+    recordVisitAfter: false
+  }).then((ok) => console.log('[promo]', ok))
+
+【活动 id 与建议页面】
+
+  id                      说明                    建议页面 / scene
+  ----------------------  ----------------------  ----------------------------------
+  inactive_visit          好久不见 / N 天没来      首页  home_show
+  inactive_login          登录有礼                首页或我的  home_show / mine_show
+  inactive_card           久未制作贺卡            首页  home_show
+  inactive_music          久未生成音乐            首页  home_show
+  inactive_community      久未盒友圈发帖          盒友圈  community_show
+  mianjia_goods           眠家好物                首页  home_show
+  after_card_share_gift   伴手礼（已暂时关闭）    贺卡分享页  after_card_share
+  after_generate_card     生成成功提醒制作贺卡    完成页  after_generate
+
+【示例：首页强制「眠家好物」】
+  getCurrentPages().pop().tryPromoShow('home_show', {
+    forceCampaignId: 'mianjia_goods',
+    recordVisitAfter: false
+  })
+
+【示例：分享页强制「伴手礼」】
+  getCurrentPages().pop().tryPromoShow('after_card_share', {
+    forceCampaignId: 'after_card_share_gift',
+    recordVisitAfter: false
+  })
+
+【示例：完成页强制「生成成功」】
+  getCurrentPages().pop().tryPromoShow('after_generate', {
+    forceCampaignId: 'after_generate_card',
+    recordVisitAfter: false
+  })
+
+控制台可过滤关键字：[promo]。
+  · show + 强制弹窗结果 true  → 成功
+  · 7天频控未通过            → 未用 forceCampaignId（自然触发时常见）
+  · forceCampaignId 未找到    → id 拼错或 scene 不对（如伴手礼要用 after_card_share）
+  · 当前页面在黑名单          → 在 gift / generating 等页无法弹
+  · PROMO_ENABLED=false      → 检查 utils/mianjia-config.js
+
+【仍不弹时自查】
+  [ ] 是否在首页 route 为 pages/create/create
+  [ ] create.wxml 是否有 <promo-popup visible="{{promoVisible}}" …>
+  [ ] 删 mb_promo_remote_cache 后重试
+  [ ] 看 Console 是否报 page.tryPromoShow is not a function
+
+--------------------------------------------------------------------------------
+四、按业务规则测「久未 7 天」（真实逻辑）
+--------------------------------------------------------------------------------
+
+规则：距上次行为 ≥ 7 天，且第三节频控 key 已清空。
+优先级：久未访问 > 久未登录 > 久未贺卡 > 久未音乐 > 久未发帖 > … > 眠家好物
+
+在 Console 执行（8 天前时间戳）：
+
+  const ago8 = Date.now() - 8 * 24 * 60 * 60 * 1000
+  wx.setStorageSync('mb_last_visit_at', ago8)
+  wx.setStorageSync('mb_first_visit_at', ago8)
+  // 按需只测某一种时，只改对应 key：
+  // wx.setStorageSync('mb_last_phone_login_at', ago8)
+  // wx.setStorageSync('mb_last_card_make_at', ago8)
+  // wx.setStorageSync('mb_last_music_generate_at', ago8)
+  // wx.setStorageSync('mb_last_community_post_at', ago8)
+  wx.removeStorageSync('mb_promo_last_show_at')
+  wx.removeStorageSync('mb_promo_snooze_until')
+  wx.removeStorageSync('mb_promo_session_closed_ids')
+
+然后：完全关闭小程序 → 重新编译进入 → 进对应 Tab。
+
+注意：首页 onShow 会先 tryPromoShow，再 recordVisit。测「久未访问」必须在
+改完 storage 后冷启动再进首页，不要在同一会话里先逛一圈再改时间。
+
+--------------------------------------------------------------------------------
+五、各场景自然触发（不走 forceCampaignId）
+--------------------------------------------------------------------------------
+
+  scene               触发时机                          进入方式
+  ------------------  --------------------------------  -------------------------
+  home_show           首页 Tab onShow                   闪屏结束 / 点 Tab 首页
+  mine_show           我的 Tab onShow                   Tab「我的」
+  community_show      盒友圈 Tab onShow                 Tab「盒友圈」
+  player_show         播放页 onShow                     播放一首作品
+  complete_show       完成页 onShow                     生成成功进入完成页
+  after_generate      完成页 onLoad 有 musicId 后约 0.6s  同上（第二条机会）
+  after_card_share    【已暂时关闭】分享后伴手礼弹窗
+
+【不会弹运营弹窗的页面】
+  pages/create/gift（收礼）
+  pages/create/generating（生成中）
+  pages/create/tracks（录音）
+  package-community/pages/post/create（发帖编辑）
+
+--------------------------------------------------------------------------------
+六、闪屏 → 首页（专项：只屏蔽「眠家好物」弹窗）
+--------------------------------------------------------------------------------
+
+产品规则：从 splash 刚进首页的第一次 home_show，不弹 mianjia_goods；
+其它运营弹窗（如好久不见）仍可弹。眠家横幅不受影响。
+
+【应不出现】
+  闪屏（等 2 秒或点跳过）→ 首页：不应出现「眠家好物 · 搭配助眠音乐」居中弹窗。
+
+【仍可出现】
+  若第四节已配置 8 天未访问等，冷启动后首页可能弹「好久不见」等更高优先级弹窗。
+
+【验证「眠家好物」延后】
+  1. 清空第二节频控 key
+  2. 闪屏 → 首页（不弹眠家好物弹窗）
+  3. 切到「我的」再切回「首页」→ 若频控允许，可弹眠家好物
+
+--------------------------------------------------------------------------------
+七、交互与频控 checklist
+--------------------------------------------------------------------------------
+
+  [ ] 主按钮：跳转正确（登录→我的、眠家→分包、制作贺卡→card-pick 等）
+  [ ] 右上角 X：仅本次冷启动内不再弹同一条 campaign；杀进程重进可再弹（未点 7 天）
+  [ ] 「7天内不再提示」：写入 mb_promo_snooze_until，7 天内各页强弹窗都不再出
+  [ ] 7 天内只弹 1 条强弹窗：弹过后 mb_promo_last_show_at 会挡住下一条
+  [ ] 横幅与弹窗独立：关弹窗不影响首页眠家横条
+  [ ] 闪屏→首页：不弹眠家好物弹窗（第六节）
+  [ ] 收礼页 gift：任意情况不弹运营弹窗
+
+--------------------------------------------------------------------------------
+八、行为时间戳（写入时机，便于构造测试数据）
+--------------------------------------------------------------------------------
+
+  storage key                   何时写入
+  ----------------------------  ------------------------------------------
+  mb_last_visit_at              每次进小程序（首页 tryPromoShow 之后 recordVisit）
+  mb_first_visit_at             首次 recordVisit
+  mb_last_phone_login_at        我的页手机号登录成功
+  mb_last_card_make_at          贺卡编辑完成保存 cardData（进分享前）
+  mb_last_music_generate_at     生成页 onGenerationComplete / 完成页 onLoad 有 musicId
+  mb_last_community_post_at     盒友圈发帖成功
+
+--------------------------------------------------------------------------------
+九、远程配置与开关
+--------------------------------------------------------------------------------
+
+  · 活动列表：GET /api/promo/active?scene=home_show（失败用 utils/promo-fallback.js）
+  · 总开关：utils/mianjia-config.js → PROMO_ENABLED（false 则全站不弹）
+  · 埋点（可选）：POST /api/promo/event，后端记日志
+
+改后端 promo 配置后：删 mb_promo_remote_cache，重新编译。
+
+--------------------------------------------------------------------------------
+十、真机预览注意
+--------------------------------------------------------------------------------
+
+  · Storage 清空只在当前设备/模拟器生效，真机需各自操作或发体验版自测。
+  · 线上需小程序 + 后端均已发布。
+  · 分享伴手礼弹窗：仅在制作者 share 页、且登录+云端 share 同步成功后触发。
+
+--------------------------------------------------------------------------------
+十一、常见问题
+--------------------------------------------------------------------------------
+
+  Q：清了 storage 仍不弹？
+  A：查 PROMO_ENABLED；是否 7 天内 snooze；是否在黑名单页；控制台 [promo] 是否有输出。
+
+  Q：只想看 UI、不想等 7 天？
+  A：用第三节 forceCampaignId（已绕过频控）；务必在首页等已接入页面执行。
+
+  Q：Console 执行了 force 仍不弹？
+  A：先执行 console.log(getCurrentPages().pop().route)；
+     必须是 create/mine 等；用第三节「推荐一键命令」看 ok 与 [promo] 日志。
+
+  Q：首页只有横幅没有弹窗？
+  A：可能频控未过、或仅命中 mianjia_goods 且刚从闪屏进来（第六节）、或优先级更高的规则未满足天数。
+
+  Q：弹窗和横幅能一起关吗？
+  A：不能共用；横幅用 mb_home_mianjia_entry_dismissed_date 等，弹窗用 mb_promo_*。
+
+================================================================================
+文档结束
+================================================================================

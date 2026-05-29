@@ -312,6 +312,11 @@ Page({
   onGenerationComplete(musicId, audioUrl, audioDurationMs) {
     if (this._cancelled) return
     this.clearTimers()
+    try {
+      require('../../utils/promo-activity-tracker').touchMusicGenerate()
+    } catch (e) {
+      /* ignore */
+    }
     log('generate', '生成完成', { musicId, audioDurationMs })
 
     this.syncProgressUI(100, 3)

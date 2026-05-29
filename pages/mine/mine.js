@@ -10,9 +10,13 @@ const {
   MINE_STATS_CACHE_TTL_MS,
   consumeMineStatsInvalidateFlag
 } = require('../../utils/mine-stats-cache')
+const promoPageBehavior = require('../../behaviors/promo-page')
+const promoActivity = require('../../utils/promo-activity-tracker')
+const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 
 Page({
+  behaviors: [promoPageBehavior],
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
     isLoggedIn: false,
@@ -38,6 +42,7 @@ Page({
   onShow() {
     setTabBarSelected(this, 3)
     this.checkLoginStatus()
+    this.tryPromoShow(SCENES.MINE, { recordVisitAfter: false })
     if (!this.data.isLoggedIn) return
     const needForce = consumeMineStatsInvalidateFlag()
     this.refreshMinePageData({ force: needForce })
@@ -162,6 +167,7 @@ Page({
             wx.setStorageSync('userInfo', userData)
             wx.setStorageSync('userId', data.userId)
             wx.setStorageSync('token', data.token || data.openid)
+            promoActivity.touchPhoneLogin()
             this.setData({
               isLoggedIn: true,
               userInfo: userData

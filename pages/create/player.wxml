@@ -21,7 +21,12 @@
     <view class="player-disc-wrap">
       <view class="player-disc-glow"></view>
       <view class="player-disc {{isPlaying ? 'player-disc--spin' : ''}}">
-        <image class="player-disc-img" src="{{coverImage || '/static/music_library/icon_category_sleep.png'}}" mode="aspectFill"/>
+        <image
+          class="player-disc-img"
+          src="{{coverImage || '/static/music_library/icon_category_sleep.png'}}"
+          mode="aspectFill"
+          key="{{musicId}}-{{coverImage}}"
+        />
       </view>
     </view>
 

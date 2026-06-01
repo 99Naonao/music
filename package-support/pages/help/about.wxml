@@ -5,7 +5,7 @@
   <view class="about-hero">
     <image class="about-logo" src="/static/mine.png" mode="aspectFit"/>
     <text class="about-name">眠音盒</text>
-    <text class="about-slogan">AI 为你定制专属助眠音乐</text>
+    <text class="about-slogan">AI 为你定制专属白噪音</text>
   </view>
 
   <view class="about-card">

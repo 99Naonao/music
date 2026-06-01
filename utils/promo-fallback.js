@@ -110,22 +110,23 @@ const FALLBACK_CAMPAIGNS = [
   //   linkType: 'navigate',
   //   enabled: MIANJIA_ENTRY_ENABLED
   // },
-  {
-    id: 'mianjia_goods',
-    type: 'rich',
-    category: 'mianjia',
-    priority: 50,
-    rule: 'always',
-    scenes: [SCENES.HOME, SCENES.PLAYER],
-    badge: '眠家深睡',
-    title: '眠家好物 · 搭配助眠音乐',
-    subtitle: '探索精选深睡产品，让音乐与好物一起守护好眠',
-    buttonText: '去看看',
-    secondaryText: '7天内不再提示',
-    linkPath: '/package-mall/pages/mianjia/index',
-    linkType: 'navigate',
-    enabled: MIANJIA_ENTRY_ENABLED
-  },
+  // 已下线：眠家好物居中弹窗（保留首页横条 mianjia-entry 即可）
+  // {
+  //   id: 'mianjia_goods',
+  //   type: 'rich',
+  //   category: 'mianjia',
+  //   priority: 50,
+  //   rule: 'always',
+  //   scenes: [SCENES.HOME, SCENES.PLAYER],
+  //   badge: '眠家深睡',
+  //   title: '眠家好物 · 搭配助眠音乐',
+  //   subtitle: '探索精选深睡产品，让音乐与好物一起守护好眠',
+  //   buttonText: '去看看',
+  //   secondaryText: '7天内不再提示',
+  //   linkPath: '/package-mall/pages/mianjia/index',
+  //   linkType: 'navigate',
+  //   enabled: MIANJIA_ENTRY_ENABLED
+  // },
   {
     id: 'after_generate_card',
     type: 'rich',

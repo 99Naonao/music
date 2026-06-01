@@ -92,6 +92,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cover-photo {
+  width: 100%;
+  height: 100%;
 }
 
 .cover-icon {
@@ -112,21 +119,28 @@
   margin-bottom: 10rpx;
 }
 
-.music-tags {
-  display: flex;
-  gap: 12rpx;
+.music-desc {
+  font-size: 24rpx;
+  color: var(--mb-text-secondary, #5c6b7a);
+  line-height: 1.45;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.tag {
-  padding: 4rpx 14rpx;
-  background: var(--mb-mint-15);
-  color: var(--mb-mint);
+.music-sub {
+  display: block;
   font-size: 22rpx;
-  border-radius: 12rpx;
+  color: var(--mb-text-muted);
 }
 
 .music-meta {
   text-align: right;
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 
 .meta-duration {

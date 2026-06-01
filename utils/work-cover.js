@@ -96,7 +96,8 @@ function isOurHostedCoverUrl(url) {
     lower.includes('/api/music/cover') ||
     lower.includes('/api/upload/file/') ||
     lower.includes('/api/upload/image/') ||
-    lower.includes('/uploads/')
+    lower.includes('/uploads/') ||
+    lower.includes('/images/')
   ) {
     return true
   }
@@ -177,6 +178,8 @@ function isPersistedCoverUrl(url) {
 function resolveWorkCoverFromWork(work) {
   if (!work || typeof work !== 'object') return ''
   const raw =
+    work.coverUrl ||
+    work.cover ||
     work.coverImage ||
     work.player_cover_url ||
     work.playerCoverUrl ||

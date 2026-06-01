@@ -6,6 +6,7 @@ const { API_BASE_URL, MUSIC_GENERATION_TIMEOUT_MS, TIMEOUT, devApiMode } = requi
 const { buildWorkTitle, getInstrumentName } = require('../../utils/work-meta')
 const { log, logWarn } = require('../../utils/log')
 const { resolveVoiceUrlForCreate } = require('../../utils/voice-upload')
+const { resolveReferenceUrlForCreate } = require('../../utils/reference-music')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
 const { isDailyTaskCompleted } = require('../../utils/daily-tasks')
 
@@ -151,6 +152,32 @@ Page({
           }
         })
 
+      let referenceAudioUrl = ''
+      const referenceTrack = trackConfig.referenceTrack
+      if (referenceTrack && referenceTrack.enabled && referenceTrack.url) {
+        try {
+          referenceAudioUrl = await resolveReferenceUrlForCreate(referenceTrack)
+        } catch (refErr) {
+          showAlert(
+            '参考音乐上传失败',
+            (refErr && refErr.message) || '请检查网络后重试，或关闭参考音乐再生成'
+          )
+          this.clearTimers()
+          this.setData({
+            statusText: '参考音乐上传失败',
+            error: (refErr && refErr.message) || '上传失败',
+            currentStep: 0
+          })
+          return
+        }
+        if (!referenceAudioUrl) {
+          showAlert('提示', '参考音乐地址无效，请重新选择')
+          this.clearTimers()
+          this.setData({ statusText: '参考音乐无效', error: '参考音乐无效', currentStep: 0 })
+          return
+        }
+      }
+
       const userId = wx.getStorageSync('userId') || 'anonymous'
 
       let voiceUrl = ''
@@ -197,7 +224,8 @@ Page({
         userPrompt: createConfig.prompt || '',
         moodLabel: createConfig.moodLabel || '',
         sceneLabels: Array.isArray(createConfig.sceneLabels) ? createConfig.sceneLabels : [],
-        voiceUrl: voiceUrl || ''
+        voiceUrl: voiceUrl || '',
+        referenceAudioUrl: referenceAudioUrl || ''
       }
 
       const createOptions = {

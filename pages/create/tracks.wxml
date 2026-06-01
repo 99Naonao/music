@@ -184,6 +184,53 @@
             </view>
           </view>
         </view>
+
+        <view class="reference-block">
+          <view class="track-row track-row--reference-head">
+            <view class="track-label">参考音乐</view>
+            <view class="reference-enable-row">
+              <text class="reference-hint">可选，6 秒～6 分钟，与人声、白噪音独立</text>
+              <switch
+                class="effect-switch"
+                checked="{{referenceTrack.enabled}}"
+                bindchange="toggleReferenceTrack"
+                color="#2E8B57"
+              />
+            </view>
+          </view>
+          <view class="reference-panel" wx:if="{{referenceTrack.enabled}}">
+            <view class="reference-selected-tip" wx:if="{{referenceSelectedTip}}">
+              <text>{{referenceSelectedTip}}</text>
+            </view>
+            <view class="reference-pick-row" wx:if="{{!referenceTrack.url}}">
+              <view class="reference-pick-btn" bindtap="openLibraryForReference">
+                <image class="record-icon" src="/static/create_step/library.png" mode="aspectFit"/>
+                <text>官方曲库</text>
+              </view>
+              <view class="reference-pick-btn" bindtap="chooseReferenceUpload">
+                <image class="record-icon" src="/static/create_step/upload.png" mode="aspectFit"/>
+                <text>上传音频</text>
+              </view>
+            </view>
+            <view class="reference-selected-row" wx:if="{{referenceTrack.url}}">
+              <view class="voice-info">
+                <image
+                  class="voice-type-icon"
+                  src="/static/create_step/{{referenceTrack.source === 'library' ? 'library' : 'file'}}.png"
+                  mode="aspectFit"
+                />
+                <view class="voice-text">
+                  <text class="voice-name">{{referenceTrack.name}}</text>
+                  <text class="voice-duration" wx:if="{{referenceTrack.durationSec > 0}}">约 {{referenceTrack.durationSec}} 秒</text>
+                  <text class="voice-duration reference-source-tag">{{referenceTrack.source === 'library' ? '官方曲库' : '本地上传'}}</text>
+                </view>
+              </view>
+              <view class="voice-remove" bindtap="removeReferenceTrack">
+                <image class="delete-icon" src="/static/new_logo/delete.png" mode="aspectFit"/>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
 
       <!-- 原底部「添加白噪音」卡片：已移至时间轴左侧

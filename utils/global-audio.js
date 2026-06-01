@@ -1,5 +1,6 @@
 const { applyGlobalInnerAudioOptions, patchInnerAudioForIOS } = require('./audio-ios')
 const playHistory = require('./play-history')
+const { request } = require('./request')
 const { log, logWarn, briefUrl } = require('./log')
 
 const NOW_PLAYING_KEY = 'mb_now_playing'
@@ -43,10 +44,12 @@ function setActiveMeta(work, audioUrl) {
     persistNowPlaying(null)
     return
   }
+  const coverUrl = work.coverUrl || work.cover || work.coverImage || ''
   activeMeta = {
     id: String(work.id),
     title: work.title || work.workTitle || '正在播放',
-    cover: work.cover || work.coverImage || '',
+    cover: coverUrl,
+    coverUrl,
     audioUrl: audioUrl || work.audioUrl || '',
     source: work.source || 'work',
     isOfficial: !!(work.isOfficial || work.source === 'library'),
@@ -224,6 +227,15 @@ function playWork(work) {
   }
 
   playHistory.recordFromWork({ ...work, audioUrl: url }, { source: work.source || 'mini' })
+  if (work.source === 'library' || work.isOfficial) {
+    request({
+      url: '/api/music/library/play',
+      method: 'POST',
+      data: { musicId: id },
+      silentFail: true,
+      retry: 0
+    }).catch(() => {})
+  }
   return true
 }
 
@@ -244,11 +256,21 @@ function toggle(work) {
     pause()
     return
   }
+  const merged =
+    activeMeta && String(activeMeta.id) === id
+      ? {
+          ...activeMeta.payload,
+          ...activeMeta,
+          ...work,
+          cover: work.coverUrl || work.cover || activeMeta.cover || '',
+          coverUrl: work.coverUrl || work.cover || activeMeta.coverUrl || activeMeta.cover || ''
+        }
+      : work
   log('global-audio', 'toggle → play', {
     musicId: id,
-    title: work.title || work.workTitle || ''
+    title: merged.title || merged.workTitle || ''
   })
-  playWork(work)
+  playWork(merged)
 }
 
 function stop() {
@@ -310,6 +332,33 @@ function getNowPlaying() {
   return null
 }
 
+/** 曲库封面等元数据更新时，同步全局播放缓存（无需重新点击播放） */
+function patchActiveMeta(partial) {
+  if (!activeMeta || !activeMeta.id || !partial) return false
+  if (partial.id != null && String(partial.id) !== String(activeMeta.id)) {
+    return false
+  }
+  const nextPayload =
+    partial.payload != null
+      ? { ...(activeMeta.payload || {}), ...partial.payload }
+      : activeMeta.payload
+  const coverUrl =
+    partial.coverUrl != null
+      ? partial.coverUrl
+      : partial.cover != null
+        ? partial.cover
+        : activeMeta.coverUrl || activeMeta.cover
+  activeMeta = {
+    ...activeMeta,
+    ...partial,
+    cover: coverUrl || activeMeta.cover,
+    coverUrl: coverUrl || activeMeta.coverUrl || activeMeta.cover,
+    payload: nextPayload
+  }
+  persistNowPlaying(activeMeta)
+  return true
+}
+
 /** 预加载时长：独立音频实例，不污染全局播放条 */
 function probeDuration(work, onReady) {
   if (!work || !work.audioUrl || typeof onReady !== 'function') return
@@ -356,5 +405,6 @@ module.exports = {
   releaseForPagePlayer,
   probeDuration,
   getState,
-  getNowPlaying
+  getNowPlaying,
+  patchActiveMeta
 }

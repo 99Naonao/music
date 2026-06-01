@@ -20,8 +20,8 @@ function formatLibraryDuration(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-function getLibraryCategoryIcon(frequency, title) {
-  const t = String(title || '').toLowerCase()
+function getLibraryCategoryIcon(frequency, title, description) {
+  const t = `${String(title || '')} ${String(description || '')}`.toLowerCase()
   const f = String(frequency || '').toLowerCase()
   if (t.includes('脑波') || f.includes('alpha') || f.includes('阿尔法')) {
     return '/static/create_step/brainwave.png'
@@ -43,9 +43,22 @@ function mapLibraryTrackItem(item) {
   if (!item || !item.id) return null
   const durationSec = Number(item.duration) > 0 ? Math.floor(Number(item.duration)) : 0
   const instrumentId = normalizeInstrumentId(item.instrument)
+  const coverResolved = resolveLibraryCoverUrl(
+    item.coverUrl || item.cover_url || item.player_cover_url || ''
+  )
+  const fallbackIcon = getLibraryCategoryIcon(
+    item.frequency,
+    item.title,
+    item.description
+  )
+  const img = coverResolved || fallbackIcon
   return {
     id: item.id,
     title: item.title || '疗愈音乐',
+    description: item.description ? String(item.description).trim() : '',
+    plays: Math.max(0, Math.floor(Number(item.plays) || 0)),
+    coverUrl: coverResolved,
+    isCoverImage: isRemoteImageUrl(coverResolved),
     instrument: instrumentId,
     instrumentName: getInstrumentName(instrumentId),
     frequency: formatLibraryFrequency(item.frequency),
@@ -54,9 +67,42 @@ function mapLibraryTrackItem(item) {
     durationSec,
     durationText: formatLibraryDuration(durationSec),
     audioUrl: item.audioUrl || item.audio_url || '',
-    img: getLibraryCategoryIcon(item.frequency, item.title),
+    img,
     isOfficial: true
   }
+}
+
+function resolveLibraryCoverUrl(coverUrl) {
+  const u = String(coverUrl || '').trim()
+  if (!u) return ''
+  if (u.startsWith('http://') || u.startsWith('https://')) {
+    return u.startsWith('http://') ? `https://${u.slice(7)}` : u
+  }
+  const base = String(API_BASE_URL || '').replace(/\/$/, '')
+  return u.startsWith('/') ? `${base}${u}` : `${base}/${u}`
+}
+
+function isRemoteImageUrl(url) {
+  return /^https:\/\//i.test(String(url || '').trim())
+}
+
+/** 官方曲库迷你播放条 / globalAudio 封面（优先远程图，避免沿用旧静态图标） */
+function pickLibraryMiniCover(meta, payload) {
+  const p = payload || meta || {}
+  const m = meta || {}
+  const candidates = [
+    p.coverUrl,
+    m.coverUrl,
+    p.cover,
+    m.cover,
+    isRemoteImageUrl(p.img) ? p.img : '',
+    isRemoteImageUrl(m.img) ? m.img : ''
+  ]
+  for (let i = 0; i < candidates.length; i++) {
+    const u = String(candidates[i] || '').trim()
+    if (isRemoteImageUrl(u)) return u
+  }
+  return '/static/create_step/healing.png'
 }
 
 function resolveLibraryAudioUrl(audioUrl) {
@@ -90,6 +136,10 @@ function buildLibraryPlayerUrl(track) {
   if (track.durationSec > 0) {
     q.push(`durationMs=${encodeURIComponent(String(track.durationSec * 1000))}`)
   }
+  const cover = track.coverUrl || (isRemoteImageUrl(track.img) ? track.img : '')
+  if (cover) {
+    q.push(`coverUrl=${encodeURIComponent(cover)}`)
+  }
   return `/pages/create/player?${q.join('&')}`
 }
 
@@ -104,7 +154,11 @@ function libraryTrackToPlayWork(track) {
     audioUrl,
     duration: track.durationSec || 0,
     durationSec: track.durationSec || 0,
-    cover: track.img || getLibraryCategoryIcon(track.frequencyRaw, track.title),
+    coverUrl: track.coverUrl || (isRemoteImageUrl(track.img) ? track.img : ''),
+    cover: pickLibraryMiniCover(
+      { coverUrl: track.coverUrl, cover: track.coverUrl, img: track.img },
+      track
+    ),
     instrument: track.instrument || '',
     frequency: track.frequencyRaw || '',
     bpm: track.bpm || 60,
@@ -119,7 +173,10 @@ module.exports = {
   formatLibraryDuration,
   getLibraryCategoryIcon,
   mapLibraryTrackItem,
+  resolveLibraryCoverUrl,
   resolveLibraryAudioUrl,
+  isRemoteImageUrl,
+  pickLibraryMiniCover,
   buildLibraryPlayerUrl,
   libraryTrackToPlayWork
 }

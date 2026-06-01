@@ -1,5 +1,11 @@
 const { showAlert } = require('../../utils/show-alert')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
+const {
+  formatRefDurationHint,
+  validateReferenceDurationSec,
+  probeAudioDurationSec,
+  resolveLibraryReferenceTrack
+} = require('../../utils/reference-music')
 
 /** 与第一步 pages/create/config 乐器列表 icon 路径一致 */
 const INSTRUMENT_ICONS = {
@@ -66,6 +72,16 @@ Page({
       duration: 0,
       name: ''
     },
+    /** MiniMax music-cover 参考音乐（与人声并列，独立于白噪音） */
+    referenceTrack: {
+      enabled: false,
+      source: null,
+      url: '',
+      name: '',
+      durationSec: 0,
+      libraryId: ''
+    },
+    referenceSelectedTip: '',
     maxEffects: 3,
     /** 时间轴上方刻度文案，与轨道同宽对齐 */
     timelineScaleLabels: [],
@@ -93,6 +109,14 @@ Page({
     let mainTrack = { ...this.data.mainTrack }
     let timelineEffects = []
     let voiceTrack = { type: null, url: '', duration: 0, name: '' }
+    let referenceTrack = {
+      enabled: false,
+      source: null,
+      url: '',
+      name: '',
+      durationSec: 0,
+      libraryId: ''
+    }
 
     if (config) {
       const dur = Number(config.duration) || 180
@@ -105,6 +129,9 @@ Page({
       if (trackConfig.mainTrack) mainTrack = { ...mainTrack, ...trackConfig.mainTrack }
       timelineEffects = trackConfig.effects || []
       voiceTrack = trackConfig.voiceTrack || voiceTrack
+      if (trackConfig.referenceTrack) {
+        referenceTrack = { ...referenceTrack, ...trackConfig.referenceTrack }
+      }
     }
 
     let selectedInstrument = 'piano'
@@ -124,13 +151,39 @@ Page({
       timelineHeadline,
       timelineEffects,
       voiceTrack,
+      referenceTrack,
+      referenceSelectedTip: this.buildReferenceSelectedTip(referenceTrack),
       timelineScaleLabels
     })
+  },
+
+  buildReferenceSelectedTip(track) {
+    if (!track || !track.url) return ''
+    const name = track.name || '参考音频'
+    const sourceLabel = track.source === 'library' ? '官方曲库' : '本地上传'
+    const dur =
+      track.durationSec > 0 ? `，约 ${track.durationSec} 秒` : ''
+    return `已选择：${name}（${sourceLabel}${dur}）`
   },
 
   onShow() {
     setTabBarSelected(this, 1)
     this.updateScrollHeight()
+
+    const pending = wx.getStorageSync('pendingLibraryReference')
+    if (pending && pending.audioUrl) {
+      wx.removeStorageSync('pendingLibraryReference')
+      const resolved = resolveLibraryReferenceTrack(pending)
+      if (resolved && resolved.error) {
+        showAlert('参考音乐不可用', resolved.error)
+      } else if (resolved) {
+        this.setData({
+          referenceTrack: resolved,
+          referenceSelectedTip: this.buildReferenceSelectedTip(resolved)
+        })
+      }
+    }
+
     const config = wx.getStorageSync('createConfig')
     let totalDuration = this.data.totalDuration
     if (config && config.duration != null) {
@@ -570,6 +623,107 @@ Page({
     })
   },
 
+  toggleReferenceTrack(e) {
+    const enabled = !!(e.detail && e.detail.value)
+    const referenceTrack = enabled
+      ? { ...this.data.referenceTrack, enabled: true }
+      : {
+          enabled: false,
+          source: null,
+          url: '',
+          name: '',
+          durationSec: 0,
+          libraryId: ''
+        }
+    this.setData({
+      referenceTrack,
+      referenceSelectedTip: enabled
+        ? this.buildReferenceSelectedTip(referenceTrack)
+        : ''
+    })
+  },
+
+  openLibraryForReference() {
+    wx.navigateTo({ url: '/pages/library/library?pick=reference' })
+  },
+
+  async applyUserReferenceFile(file) {
+    if (!file || !file.path) return
+    const name = file.name || '参考音频'
+    let durationSec = 0
+    try {
+      durationSec = await probeAudioDurationSec(file.path)
+    } catch (err) {
+      showAlert('提示', (err && err.message) || '无法读取音频时长')
+      return
+    }
+    const check = validateReferenceDurationSec(durationSec)
+    if (!check.ok) {
+      showAlert('参考音乐时长不符', check.message)
+      return
+    }
+    const referenceTrack = {
+      enabled: true,
+      source: 'upload',
+      url: file.path,
+      name,
+      durationSec: check.durationSec,
+      libraryId: ''
+    }
+    this.setData({
+      referenceTrack,
+      referenceSelectedTip: this.buildReferenceSelectedTip(referenceTrack)
+    })
+  },
+
+  chooseReferenceUpload() {
+    if (wx.chooseMedia) {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['audio'],
+        sourceType: ['album'],
+        success: (res) => {
+          const file = res.tempFiles && res.tempFiles[0]
+          if (!file) return
+          this.applyUserReferenceFile({
+            path: file.tempFilePath,
+            name: file.name || '参考音频'
+          })
+        },
+        fail: () => this.chooseReferenceUploadFromFile()
+      })
+      return
+    }
+    this.chooseReferenceUploadFromFile()
+  },
+
+  chooseReferenceUploadFromFile() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['mp3', 'm4a', 'wav', 'aac'],
+      success: (res) => {
+        const file = res.tempFiles && res.tempFiles[0]
+        this.applyUserReferenceFile(file)
+      },
+      fail: () => {}
+    })
+  },
+
+  removeReferenceTrack() {
+    this.setData({
+      referenceTrack: {
+        enabled: false,
+        source: null,
+        url: '',
+        name: '',
+        durationSec: 0,
+        libraryId: ''
+      },
+      referenceSelectedTip: ''
+    })
+  },
+
   removeVoice() {
     this.setData({
       voiceTrack: { type: null, url: '', duration: 0, name: '' },
@@ -590,10 +744,26 @@ Page({
   },
 
   generateMusic() {
+    const ref = this.data.referenceTrack
+    if (ref && ref.enabled) {
+      if (!ref.url) {
+        showAlert('提示', `请从官方曲库或本机选择参考音乐（${formatRefDurationHint()}）`)
+        return
+      }
+      if (ref.source === 'upload') {
+        const check = validateReferenceDurationSec(ref.durationSec)
+        if (!check.ok) {
+          showAlert('参考音乐时长不符', check.message)
+          return
+        }
+      }
+    }
+
     const trackConfig = {
       mainTrack: this.data.mainTrack,
       effects: this.data.timelineEffects,
-      voiceTrack: this.data.voiceTrack
+      voiceTrack: this.data.voiceTrack,
+      referenceTrack: this.data.referenceTrack
     }
     wx.setStorageSync('trackConfig', trackConfig)
 

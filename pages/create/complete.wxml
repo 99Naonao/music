@@ -11,12 +11,12 @@
     <view class="complete-body">
       <view class="complete-inner">
       <view class="complete-header">
-        <text class="complete-title">你的专属音乐已生成</text>
+        <text class="complete-title">您的专属音乐已生成</text>
         <text class="complete-subtitle">希望它能陪你度过美好的夜晚</text>
       </view>
 
-      <view class="complete-cover-section" bindtap="chooseWorkCover">
-        <view class="complete-cover-box">
+      <view class="complete-cover-section">
+        <view class="complete-cover-box" bindtap="chooseWorkCover">
           <image
             class="complete-cover-img"
             src="{{coverImage || defaultCover}}"
@@ -26,7 +26,14 @@
             <text class="complete-cover-hint">{{coverImage ? '点击更换封面' : '点击选择作品封面'}}</text>
           </view>
         </view>
-        <text class="complete-cover-tip">选一张喜欢的图作为封面</text>
+        <text class="complete-cover-tip" bindtap="chooseWorkCover">选一张喜欢的图作为封面</text>
+        <button
+          wx:if="{{showCoverSnoozeLink}}"
+          class="complete-cover-snooze-btn"
+          plain
+          hover-class="complete-cover-snooze-btn--press"
+          catchtap="onOpenCoverSnoozeSettings"
+        >不想每次自动提醒选封面？</button>
       </view>
 
       <view class="complete-work" bindtap="editWorkTitle">
@@ -117,6 +124,41 @@
       </view>
     </view>
   </scroll-view>
+
+  <view
+    wx:if="{{coverSnoozeSheetVisible}}"
+    class="cover-snooze-mask"
+    catchtap="onCloseCoverSnoozeSheet"
+  >
+    <view class="cover-snooze-sheet" catchtap="onCoverSnoozeSheetNoop">
+      <text class="cover-snooze-sheet-title">关闭选封面自动提醒</text>
+      <text class="cover-snooze-sheet-desc">仅关闭生成后的弹窗提醒，您仍可随时点击上方封面区域上传图片。</text>
+      <view
+        class="cover-snooze-option"
+        hover-class="cover-snooze-option--press"
+        catchtap="onPickCoverSnoozeOption"
+        data-index="0"
+      >今天不再自动提醒</view>
+      <view
+        class="cover-snooze-option"
+        hover-class="cover-snooze-option--press"
+        catchtap="onPickCoverSnoozeOption"
+        data-index="1"
+      >7天内不再自动提醒</view>
+      <view
+        class="cover-snooze-option"
+        hover-class="cover-snooze-option--press"
+        catchtap="onPickCoverSnoozeOption"
+        data-index="2"
+      >自定义天数（1～30天）</view>
+      <view
+        class="cover-snooze-cancel"
+        hover-class="cover-snooze-option--press"
+        catchtap="onCloseCoverSnoozeSheet"
+      >取消</view>
+    </view>
+  </view>
+
   <promo-popup
     visible="{{promoVisible}}"
     payload="{{promoPayload}}"

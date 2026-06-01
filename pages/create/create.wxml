@@ -100,10 +100,14 @@
             data-id="{{item.id}}"
           >
             <view class="home-library-cover">
-              <image class="home-library-icon" src="{{item.img}}" mode="aspectFit"/>
+              <image
+                class="{{item.isCoverImage ? 'home-library-photo' : 'home-library-icon'}}"
+                src="{{item.img}}"
+                mode="{{item.isCoverImage ? 'aspectFill' : 'aspectFit'}}"
+              />
             </view>
             <text class="home-library-name">{{item.title}}</text>
-            <text class="home-library-meta">{{item.frequency}} · {{item.durationText}}</text>
+            <text class="home-library-meta">{{item.durationText}}</text>
           </view>
         </view>
       </scroll-view>
@@ -132,7 +136,12 @@
     style="bottom: {{miniPlayerBottom}}px;"
   >
     <view class="mini-player-main" bindtap="openMiniPlayer">
-      <image class="mini-player-cover" src="{{miniPlayer.cover}}" mode="aspectFill"/>
+      <image
+        class="mini-player-cover"
+        src="{{miniPlayer.cover}}"
+        mode="aspectFill"
+        key="{{miniPlayer.id}}-{{miniPlayer.cover}}"
+      />
       <view class="mini-player-info">
         <text class="mini-player-title">{{miniPlayer.title}}</text>
         <text class="mini-player-status">{{miniPlayerStatusText}}</text>

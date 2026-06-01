@@ -21,6 +21,14 @@ const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const { getDefaultTemplateItem, GRADIENT_OPTIONS } = require('../../utils/card-gradient')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
 const { showAlert } = require('../../utils/show-alert')
+const {
+  promptChooseWorkCoverIfNeeded,
+  handleCoverSnoozeOption,
+  isCoverPromptSnoozed
+} = require('../../utils/complete-cover-prompt')
+
+const COVER_PROMPT_SNOOZE_UNTIL_KEY = 'mb_complete_cover_prompt_snooze_until'
+const COVER_PROMPT_DISMISS_DATE_KEY = 'mb_complete_cover_prompt_dismiss_date'
 
 function buildGradientPreviews() {
   const base = getDefaultTemplateItem()
@@ -72,7 +80,13 @@ Page({
     hasCustomCover: false,
     scrollHeight: 500,
     cardPreviews: [],
-    cardPreviewsLoading: true
+    cardPreviewsLoading: true,
+    coverSnoozeSheetVisible: false,
+    showCoverSnoozeLink: true
+  },
+
+  syncCoverSnoozeLinkVisible() {
+    this.setData({ showCoverSnoozeLink: !isCoverPromptSnoozed() })
   },
 
   updatePageLayout() {
@@ -82,6 +96,7 @@ Page({
   onShow() {
     setTabBarSelected(this, 1)
     this.updatePageLayout()
+    this.syncCoverSnoozeLinkVisible()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
     // 生成完成进入时只走 after_generate 贺卡弹窗，避免与页内眠家横幅重复推好物
     if (!this._promoAfterGenerateOnly) {
@@ -91,11 +106,17 @@ Page({
 
   onLoad(options) {
     this.updatePageLayout()
+    this.syncCoverSnoozeLinkVisible()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
     this._promoAfterGenerateOnly = false
     const createConfig = wx.getStorageSync('createConfig') || {}
     const trackConfig = wx.getStorageSync('trackConfig') || {}
-    const musicId = options.musicId || options.id || null
+    const forceCoverPrompt =
+      options.testCoverPrompt === '1' || options.testCoverPrompt === 'true'
+    let musicId = options.musicId || options.id || null
+    if (forceCoverPrompt && !musicId) {
+      musicId = 'console-test-cover'
+    }
     const audioUrl = options.audioUrl ? decodeURIComponent(options.audioUrl) : null
     const durationMs =
       options.durationMs != null && !Number.isNaN(Number(options.durationMs))
@@ -105,8 +126,11 @@ Page({
     const workTitle = buildWorkTitle(createConfig)
     const workTags = resolveWorkTags(createConfig, trackConfig, { musicId })
     const existingCover = getWorkCoverDisplay(musicId, { coverImage: '' })
-    const hasCustomCover =
+    let hasCustomCover =
       existingCover && existingCover !== DEFAULT_WORK_COVER
+    if (forceCoverPrompt) {
+      hasCustomCover = false
+    }
 
     this._musicId = musicId
     this._audioUrl = audioUrl
@@ -134,22 +158,32 @@ Page({
       })
     }
 
-    if (musicId && !hasCustomCover) {
-      setTimeout(() => {
-        if (!this._musicId || this.data.hasCustomCover) return
-        wx.showModal({
-          title: '选择作品封面',
-          content: '为你的专属声波选一张封面图，稍后在「我的作品」里也能更换。',
-          confirmText: '去选封面',
-          cancelText: '稍后',
-          success: (res) => {
-            if (res.confirm) this.chooseWorkCover()
-          }
-        })
-      }, 500)
+    if (forceCoverPrompt) {
+      setTimeout(() => promptChooseWorkCoverIfNeeded(this), 400)
+    } else if (musicId && !hasCustomCover) {
+      setTimeout(() => promptChooseWorkCoverIfNeeded(this), 500)
     }
 
     this.loadCardPreviews()
+  },
+
+  /** 开发者工具 Console 测选封面弹窗：先清空频控再弹出 */
+  testCoverPrompt() {
+    try {
+      wx.removeStorageSync(COVER_PROMPT_SNOOZE_UNTIL_KEY)
+      wx.removeStorageSync(COVER_PROMPT_DISMISS_DATE_KEY)
+    } catch (e) {
+      /* ignore */
+    }
+    this.syncCoverSnoozeLinkVisible()
+    const mid = this._musicId || this.data.musicId || 'console-test-cover'
+    this._musicId = mid
+    this.setData({
+      musicId: mid,
+      hasCustomCover: false,
+      coverImage: ''
+    })
+    promptChooseWorkCoverIfNeeded(this)
   },
 
   async loadWorkMetaFromServer(musicId) {
@@ -205,6 +239,24 @@ Page({
     } finally {
       wx.hideLoading()
     }
+  },
+
+  onOpenCoverSnoozeSettings() {
+    this.setData({ coverSnoozeSheetVisible: true })
+  },
+
+  onCloseCoverSnoozeSheet() {
+    this.setData({ coverSnoozeSheetVisible: false })
+  },
+
+  onCoverSnoozeSheetNoop() {},
+
+  onPickCoverSnoozeOption(e) {
+    const idx = e.currentTarget.dataset.index
+    this.setData({ coverSnoozeSheetVisible: false })
+    wx.nextTick(() =>
+      handleCoverSnoozeOption(idx, () => this.syncCoverSnoozeLinkVisible())
+    )
   },
 
   async chooseWorkCover() {

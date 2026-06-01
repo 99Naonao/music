@@ -15,7 +15,8 @@ const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const {
   mapLibraryTrackItem,
   buildLibraryPlayerUrl,
-  libraryTrackToPlayWork
+  libraryTrackToPlayWork,
+  pickLibraryMiniCover
 } = require('../../utils/library-music')
 
 function clearTrackSession() {
@@ -213,6 +214,13 @@ Page({
     if (statusText !== this.data.miniPlayerStatusText) {
       patch.miniPlayerStatusText = statusText
     }
+    if (
+      (mp.isOfficial || mp.source === 'library') &&
+      audioState.musicId != null &&
+      String(audioState.musicId) === String(mp.id)
+    ) {
+      this.syncMiniPlayerCoverFromLibrary()
+    }
     if (Object.keys(patch).length) this.setData(patch)
   },
 
@@ -229,19 +237,21 @@ Page({
           ? Number(payload.durationSec) || 0
           : resolveWorkDurationSec(payload)
     const durationText = formatDurationSec(durationSec)
+    const officialCover = isOfficial
+      ? pickLibraryMiniCover(meta, payload)
+      : ''
     log('home', '迷你播放条', {
       musicId: meta.id,
       title: meta.title,
       playing,
-      source: meta.source || 'work'
+      source: meta.source || 'work',
+      cover: isOfficial ? officialCover : ''
     })
     this.setData({
       miniPlayer: {
         id: meta.id,
         title: meta.title || (isOfficial ? '疗愈音乐' : '我的作品'),
-        cover: isOfficial
-          ? meta.cover || payload.cover || '/static/create_step/healing.png'
-          : getWorkCoverDisplay(meta.id, payload),
+        cover: isOfficial ? officialCover : getWorkCoverDisplay(meta.id, payload),
         durationSec: durationSec || 0,
         durationText,
         work: payload,
@@ -256,16 +266,59 @@ Page({
     }
   },
 
+  /** 曲库列表刷新后，把当前官方曲目的封面同步到迷你条（无需用户再点一次） */
+  syncMiniPlayerCoverFromLibrary(libraryList) {
+    const mp = this.data.miniPlayer
+    if (!mp || !(mp.isOfficial || mp.source === 'library')) return
+
+    const list = libraryList || this.data.libraryPreview || []
+    const track = list.find((t) => t && String(t.id) === String(mp.id))
+    if (!track) return
+
+    const cover = pickLibraryMiniCover(track, track)
+    const coverUrl = track.coverUrl || cover
+    const work = {
+      ...(mp.work || {}),
+      ...track,
+      cover,
+      coverUrl,
+      source: 'library',
+      isOfficial: true,
+      libraryTrack: track
+    }
+
+    globalAudio.patchActiveMeta({
+      title: track.title || mp.title,
+      cover,
+      coverUrl,
+      payload: work
+    })
+
+    const patch = {}
+    if (cover && cover !== mp.cover) patch['miniPlayer.cover'] = cover
+    if (track.title && track.title !== mp.title) patch['miniPlayer.title'] = track.title
+    try {
+      if (JSON.stringify(mp.work || {}) !== JSON.stringify(work)) {
+        patch['miniPlayer.work'] = work
+      }
+    } catch (e) {
+      patch['miniPlayer.work'] = work
+    }
+    if (Object.keys(patch).length) this.setData(patch)
+  },
+
   loadMiniPlayer() {
     const gs = globalAudio.getState()
     const now = globalAudio.getNowPlaying()
     if (now && now.id && (now.audioUrl || (now.payload && now.payload.audioUrl))) {
       const mp = this.data.miniPlayer
       if (mp && String(mp.id) === String(now.id)) {
+        this.syncMiniPlayerCoverFromLibrary()
         this.syncMiniPlayState(gs)
         return
       }
       this.applyMiniPlayer(now, gs)
+      this.syncMiniPlayerCoverFromLibrary()
       return
     }
 
@@ -428,6 +481,7 @@ Page({
           .filter((t) => t && t.audioUrl)
           .slice(0, 8)
         this.setData({ libraryPreview, libraryLoading: false })
+        this.syncMiniPlayerCoverFromLibrary(libraryPreview)
         return
       }
     } catch (e) {
@@ -513,7 +567,11 @@ Page({
       ...mp.work,
       id: mp.id,
       title: mp.title,
-      audioUrl: mp.work.audioUrl
+      cover: mp.cover || mp.work.cover,
+      coverUrl: mp.work.coverUrl || mp.cover,
+      audioUrl: mp.work.audioUrl,
+      source: mp.source || mp.work.source,
+      isOfficial: mp.isOfficial
     }
     globalAudio.toggle(work)
   },
@@ -542,5 +600,21 @@ Page({
       url += `&durationMs=${encodeURIComponent(String(Math.round(Number(work.duration) * 1000)))}`
     }
     wx.navigateTo({ url })
+  },
+
+  /**
+   * 开发者工具：从首页 Console 测「选择作品封面」弹窗
+   * 用法：getCurrentPages().pop().testCoverPrompt()
+   */
+  testCoverPrompt() {
+    try {
+      wx.removeStorageSync('mb_complete_cover_prompt_snooze_until')
+      wx.removeStorageSync('mb_complete_cover_prompt_dismiss_date')
+    } catch (e) {
+      /* ignore */
+    }
+    wx.navigateTo({
+      url: '/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1'
+    })
   }
 })

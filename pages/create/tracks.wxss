@@ -281,6 +281,108 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.reference-block {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid rgba(30, 58, 95, 0.1);
+}
+
+.mb-theme-night .reference-block {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.track-row--reference-head {
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+.reference-enable-row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-width: 0;
+}
+
+.reference-hint {
+  flex: 1;
+  font-size: 20rpx;
+  line-height: 1.45;
+  color: var(--mb-text-tertiary, #888);
+}
+
+.reference-panel {
+  margin: 12rpx 0 0 100rpx;
+  padding: 16rpx 20rpx;
+  background: rgba(111, 143, 207, 0.1);
+  border-radius: 12rpx;
+  border-left: 3rpx solid #7fb3a3;
+}
+
+.mb-theme-night .reference-panel {
+  background: rgba(0, 0, 0, 0.15);
+  border-left-color: #2e8b57;
+}
+
+.reference-pick-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.reference-pick-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 12rpx;
+  background: rgba(46, 139, 87, 0.14);
+  font-size: 24rpx;
+  color: var(--mb-mist-blue, #5a7fb8);
+}
+
+.reference-pick-btn:active {
+  opacity: 0.85;
+}
+
+.mb-theme-night .reference-pick-btn {
+  background: rgba(46, 139, 87, 0.22);
+  color: #a8c4e8;
+}
+
+.reference-selected-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.reference-selected-tip {
+  margin-bottom: 12rpx;
+  padding: 14rpx 18rpx;
+  border-radius: 12rpx;
+  background: rgba(46, 139, 87, 0.12);
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: var(--mb-mist-blue, #5a7fb8);
+}
+
+.mb-theme-night .reference-selected-tip {
+  background: rgba(111, 143, 207, 0.15);
+  color: #a8c4e8;
+}
+
+.reference-source-tag {
+  display: block;
+  font-size: 20rpx;
+  opacity: 0.85;
+}
+
 /* 白噪音时间轴：白条固定宽时略可超出槽外，避免被裁掉无法点 */
 .track-timeline.track-timeline-effect {
   overflow: visible;

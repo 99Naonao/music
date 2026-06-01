@@ -4,12 +4,30 @@
   "libVersion": "trial",
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": ".git" },
-      { "type": "folder", "value": ".cursor" },
-      { "type": "folder", "value": ".vscode" },
-      { "type": "folder", "value": "node_modules" },
-      { "type": "file", "value": "指导.txt" },
-      { "type": "suffix", "value": ".md" }
+      {
+        "type": "folder",
+        "value": ".git"
+      },
+      {
+        "type": "folder",
+        "value": ".cursor"
+      },
+      {
+        "type": "folder",
+        "value": ".vscode"
+      },
+      {
+        "type": "folder",
+        "value": "node_modules"
+      },
+      {
+        "type": "file",
+        "value": "指导.txt"
+      },
+      {
+        "type": "suffix",
+        "value": ".md"
+      }
     ],
     "include": []
   },

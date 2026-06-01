@@ -24,7 +24,11 @@ Page({
     loading: false
   },
 
-  onLoad() {
+  onLoad(options) {
+    this._pickMode = options && options.pick === 'reference' ? 'reference' : ''
+    if (this._pickMode === 'reference') {
+      wx.setNavigationBarTitle({ title: '选择参考音乐' })
+    }
     this.loadLibrary()
   },
 
@@ -42,8 +46,9 @@ Page({
             if (!item) return null
             return {
               ...item,
+              description: item.description || '',
               duration: item.durationText,
-              plays: this.formatPlays((raw && raw.plays) || 0)
+              plays: this.formatPlays(item.plays != null ? item.plays : 0)
             }
           })
           .filter(Boolean)
@@ -72,17 +77,23 @@ Page({
       return
     }
 
-    const filtered = this.data.allMusicList.filter(m => {
+    const filtered = this.data.allMusicList.filter((m) => {
       const title = (m.title || '').toLowerCase()
+      const desc = (m.description || '').toLowerCase()
       const freq = (m.frequency || '').toLowerCase()
       const key = category.toLowerCase()
-      return title.includes(key) || freq.includes(key) || this.matchCategory(m, category)
+      return (
+        title.includes(key) ||
+        desc.includes(key) ||
+        freq.includes(key) ||
+        this.matchCategory(m, category)
+      )
     })
     this.setData({ musicList: filtered })
   },
 
   matchCategory(music, category) {
-    const title = (music.title || '').toLowerCase()
+    const title = `${music.title || ''} ${music.description || ''}`.toLowerCase()
     const freq = (music.frequency || '').toLowerCase()
     const map = {
       '睡眠': ['delta', '德尔塔', '深度', '睡眠', 'sleep'],
@@ -105,10 +116,10 @@ Page({
       this.setData({ musicList: this.data.allMusicList })
       return
     }
-    const filtered = this.data.allMusicList.filter(m =>
-      (m.title || '').toLowerCase().includes(keyword) ||
-      (m.frequency || '').toLowerCase().includes(keyword)
-    )
+    const filtered = this.data.allMusicList.filter((m) => {
+      const blob = `${m.title || ''} ${m.description || ''}`.toLowerCase()
+      return blob.includes(keyword)
+    })
     this.setData({ musicList: filtered.length ? filtered : this.data.allMusicList })
   },
 
@@ -116,6 +127,26 @@ Page({
     const id = e.currentTarget.dataset.id
     const music = this.data.musicList.find(m => m.id === id)
     if (!music || !music.audioUrl) return
+
+    if (this._pickMode === 'reference') {
+      const durationSec = Number(music.durationSec) || 0
+      if (durationSec > 0 && (durationSec < 6 || durationSec > 360)) {
+        showAlert(
+          '时长不符合要求',
+          '参考音乐须为 6 秒～6 分钟。请选择其它官方曲目，或在本地上传更短的片段。'
+        )
+        return
+      }
+      wx.setStorageSync('pendingLibraryReference', {
+        id: music.id,
+        title: music.title,
+        audioUrl: music.audioUrl,
+        durationSec: durationSec || 180
+      })
+      wx.navigateBack()
+      return
+    }
+
     log('library-play', '点击曲库条目', {
       musicId: id,
       title: music.title,

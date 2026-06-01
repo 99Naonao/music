@@ -9,6 +9,11 @@ const {
   getInstrumentName
 } = require('../../utils/work-meta')
 const { getWorkCoverDisplay, setWorkCover } = require('../../utils/work-cover')
+const {
+  mapLibraryTrackItem,
+  pickLibraryMiniCover,
+  resolveLibraryCoverUrl
+} = require('../../utils/library-music')
 const globalAudio = require('../../utils/global-audio')
 const { log, logWarn } = require('../../utils/log')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
@@ -103,6 +108,73 @@ Page({
     this.syncSleepTimerUI()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
     this.tryPromoShow(SCENES.PLAYER, { recordVisitAfter: false })
+    if (this._playSource === 'library' && this.data.musicId) {
+      this.fetchLibraryTrackMeta(this.data.musicId)
+    }
+  },
+
+  applyLibraryTrackToPlayer(track) {
+    if (!track || String(this.data.musicId) !== String(track.id)) return
+    const cover = pickLibraryMiniCover(track, track)
+    const tags = []
+    if (track.instrumentName) tags.push(track.instrumentName)
+    if (track.frequency) tags.push(track.frequency)
+    const patch = {
+      coverImage: cover,
+      workTitle: track.title || this.data.workTitle,
+      workTags: tags.length ? tags : this.data.workTags
+    }
+    if (track.durationSec > 0 && !this._durationFromMiniMax) {
+      patch.duration = track.durationSec
+    }
+    if (track.description) {
+      patch['musicInfo.description'] = track.description
+    }
+    this.setData(patch)
+    setWorkCover(track.id, cover)
+  },
+
+  async fetchLibraryTrackMeta(musicId) {
+    const mid = musicId != null ? String(musicId) : ''
+    if (!mid) return
+    try {
+      const res = await request({
+        url: '/api/music/library',
+        data: { limit: 50 },
+        silentFail: true
+      })
+      if (res.code !== 0 || !res.data || !Array.isArray(res.data.list)) return
+      const track = res.data.list
+        .map(mapLibraryTrackItem)
+        .find((t) => t && String(t.id) === mid)
+      if (track) {
+        this.applyLibraryTrackToPlayer(track)
+        return
+      }
+    } catch (e) {
+      console.warn('[player] fetchLibraryTrackMeta', e)
+    }
+    if (String(this.data.musicId) !== mid) return
+    const fromStatus = await this.fetchLibraryCoverFromStatus(mid)
+    if (!fromStatus && this.data.coverImage) return
+  },
+
+  async fetchLibraryCoverFromStatus(musicId) {
+    try {
+      const res = await request({
+        url: `/api/music/${musicId}/status`,
+        silentFail: true
+      })
+      if (res.code !== 0 || !res.data) return false
+      const rel = res.data.player_cover_url || ''
+      const cover = resolveLibraryCoverUrl(rel)
+      if (!cover || String(this.data.musicId) !== String(musicId)) return false
+      this.setData({ coverImage: cover })
+      setWorkCover(musicId, cover)
+      return true
+    } catch (e) {
+      return false
+    }
   },
 
   syncSleepTimerUI() {
@@ -211,14 +283,23 @@ Page({
       const freqRaw = options.frequency ? decodeURIComponent(options.frequency) : ''
       const bpm = options.bpm != null ? Number(options.bpm) : 60
       const durSec = durationFromUrl != null ? durationFromUrl : 180
+      const coverFromUrl = options.coverUrl
+        ? resolveLibraryCoverUrl(decodeURIComponent(options.coverUrl))
+        : ''
       const tags = []
       if (instrumentId) tags.push(getInstrumentName(instrumentId))
       if (freqRaw) tags.push(this.formatWorkFrequency(freqRaw))
+      const initialCover =
+        coverFromUrl ||
+        pickLibraryMiniCover(
+          { coverUrl: coverFromUrl, id: mid, title },
+          { coverUrl: coverFromUrl, title }
+        )
       this._autoPlayOnReady = true
       this.setData({
         workTitle: title,
         workTags: tags,
-        coverImage: mid ? getWorkCoverDisplay(mid, {}) : '',
+        coverImage: initialCover,
         'musicInfo.instrument': instrumentId
           ? getInstrumentName(instrumentId)
           : '助眠',
@@ -235,7 +316,8 @@ Page({
       this.syncFavoriteState()
       this.syncDownloadState()
       if (mid) {
-        this.fetchTrackMetaFromServer(mid)
+        if (coverFromUrl) setWorkCover(mid, coverFromUrl)
+        this.fetchLibraryTrackMeta(mid)
       }
       this.initSleepTimerBinding()
       return

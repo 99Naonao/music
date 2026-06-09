@@ -51,7 +51,24 @@
   }).then((ok) => console.log('[promo] 强制弹窗结果', ok))
 
   · 约 0.3 秒后出现弹窗；ok 为 true 表示成功。
-  · forceCampaignId 现已绕过 7 天频控（仍须在正确页面、scene 与活动匹配）。
+  · forceCampaignId 绕过规则校验与 7 天频控；且不会写入 mb_promo_last_show_at（不影响自然触发测试）。
+
+【诊断自然触发为何不弹（首页 Console）】
+
+  getCurrentPages().pop().tryPromoDiagnose('home_show').then(console.log)
+
+  看 wouldPick（会弹哪条）、frequencyOk、candidates 里 inactive_card 的 ruleOk/days。
+
+  测「久未贺卡」示例（8 天前做贺卡，但最近有访问）：
+
+  const ago8 = Date.now() - 8 * 24 * 60 * 60 * 1000
+  const ago1 = Date.now() - 1 * 24 * 60 * 60 * 1000
+  wx.setStorageSync('mb_last_card_make_at', ago8)
+  wx.setStorageSync('mb_last_visit_at', ago1)
+  wx.removeStorageSync('mb_promo_last_show_at')
+  wx.removeStorageSync('mb_promo_snooze_until')
+  wx.removeStorageSync('mb_promo_session_closed_ids')
+  // 杀进程重进首页，或切 Tab 再回首页
 
 【通用写法】
   const page = getCurrentPages().pop()

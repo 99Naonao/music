@@ -131,11 +131,8 @@ function matchRule(campaign, snap, scene) {
       if (!snap.lastPhoneLoginAt) return false
       return snap.daysSinceLogin != null && snap.daysSinceLogin >= minDays
     }
-    const days =
-      snap.daysSinceFirstVisit != null
-        ? snap.daysSinceFirstVisit
-        : snap.daysSinceVisit
-    return days != null && days >= minDays
+    // 未登录：按「距上次访问」判断，避免老用户因首次安装时间永久挡住贺卡/音乐等弹窗
+    return snap.daysSinceVisit != null && snap.daysSinceVisit >= minDays
   }
 
   if (rule === 'inactive_card') {
@@ -168,13 +165,44 @@ function matchRule(campaign, snap, scene) {
   return false
 }
 
+function resolveDaysForCampaign(campaign, snap) {
+  const rule = campaign.rule || 'always'
+  const fallbackDays =
+    snap.daysSinceFirstVisit != null
+      ? snap.daysSinceFirstVisit
+      : PROMO_INACTIVE_DAYS
+
+  if (rule === 'inactive_visit') {
+    return snap.daysSinceVisit != null ? snap.daysSinceVisit : fallbackDays
+  }
+
+  if (rule === 'inactive_login') {
+    if (snap.loggedIn && snap.daysSinceLogin != null) {
+      return snap.daysSinceLogin
+    }
+    if (snap.daysSinceVisit != null) return snap.daysSinceVisit
+    if (snap.daysSinceFirstVisit != null) return snap.daysSinceFirstVisit
+    return fallbackDays
+  }
+
+  if (rule === 'inactive_card') {
+    return snap.daysSinceCard != null ? snap.daysSinceCard : fallbackDays
+  }
+
+  if (rule === 'inactive_music') {
+    return snap.daysSinceMusic != null ? snap.daysSinceMusic : fallbackDays
+  }
+
+  if (rule === 'inactive_community') {
+    return snap.daysSincePost != null ? snap.daysSincePost : fallbackDays
+  }
+
+  if (snap.daysSinceVisit != null) return snap.daysSinceVisit
+  return fallbackDays
+}
+
 function buildPayload(campaign, snap) {
-  const days =
-    snap.daysSinceVisit != null
-      ? snap.daysSinceVisit
-      : snap.daysSinceFirstVisit != null
-        ? snap.daysSinceFirstVisit
-        : PROMO_INACTIVE_DAYS
+  const days = resolveDaysForCampaign(campaign, snap)
   const vars = { days: String(days) }
   return {
     id: campaign.id,
@@ -226,6 +254,50 @@ function pickCampaign(list, snap, scene, options = {}) {
     return { ...c, _matchedScene: scene }
   }
   return null
+}
+
+function summarizePromoAttempt(scene, snap, list) {
+  const sessionClosed = loadSessionClosed()
+  const candidates = (Array.isArray(list) ? list : [])
+    .filter((c) => c.enabled !== false && !sessionClosed.includes(c.id))
+    .map((c) => ({
+      id: c.id,
+      priority: c.priority,
+      rule: c.rule,
+      sceneOk: (c.scenes || []).includes(scene),
+      ruleOk: matchRule(c, snap, scene),
+      days: resolveDaysForCampaign(c, snap)
+    }))
+  return {
+    scene,
+    frequencyOk: canShowByFrequency(),
+    snoozeUntil: readSnoozeUntil(),
+    lastShowAt: readLastShowAt(),
+    sessionClosed,
+    route: getCurrentRoute(),
+    daysSinceVisit: snap.daysSinceVisit,
+    daysSinceCard: snap.daysSinceCard,
+    daysSinceMusic: snap.daysSinceMusic,
+    loggedIn: snap.loggedIn,
+    candidates
+  }
+}
+
+/** Console 诊断：getCurrentPages().pop().tryPromoDiagnose('home_show') */
+async function diagnose(scene) {
+  const snap = getActivitySnapshot()
+  let list = []
+  try {
+    list = await fetchCampaignList(scene)
+  } catch (e) {
+    list = []
+  }
+  const summary = summarizePromoAttempt(scene, snap, list)
+  const picked = pickCampaign(list, snap, scene, { excludeIds: [] })
+  return {
+    ...summary,
+    wouldPick: picked ? picked.id : null
+  }
 }
 
 function markShown(promoId) {
@@ -322,11 +394,20 @@ async function tryShow(opts) {
     }
     picked = pickCampaign(list, snap, scene, { excludeIds })
   }
-  if (!picked) return false
+  if (!picked) {
+    if (!isForce) {
+      logWarn('promo', '自然触发：无匹配活动', summarizePromoAttempt(scene, snap, list))
+    }
+    return false
+  }
 
   const payload = buildPayload(picked, snap)
-  markShown(payload.id)
-  log('promo', 'show', { id: payload.id, scene })
+  if (!isForce) {
+    markShown(payload.id)
+  } else {
+    log('promo', 'force show（不写入 7 天频控）', { id: payload.id, scene })
+  }
+  log('promo', 'show', { id: payload.id, scene, force: isForce })
   onShow(payload)
   return true
 }
@@ -390,6 +471,7 @@ function shouldDeferVisitRecord() {
 
 module.exports = {
   tryShow,
+  diagnose,
   handleClose,
   handleClick,
   navigate,

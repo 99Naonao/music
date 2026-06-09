@@ -6,20 +6,20 @@
     <view class="contact-item">
       <text class="contact-label">客服电话</text>
       <view class="contact-row">
-        <text class="contact-value">400-808-5180</text>
+        <text class="contact-value">{{servicePhoneDisplay}}</text>
         <text class="contact-action" bindtap="callPhone">拨打</text>
       </view>
     </view>
     <view class="contact-item">
       <text class="contact-label">客服邮箱</text>
       <view class="contact-row">
-        <text class="contact-value">support@music.com</text>
+        <text class="contact-value">{{serviceEmail}}</text>
         <text class="contact-action" bindtap="copyEmail">复制</text>
       </view>
     </view>
     <view class="contact-item">
       <text class="contact-label">服务时间</text>
-      <text class="contact-value">周一至周日 9:00-21:00</text>
+      <text class="contact-value">工作日 9:00-18:00</text>
     </view>
   </view>
 

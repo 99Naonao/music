@@ -153,13 +153,13 @@
         <text class="mine-menu-name">积分商城</text>
         <text class="mine-menu-arrow">›</text>
       </view>
-      <view class="mine-menu-item" bindtap="goToHelp">
+      <!-- <view class="mine-menu-item" bindtap="goToHelp">
         <view class="mine-menu-icon-wrap">
           <image class="mine-menu-icon" src="/static/self_icon/icon_help.png" mode="aspectFit"/>
         </view>
         <text class="mine-menu-name">帮助中心</text>
         <text class="mine-menu-arrow">›</text>
-      </view>
+      </view> -->
       <view class="mine-menu-item mine-menu-item--last" bindtap="goToSettings">
         <view class="mine-menu-icon-wrap">
           <image class="mine-menu-icon" src="/static/new_logo/setting.png" mode="aspectFit"/>

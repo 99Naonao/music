@@ -77,6 +77,11 @@ module.exports = Behavior({
         mode: 'snooze'
       })
       this.setData({ promoVisible: false, promoPayload: null })
+    },
+
+    /** 诊断自然触发为何不弹：tryPromoDiagnose('home_show').then(console.log) */
+    tryPromoDiagnose(scene) {
+      return promoScheduler.diagnose(scene || 'home_show')
     }
   }
 })

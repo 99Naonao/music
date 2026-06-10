@@ -54,22 +54,59 @@ function syncTabBarPageLayout(page, opts = {}) {
   return patch
 }
 
+const TAB_PATH_BY_LEGACY_INDEX = [
+  '/pages/create/create',
+  '/pages/create/config',
+  '/pages/communites/communites',
+  '/pages/mine/mine'
+]
+
+function resolveTabSelectedIndex(bar, indexOrPath) {
+  if (!bar || !bar.data || !Array.isArray(bar.data.list)) {
+    return typeof indexOrPath === 'number' ? indexOrPath : 0
+  }
+  let path = ''
+  if (typeof indexOrPath === 'number') {
+    path = TAB_PATH_BY_LEGACY_INDEX[indexOrPath] || ''
+  } else {
+    path = String(indexOrPath || '')
+  }
+  if (!path) return 0
+  const idx = bar.data.list.findIndex((item) => item.pagePath === path)
+  return idx >= 0 ? idx : 0
+}
+
 function setTabBarSelected(page, index) {
   if (!page) return
-  const theme = require('./theme')
+  const themeMod = require('./theme')
+  const channel = require('./channel')
+  const meta = themeMod.getThemeMeta()
+  const iconFilter = channel.isChannelActive()
+    ? 'hue-rotate(22deg) saturate(0.82) brightness(0.96)'
+    : 'none'
   if (typeof page.getTabBar === 'function') {
     const bar = page.getTabBar()
     if (bar) {
       bar.setData({
-        selected: index,
-        theme: theme.getTheme()
+        selected: resolveTabSelectedIndex(bar, index),
+        theme: themeMod.getEffectiveThemeId(),
+        tabBg: meta.tabBg,
+        tabColor: meta.tabColor,
+        tabSelected: meta.tabSelected,
+        iconFilter
       })
       return
     }
   }
   const comp = page.selectComponent('#custom-tab-bar')
   if (comp) {
-    comp.setData({ selected: index })
+    comp.setData({
+      selected: resolveTabSelectedIndex(comp, index),
+      tabBg: meta.tabBg,
+      tabColor: meta.tabColor,
+      tabSelected: meta.tabSelected,
+      iconFilter
+    })
   }
 }
 

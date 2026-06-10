@@ -62,7 +62,7 @@
         <text class="mine-stat-num">{{user.fansCount || 0}}</text>
         <text class="mine-stat-label">粉丝</text>
       </view>
-      <view class="mine-stat-item" bindtap="goToPoints">
+      <view class="mine-stat-item" bindtap="goToPoints" wx:if="{{showPointsStat}}">
         <text class="mine-stat-num mine-stat-num--points">{{user.points || 0}}</text>
         <text class="mine-stat-label">积分</text>
       </view>
@@ -139,14 +139,14 @@
     </view>
 
     <view class="mine-menu-card">
-      <view class="mine-menu-item" bindtap="goToTasks">
+      <view class="mine-menu-item" bindtap="goToTasks" wx:if="{{showTasksMenu}}">
         <view class="mine-menu-icon-wrap">
           <image class="mine-menu-icon" src="/static/self_icon/icon_tasks.png" mode="aspectFit"/>
         </view>
         <text class="mine-menu-name">每日任务</text>
         <text class="mine-menu-arrow">›</text>
       </view>
-      <view class="mine-menu-item" bindtap="goToMall">
+      <view class="mine-menu-item" bindtap="goToMall" wx:if="{{showPointsMenu}}">
         <view class="mine-menu-icon-wrap">
           <image class="mine-menu-icon" src="/static/self_icon/icon_score_shop.png" mode="aspectFit"/>
         </view>

@@ -39,7 +39,15 @@ const {
 } = require('../../utils/card-share-remote')
 const { fetchSharedCardPayload } = require('../../utils/shared-card-fetch')
 const { log, logWarn } = require('../../utils/log')
+const channel = require('../../utils/channel')
+const channelShare = require('../../utils/channel-share')
 const promoPageBehavior = require('../../behaviors/promo-page')
+
+function defaultCardBlessing() {
+  return (
+    channel.getCopy('cardDefaultMessage', '') || '愿这份音乐带给你宁静与好眠'
+  )
+}
 
 function briefShareId(id) {
   const s = id != null ? String(id).trim() : ''
@@ -66,7 +74,7 @@ Page({
     cardCustomCover: '',
     cardData: {
       recipient: '亲爱的朋友',
-      message: '愿这份音乐带给你宁静与好眠',
+      message: defaultCardBlessing(),
       template: 1,
       artistBgImage: ''
     },
@@ -171,6 +179,7 @@ Page({
   },
 
   onLoad(options) {
+    channel.applyFromPageOptions(options || {})
     let incomingShareId = resolveShareIdFromOptions(options)
     if (!incomingShareId) {
       incomingShareId = resolveShareIdFromEntry()
@@ -210,7 +219,7 @@ Page({
     if (cardData) {
       const recipient = cardData.recipient || '亲爱的朋友'
       const rawMsg = truncateCardMessage(
-        cardData.message || '愿这份音乐带给你宁静与好眠'
+        cardData.message || defaultCardBlessing()
       )
       patch.cardData = {
         recipient,
@@ -253,6 +262,12 @@ Page({
       if (patch.audioUrl) {
         this.initAudioPlayer(patch.audioUrl)
       }
+      channel.ensureInit({ query: options || {} }).then(() => {
+        this._cachedShareCardImage = null
+        if (this.isLoggedInForShare() && !this.data.isSharedView) {
+          this.cacheShareCardImage()
+        }
+      })
       if (!patch.canShare) {
         logWarn('share-page', '未登录，将提示登录')
         this.promptLoginForShare()
@@ -340,7 +355,7 @@ Page({
     const stored = wx.getStorageSync('cardData') || {}
     const cardData = {
       recipient: '亲爱的朋友',
-      message: '愿这份音乐带给你宁静与好眠',
+      message: defaultCardBlessing(),
       template: 1,
       artistBgImage: '',
       templateId: '',
@@ -363,6 +378,8 @@ Page({
   },
 
   pickShareCardImageUrl() {
+    const channelCover = channelShare.getChannelShareCoverUrl()
+    if (channelCover) return channelCover
     const { cardData, coverImage } = this.getSharePayloadFromPage()
     const artistBg = (cardData && cardData.artistBgImage) || ''
     if (/^https:\/\//i.test(artistBg)) return artistBg
@@ -376,7 +393,9 @@ Page({
   buildSharePagePath(shareId) {
     const sid = shareId != null ? String(shareId).trim() : ''
     if (!sid || !isShareUuid(sid)) return ''
-    return `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
+    return channel.appendChannelToPath(
+      `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
+    )
   },
 
   /** 预生成分享卡片封面（须同步返回 onShareAppMessage，不能靠 Promise 拖慢 path） */
@@ -396,11 +415,15 @@ Page({
     const { cardData } = this.getSharePayloadFromPage()
     const recipient = (cardData.recipient || '朋友').trim() || '朋友'
     const workTitle = this.data.shareWorkTitle || '专属助眠曲'
-    const title = `${recipient}，送你一份「${workTitle}」`
+    const title = channelShare.buildShareTitle(recipient, workTitle)
     const sid = this.data.shareId || readCreatorShareId()
     const path = this.buildSharePagePath(sid)
-    const imageUrl = this._cachedShareCardImage || this.pickShareCardImageUrl()
-    const finalPath = path || '/pages/create/share'
+    const imageUrl = channelShare.pickShareImageUrl(
+      this._cachedShareCardImage,
+      null,
+      this.pickShareCardImageUrl()
+    )
+    const finalPath = path || channel.appendChannelToPath('/pages/create/share')
     if (!path) {
       logWarn('share-page', '转发 path 无 shareId，将退回 share 页', {
         dataShareId: briefShareId(this.data.shareId),
@@ -557,9 +580,9 @@ Page({
         }
       })
       return {
-        title: '眠音盒 · 助眠贺卡',
-        path: '/pages/create/share',
-        imageUrl: SHARE_CARD_FALLBACK_IMAGE
+        title: channelShare.buildFallbackShareTitle(),
+        path: channel.appendChannelToPath('/pages/create/share'),
+        imageUrl: channelShare.pickShareImageUrl(null, null, SHARE_CARD_FALLBACK_IMAGE)
       }
     }
 
@@ -677,7 +700,7 @@ Page({
     const { cardData } = this.getSharePayloadFromPage()
     const recipient = (cardData.recipient || '朋友').trim() || '朋友'
     const workTitle = this.data.shareWorkTitle || '专属助眠曲'
-    const title = `${recipient}，送你一份「${workTitle}」`
+    const title = channelShare.buildShareTitle(recipient, workTitle)
     const fallbackImage = this.pickShareCardImageUrl()
 
     return (async () => {
@@ -1147,7 +1170,7 @@ Page({
           (cardData.recipient && String(cardData.recipient).trim()) || '亲爱的朋友'
         const message = stripLeadingRecipientSalutation(
           truncateCardMessage(
-            cardData.message || '愿这份音乐带给你宁静与好眠'
+            cardData.message || defaultCardBlessing()
           ),
           recipient
         )
@@ -1390,7 +1413,7 @@ Page({
 
       const message = stripLeadingRecipientSalutation(
         truncateCardMessage(
-          cardData.message || '愿这份音乐带给你宁静与好眠'
+          cardData.message || defaultCardBlessing()
         ),
         cardData.recipient || '亲爱的朋友'
       )
@@ -1482,13 +1505,14 @@ Page({
       y += msgToSigGap
       ctx.fillStyle = 'rgba(255,255,255,0.85)'
       ctx.font = '28px sans-serif'
-      ctx.fillText('—— 眠音盒', cx, y)
+      const wm = channelShare.getCardWatermarkLines()
+      ctx.fillText(wm.watermark, cx, y)
 
       ctx.fillStyle = 'rgba(255,255,255,0.55)'
       ctx.font = '24px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('眠音盒 · AI 助眠音乐', cx, footerLine1Y)
-      ctx.fillText('让每一晚都有好梦相伴', cx, footerLine2Y)
+      ctx.fillText(wm.footerLine1, cx, footerLine1Y)
+      ctx.fillText(wm.footerLine2, cx, footerLine2Y)
 
       this._finishCanvasExport(ctx, resolve, reject, {
         forShare,

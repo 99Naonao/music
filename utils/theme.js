@@ -1,4 +1,4 @@
-/** 眠音盒 · 界面主题（皮肤） */
+/** 眠音盒 · 界面主题（皮肤）+ 渠道色覆盖（渠道默认色 > dawn/night > 全局 default） */
 const STORAGE_KEY = 'mbAppTheme'
 const DEFAULT_THEME = 'dawn'
 
@@ -50,6 +50,10 @@ const PAGE_VAR_STYLE = {
     '--mb-gradient-cta:linear-gradient(135deg,#7fb3a3 0%,#6f8fcf 100%)',
     '--mb-btn-primary:linear-gradient(135deg,#7fb3a3 0%,#6f8fcf 100%)',
     '--mb-btn-shadow:rgba(111,143,207,0.35)',
+    '--mb-accent:#7fb3a3',
+    '--mb-accent-soft:rgba(127,179,163,0.15)',
+    '--mb-accent-medium:rgba(111,143,207,0.28)',
+    'background-color:#202b48',
     'background:var(--mb-gradient-page)',
     'color:var(--mb-text-primary)'
   ].join(';'),
@@ -72,16 +76,169 @@ const PAGE_VAR_STYLE = {
     '--mb-gradient-cta:#568fd1',
     '--mb-btn-primary:#568fd1',
     '--mb-btn-shadow:rgba(86,143,209,0.35)',
+    '--mb-accent:#568fd1',
+    '--mb-accent-soft:rgba(86,143,209,0.12)',
+    '--mb-accent-medium:rgba(86,143,209,0.22)',
+    'background-color:#e8f2fc',
     'background:var(--mb-gradient-page)',
     'color:var(--mb-text-primary)'
   ].join(';')
+}
+
+function hexToRgb(hex) {
+  const h = String(hex || '').replace('#', '')
+  if (h.length !== 6) return { r: 117, g: 104, b: 168 }
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16)
+  }
+}
+
+/** 微信导航栏 frontColor 仅支持 #000000 / #ffffff */
+function resolveWxNavFrontColor(bgHex) {
+  const rgb = hexToRgb(bgHex || '#ffffff')
+  const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+  return lum > 0.62 ? '#000000' : '#ffffff'
+}
+
+function isDarkChannelTheme(t) {
+  if (t && t.variant === 'night') return true
+  const rgb = hexToRgb((t && t.windowBg) || '#F4F0FA')
+  const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+  return lum < 0.42
+}
+
+function buildChannelPageVarStyle(t) {
+  const primary = t.primaryColor || '#7568A8'
+  const windowBg = t.windowBg || '#F4F0FA'
+  const navBg = t.navBg || '#EBE6F4'
+  const rgb = hexToRgb(primary)
+  const cardBorder = `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+  const accentSoft = `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`
+  const accentMedium = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`
+  const btnShadow = `rgba(${rgb.r},${rgb.g},${rgb.b},0.28)`
+
+  if (isDarkChannelTheme(t)) {
+    const textPrimary = t.navFront || '#EAEEF8'
+    const darkAccentSoft = `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+    const darkAccentMedium = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`
+    const gradientPage = `linear-gradient(180deg,${windowBg} 0%,${navBg} 48%,${windowBg} 100%)`
+    return [
+      `--mb-gradient-page:${gradientPage}`,
+      `--mb-bg-page:${windowBg}`,
+      `--mb-bg-page-alt:${navBg}`,
+      `--mb-bg-elevated:rgba(30,36,56,0.72)`,
+      `--mb-text-primary:${textPrimary}`,
+      `--mb-text-secondary:rgba(245,245,240,0.78)`,
+      `--mb-text-muted:rgba(245,245,240,0.52)`,
+      `--mb-border-subtle:rgba(255,255,255,0.12)`,
+      `--mb-border-strong:rgba(255,255,255,0.22)`,
+      `--mb-card-bg:rgba(255,255,255,0.07)`,
+      `--mb-card-border:rgba(255,255,255,0.1)`,
+      `--mb-accent-soft:${darkAccentSoft}`,
+      `--mb-accent-medium:${darkAccentMedium}`,
+      `--mb-night-fade-80:rgba(30,36,56,0.82)`,
+      `--mb-night-fade-95:rgba(24,28,44,0.96)`,
+      `--mb-gradient-cta-to-night:linear-gradient(180deg,${navBg} 0%,${windowBg} 100%)`,
+      `--mb-gradient-cta-to-night-h:linear-gradient(90deg,${primary} 0%,${navBg} 100%)`,
+      `--mb-gradient-cta:${primary}`,
+      `--mb-btn-primary:${primary}`,
+      `--mb-btn-shadow:${btnShadow}`,
+      `--mb-accent:${primary}`,
+      `background-color:${windowBg}`,
+      'background:var(--mb-gradient-page)',
+      'color:var(--mb-text-primary)'
+    ].join(';')
+  }
+
+  const textPrimary = t.navFront || '#352D4A'
+  const gradientPage = `linear-gradient(165deg,${windowBg} 0%,${navBg} 52%,#ffffff 100%)`
+
+  return [
+    `--mb-gradient-page:${gradientPage}`,
+    `--mb-bg-page:${windowBg}`,
+    `--mb-bg-page-alt:${navBg}`,
+    `--mb-bg-elevated:rgba(255,255,255,0.94)`,
+    `--mb-text-primary:${textPrimary}`,
+    `--mb-text-secondary:rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`,
+    `--mb-text-muted:rgba(${rgb.r},${rgb.g},${rgb.b},0.52)`,
+    `--mb-border-subtle:rgba(${rgb.r},${rgb.g},${rgb.b},0.1)`,
+    `--mb-border-strong:rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`,
+    `--mb-card-bg:rgba(255,255,255,0.88)`,
+    `--mb-card-border:${cardBorder}`,
+    `--mb-accent-soft:${accentSoft}`,
+    `--mb-accent-medium:${accentMedium}`,
+    `--mb-night-fade-80:rgba(255,255,255,0.86)`,
+    `--mb-night-fade-95:rgba(252,250,254,0.98)`,
+    `--mb-gradient-cta-to-night:linear-gradient(180deg,${navBg} 0%,${windowBg} 100%)`,
+    `--mb-gradient-cta-to-night-h:linear-gradient(90deg,${primary} 0%,${navBg} 100%)`,
+    `--mb-gradient-cta:${primary}`,
+    `--mb-btn-primary:${primary}`,
+    `--mb-btn-shadow:${btnShadow}`,
+    `--mb-accent:${primary}`,
+    `--mb-accent-soft:${accentSoft}`,
+    `--mb-accent-medium:${accentMedium}`,
+    `background-color:${windowBg}`,
+    'background:var(--mb-gradient-page)',
+    'color:var(--mb-text-primary)'
+  ].join(';')
+}
+
+function getAccentColors(id) {
+  const overrides = getChannelThemeOverrides()
+  if (overrides && overrides.primaryColor) {
+    const rgb = hexToRgb(overrides.primaryColor)
+    return {
+      accent: overrides.primaryColor,
+      accentSoft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`
+    }
+  }
+  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
+  if (key === 'night') {
+    return { accent: '#7fb3a3', accentSoft: 'rgba(127,179,163,0.22)' }
+  }
+  return { accent: '#568fd1', accentSoft: 'rgba(86,143,209,0.22)' }
+}
+
+function getChannelModule() {
+  try {
+    return require('./channel')
+  } catch (e) {
+    return null
+  }
+}
+
+function getAppearancePresetTheme() {
+  const presets = require('./channel-theme-presets')
+  const ch = getChannelModule()
+  const forChannel =
+    !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
+  const id = presets.getUserChannelPresetId(forChannel)
+  if (!id) return null
+  return presets.presetToThemeObject(id)
+}
+
+function getChannelThemeOverrides() {
+  const fromUser = getAppearancePresetTheme()
+  if (fromUser) return fromUser
+  const ch = getChannelModule()
+  if (ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext()) {
+    if (typeof ch.getResolvedChannelTheme === 'function') {
+      return ch.getResolvedChannelTheme()
+    }
+    const b = ch.getBranding && ch.getBranding()
+    if (b && b.theme) return b.theme
+  }
+  return null
 }
 
 function normalizeThemeId(id) {
   return id === 'dawn' ? 'dawn' : 'night'
 }
 
-function getTheme() {
+/** 用户自选 dawn/night（Storage） */
+function getUserTheme() {
   try {
     const raw = wx.getStorageSync(STORAGE_KEY)
     if (raw === '' || raw == null) return DEFAULT_THEME
@@ -91,13 +248,47 @@ function getTheme() {
   }
 }
 
+/**
+ * 有效主题 ID：渠道 theme.variant > 用户 dawn/night > 全局 default
+ */
+function getEffectiveThemeId() {
+  const overrides = getChannelThemeOverrides()
+  if (overrides && overrides.variant) {
+    return normalizeThemeId(overrides.variant)
+  }
+  return getUserTheme()
+}
+
+function getTheme() {
+  return getEffectiveThemeId()
+}
+
+function mergeChannelIntoMeta(baseMeta) {
+  const overrides = getChannelThemeOverrides()
+  if (!overrides) return { ...baseMeta }
+  const next = { ...baseMeta }
+  if (overrides.navBg) next.navBg = overrides.navBg
+  if (overrides.navFront) next.navFront = overrides.navFront
+  if (overrides.windowBg) next.windowBg = overrides.windowBg
+  if (overrides.tabColor) next.tabColor = overrides.tabColor
+  if (overrides.tabSelected) next.tabSelected = overrides.tabSelected
+  if (overrides.tabBg) next.tabBg = overrides.tabBg
+  if (overrides.primaryColor) next.primaryColor = overrides.primaryColor
+  return next
+}
+
 function getThemeMeta(id) {
-  const key = id === '' || id == null ? DEFAULT_THEME : normalizeThemeId(id)
-  return THEMES[key] || THEMES[DEFAULT_THEME]
+  const key = id === '' || id == null ? getEffectiveThemeId() : normalizeThemeId(id)
+  const base = THEMES[key] || THEMES[DEFAULT_THEME]
+  return mergeChannelIntoMeta(base)
 }
 
 function getPageMetaStyle(id) {
-  const key = id === '' || id == null ? DEFAULT_THEME : normalizeThemeId(id)
+  const overrides = getChannelThemeOverrides()
+  if (overrides) {
+    return buildChannelPageVarStyle(overrides)
+  }
+  const key = id === '' || id == null ? getEffectiveThemeId() : normalizeThemeId(id)
   return PAGE_VAR_STYLE[key] || PAGE_VAR_STYLE[DEFAULT_THEME]
 }
 
@@ -110,18 +301,53 @@ const SPLASH_PAGE_STYLE = {
 }
 
 function getSplashPageMetaStyle(id) {
-  const key = normalizeThemeId(id)
-  return SPLASH_PAGE_STYLE[key] || SPLASH_PAGE_STYLE.dawn
+  const ch = getChannelModule()
+  if (ch && ch.isChannelActive()) {
+    const splash = ch.getSplashDisplay()
+    if (splash.useRemoteImage) {
+      return 'background:#0f0b14;color:#fffdf5'
+    }
+    const overrides = getChannelThemeOverrides()
+    if (overrides && (overrides.windowBg || overrides.navBg)) {
+      const bg = overrides.windowBg || '#F0ECF5'
+      const bg2 = overrides.navBg || bg
+      const fg = overrides.navFront || '#2D2438'
+      return `background:linear-gradient(165deg,${bg} 0%,${bg2} 55%,#ffffff 100%);color:${fg}`
+    }
+  }
+  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
+  let style = SPLASH_PAGE_STYLE[key] || SPLASH_PAGE_STYLE.dawn
+  const overrides = getChannelThemeOverrides()
+  if (overrides && overrides.windowBg) {
+    const fg = overrides.navFront || (key === 'night' ? '#fffdf5' : '#1e3a5f')
+    style = `background:${overrides.windowBg};color:${fg}`
+  }
+  return style
+}
+
+function normalizeHexColor(hex, fallback) {
+  const s = hex != null ? String(hex).trim() : ''
+  if (/^#[0-9A-Fa-f]{6}$/.test(s)) return s
+  if (/^#[0-9A-Fa-f]{3}$/.test(s)) {
+    return (
+      '#' +
+      s
+        .slice(1)
+        .split('')
+        .map((c) => c + c)
+        .join('')
+    )
+  }
+  return fallback || '#e8f2fc'
 }
 
 function getThemeOptions() {
   return [THEMES.night, THEMES.dawn]
 }
 
-/** 页面窗口底色（json 里多为晨雾色，眠夜时需运行时覆盖，避免切页闪浅色） */
 function applyPageBackground(id) {
-  const meta = getThemeMeta(id)
-  const bg = meta.windowBg || '#e8f2fc'
+  const meta = getThemeMeta(id == null ? getEffectiveThemeId() : id)
+  const bg = normalizeHexColor(meta.windowBg || meta.navBg, '#e8f2fc')
   try {
     wx.setBackgroundColor({
       backgroundColor: bg,
@@ -131,14 +357,40 @@ function applyPageBackground(id) {
   } catch (e) {
     /* 低版本基础库可忽略 */
   }
+  /* Android WebView 页面容器默认白底；backgroundColorBottom 仅 iOS 有效 */
+  try {
+    if (typeof wx.setPageStyle === 'function') {
+      wx.setPageStyle({
+        style: {
+          background: bg,
+          backgroundColor: bg
+        }
+      })
+    }
+  } catch (e) {
+    /* 非公开 API，部分基础库不可用 */
+  }
+}
+
+function schedulePageBackgroundRefresh(id) {
+  applyPageBackground(id)
+  try {
+    if (typeof wx.nextTick === 'function') {
+      wx.nextTick(() => applyPageBackground(id))
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  setTimeout(() => applyPageBackground(id), 100)
 }
 
 function applyChromeTheme(id, options = {}) {
-  const meta = getThemeMeta(id)
-  applyPageBackground(id)
+  const effectiveId = id == null ? getEffectiveThemeId() : normalizeThemeId(id)
+  const meta = getThemeMeta(effectiveId)
+  schedulePageBackgroundRefresh(effectiveId)
   const animate = options.animate === true
   wx.setNavigationBarColor({
-    frontColor: meta.navFront,
+    frontColor: resolveWxNavFrontColor(meta.navBg),
     backgroundColor: meta.navBg,
     animation: animate ? { duration: 200, timingFunc: 'easeIn' } : { duration: 0 }
   })
@@ -152,19 +404,38 @@ function applyChromeTheme(id, options = {}) {
   } catch (e) {
     /* 非 Tab 页或 custom tabBar 时可能无效 */
   }
-  syncCustomTabBarTheme(id)
+  syncCustomTabBarTheme(effectiveId)
 }
 
-/** custom-tab-bar 需单独 setData，wx.setTabBarStyle 对其无效 */
 function syncCustomTabBarTheme(id) {
-  const key = normalizeThemeId(id == null ? getTheme() : id)
+  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
+  const meta = getThemeMeta(key)
+  const ch = getChannelModule()
+  const forChannel =
+    !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
+  const presets = require('./channel-theme-presets')
+  const hasAppearanceOverride =
+    (ch && ch.isChannelActive && ch.isChannelActive()) ||
+    !!presets.getUserChannelPresetId(forChannel)
+  const iconFilter =
+    (ch && ch.isChannelActive()) || hasAppearanceOverride
+      ? 'hue-rotate(22deg) saturate(0.82) brightness(0.96)'
+      : 'none'
   const pages = getCurrentPages()
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i]
     if (typeof page.getTabBar !== 'function') continue
     const bar = page.getTabBar()
-    if (bar && typeof bar.setData === 'function') {
-      bar.setData({ theme: key })
+    if (bar && typeof bar.syncTabBarTheme === 'function') {
+      bar.syncTabBarTheme()
+    } else if (bar && typeof bar.setData === 'function') {
+      bar.setData({
+        theme: key,
+        tabBg: meta.tabBg,
+        tabColor: meta.tabColor,
+        tabSelected: meta.tabSelected,
+        iconFilter
+      })
     }
   }
 }
@@ -174,24 +445,67 @@ function setTheme(id) {
   wx.setStorageSync(STORAGE_KEY, key)
   const app = getApp()
   if (app && app.globalData) {
-    app.globalData.mbTheme = key
+    app.globalData.mbTheme = getEffectiveThemeId()
   }
-  applyChromeTheme(key, { animate: true })
-  refreshOpenPages(key)
+  applyChromeTheme(getEffectiveThemeId(), { animate: true })
+  refreshOpenPages(getEffectiveThemeId())
   return key
 }
 
+/** 用户切换外观预设（官方 16 套 / 渠道 14 套） */
+function setChannelThemePreset(presetId) {
+  const presets = require('./channel-theme-presets')
+  const ch = getChannelModule()
+  const forChannel =
+    !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
+  const id = presets.setUserChannelPresetId(presetId, { forChannel })
+  if (!id) return null
+  refreshAfterChannelBranding()
+  return id
+}
+
+function getChannelThemePresetOptions() {
+  const presets = require('./channel-theme-presets')
+  const ch = getChannelModule()
+  const forChannel =
+    !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
+  return forChannel ? presets.listChannelPresets() : presets.listPresets()
+}
+
+function getActiveChannelThemePresetId() {
+  const presets = require('./channel-theme-presets')
+  const ch = getChannelModule()
+  const forChannel =
+    !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
+  let brandingPresetId = ''
+  if (forChannel && typeof ch.getActiveChannelThemePresetId === 'function') {
+    brandingPresetId = ch.getActiveChannelThemePresetId()
+  }
+  return presets.getActiveAppearancePresetId(brandingPresetId || '', forChannel)
+}
+
 function refreshOpenPages(themeId) {
+  const effective = themeId != null ? normalizeThemeId(themeId) : getEffectiveThemeId()
   const pages = getCurrentPages()
   pages.forEach((page) => {
     if (typeof page.syncMbTheme === 'function') {
-      page.syncMbTheme(themeId)
+      page.syncMbTheme(effective)
     }
   })
 }
 
+function refreshAfterChannelBranding() {
+  const effective = getEffectiveThemeId()
+  const app = getApp()
+  if (app && app.globalData) {
+    app.globalData.mbTheme = effective
+  }
+  applyChromeTheme(effective, { animate: false })
+  refreshOpenPages(effective)
+}
+
 function initTheme(app) {
-  const key = getTheme()
+  const key = getEffectiveThemeId()
   if (app && app.globalData) {
     app.globalData.mbTheme = key
   }
@@ -203,15 +517,23 @@ module.exports = {
   STORAGE_KEY,
   DEFAULT_THEME,
   THEMES,
+  getUserTheme,
+  getEffectiveThemeId,
   getTheme,
   getThemeMeta,
   getThemeOptions,
   getPageMetaStyle,
   getSplashPageMetaStyle,
+  getAccentColors,
   applyChromeTheme,
   applyPageBackground,
+  schedulePageBackgroundRefresh,
   syncCustomTabBarTheme,
   setTheme,
+  setChannelThemePreset,
+  getChannelThemePresetOptions,
+  getActiveChannelThemePresetId,
   initTheme,
-  refreshOpenPages
+  refreshOpenPages,
+  refreshAfterChannelBranding
 }

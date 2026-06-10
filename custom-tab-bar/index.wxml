@@ -1,4 +1,7 @@
-<view class="tab-bar mb-theme-{{theme}}">
+<view
+  class="tab-bar mb-theme-{{theme}}"
+  style="background: {{tabBg}}; border-top: 1rpx solid rgba(0,0,0,0.06);"
+>
   <view
     wx:for="{{list}}"
     wx:key="pagePath"
@@ -6,7 +9,15 @@
     data-index="{{index}}"
     bindtap="switchTab"
   >
-    <image class="tab-bar-icon" src="{{selected === index ? item.selectedIconPath : item.iconPath}}" mode="aspectFit"/>
-    <text class="tab-bar-text">{{item.text}}</text>
+    <image
+      class="tab-bar-icon"
+      style="filter: {{selected === index ? iconFilter : 'none'}};"
+      src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+      mode="aspectFit"
+    />
+    <text
+      class="tab-bar-text"
+      style="color: {{selected === index ? tabSelected : tabColor}}; font-weight: {{selected === index ? 600 : 400}};"
+    >{{item.text}}</text>
   </view>
 </view>

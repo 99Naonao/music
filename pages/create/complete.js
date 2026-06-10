@@ -18,6 +18,7 @@ const promoPageBehavior = require('../../behaviors/promo-page')
 const promoActivity = require('../../utils/promo-activity-tracker')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
+const channel = require('../../utils/channel')
 const { getDefaultTemplateItem, GRADIENT_OPTIONS } = require('../../utils/card-gradient')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
 const { showAlert } = require('../../utils/show-alert')
@@ -93,8 +94,16 @@ Page({
     syncTabBarPageLayout(this, { footerRpx: 0 })
   },
 
+  syncChannelFeatures() {
+    const showMall = channel.getFeature('hideMall', false)
+      ? false
+      : MIANJIA_ENTRY_ENABLED
+    this.setData({ showMianjiaEntry: showMall })
+  },
+
   onShow() {
     setTabBarSelected(this, 1)
+    this.syncChannelFeatures()
     this.updatePageLayout()
     this.syncCoverSnoozeLinkVisible()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
@@ -105,6 +114,7 @@ Page({
   },
 
   onLoad(options) {
+    this.syncChannelFeatures()
     this.updatePageLayout()
     this.syncCoverSnoozeLinkVisible()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
@@ -407,9 +417,10 @@ Page({
   },
 
   onShareAppMessage() {
+    const prefix = channel.getCopy('completeShareTitlePrefix', '眠音盒')
     const title = this.data.workTitle
-      ? `眠音盒 · ${this.data.workTitle}`
-      : '眠音盒 · 专属助眠声波'
+      ? `${prefix} · ${this.data.workTitle}`
+      : `${prefix} · 专属助眠声波`
     let path = '/pages/create/complete'
     if (this._musicId) {
       path += `?musicId=${encodeURIComponent(String(this._musicId))}`
@@ -417,10 +428,15 @@ Page({
         path += `&audioUrl=${encodeURIComponent(this._audioUrl)}`
       }
     }
+    const shareImg = channel.getShareConfig().defaultImageUrl
+    const imageUrl =
+      shareImg && /^https:\/\//i.test(shareImg)
+        ? shareImg
+        : '/static/new_logo/logo_bg.png'
     return {
       title,
-      path,
-      imageUrl: '/static/new_logo/logo_bg.png'
+      path: channel.appendChannelToPath(path),
+      imageUrl
     }
   }
 })

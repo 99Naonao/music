@@ -8,13 +8,6 @@
   height: calc(96rpx + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   box-sizing: border-box;
-  background: #ffffff;
-  border-top: 1rpx solid rgba(107, 122, 140, 0.12);
-}
-
-.mb-theme-night.tab-bar {
-  background: #1a2238;
-  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .tab-bar-item {
@@ -34,18 +27,4 @@
 .tab-bar-text {
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: #6b7a8c;
-}
-
-.mb-theme-night .tab-bar-text {
-  color: rgba(245, 245, 240, 0.55);
-}
-
-.tab-bar-item--active .tab-bar-text {
-  color: #2d5a8e;
-  font-weight: 600;
-}
-
-.mb-theme-night .tab-bar-item--active .tab-bar-text {
-  color: #8eb4e8;
 }

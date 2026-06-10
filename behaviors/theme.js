@@ -1,11 +1,19 @@
 const theme = require('../utils/theme')
 
 function getInitialThemeData() {
-  const id = theme.getTheme()
+  const id = theme.getEffectiveThemeId()
+  const meta = theme.getThemeMeta(id)
+  const accent = theme.getAccentColors(id)
   return {
     mbTheme: id,
-    pageMetaStyle: theme.getPageMetaStyle(id)
+    pageMetaStyle: theme.getPageMetaStyle(id),
+    mbAccent: meta.primaryColor || meta.tabSelected || accent.accent,
+    mbAccentSoft: accent.accentSoft
   }
+}
+
+function refreshPageBackground(themeId) {
+  theme.schedulePageBackgroundRefresh(themeId)
 }
 
 module.exports = Behavior({
@@ -13,11 +21,25 @@ module.exports = Behavior({
 
   methods: {
     syncMbTheme(themeId) {
-      const id = themeId != null ? themeId : theme.getTheme()
-      theme.applyPageBackground(id)
+      const id = themeId != null ? themeId : theme.getEffectiveThemeId()
+      refreshPageBackground(id)
+      const meta = theme.getThemeMeta(id)
+      const accent = theme.getAccentColors(id)
       const pageStyle = theme.getPageMetaStyle(id)
-      if (this.data.mbTheme !== id || this.data.pageMetaStyle !== pageStyle) {
-        this.setData({ mbTheme: id, pageMetaStyle: pageStyle })
+      const mbAccent = meta.primaryColor || meta.tabSelected || accent.accent
+      const mbAccentSoft = accent.accentSoft
+      if (
+        this.data.mbTheme !== id ||
+        this.data.pageMetaStyle !== pageStyle ||
+        this.data.mbAccent !== mbAccent ||
+        this.data.mbAccentSoft !== mbAccentSoft
+      ) {
+        this.setData({
+          mbTheme: id,
+          pageMetaStyle: pageStyle,
+          mbAccent,
+          mbAccentSoft
+        }, () => refreshPageBackground(id))
       }
     }
   },
@@ -28,12 +50,17 @@ module.exports = Behavior({
       if (route === 'pages/splash/splash') return
       this.syncMbTheme()
     },
+    ready() {
+      const route = (this.route || '').replace(/^\//, '')
+      if (route === 'pages/splash/splash') return
+      refreshPageBackground()
+    },
     show() {
       const route = (this.route || '').replace(/^\//, '')
       if (route === 'pages/splash/splash') return
       this.syncMbTheme()
-      // 普通切页不播导航栏动画（200ms 会显得「进页很慢」）；仅在设置里切换主题时 animate
-      theme.applyChromeTheme(theme.getTheme(), { animate: false })
+      theme.applyChromeTheme(theme.getEffectiveThemeId(), { animate: false })
+      refreshPageBackground()
     }
   }
 })

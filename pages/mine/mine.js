@@ -14,11 +14,15 @@ const promoPageBehavior = require('../../behaviors/promo-page')
 const promoActivity = require('../../utils/promo-activity-tracker')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
+const channel = require('../../utils/channel')
 
 Page({
   behaviors: [promoPageBehavior],
   data: {
     showMianjiaEntry: MIANJIA_ENTRY_ENABLED,
+    showPointsMenu: true,
+    showTasksMenu: true,
+    showPointsStat: true,
     isLoggedIn: false,
     userInfo: null,
     user: {
@@ -39,8 +43,21 @@ Page({
     this.checkLoginStatus()
   },
 
+  syncChannelFeatures() {
+    const showMall = channel.getFeature('hideMall', false)
+      ? false
+      : MIANJIA_ENTRY_ENABLED
+    this.setData({
+      showMianjiaEntry: showMall,
+      showPointsMenu: !channel.getFeature('hidePoints', false),
+      showTasksMenu: !channel.getFeature('hideTasks', false),
+      showPointsStat: !channel.getFeature('hidePoints', false)
+    })
+  },
+
   onShow() {
     setTabBarSelected(this, 3)
+    this.syncChannelFeatures()
     this.checkLoginStatus()
     this.tryPromoShow(SCENES.MINE, { recordVisitAfter: false })
     if (!this.data.isLoggedIn) return
@@ -168,6 +185,12 @@ Page({
             wx.setStorageSync('userId', data.userId)
             wx.setStorageSync('token', data.token || data.openid)
             promoActivity.touchPhoneLogin()
+            try {
+              const channel = require('../../utils/channel')
+              await channel.syncChannelAfterLogin(data.channelId)
+            } catch (syncErr) {
+              /* ignore */
+            }
             this.setData({
               isLoggedIn: true,
               userInfo: userData

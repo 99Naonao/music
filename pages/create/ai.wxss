@@ -15,14 +15,7 @@
   bottom: 0;
   z-index: 0;
   pointer-events: none;
-}
-
-.mb-theme-dawn .ai-page-bg {
-  background: linear-gradient(135deg, #d1e9ff 0%, #e8f4ff 42%, #f7faff 72%, #ffffff 100%);
-}
-
-.mb-theme-night .ai-page-bg {
-  background: linear-gradient(180deg, #202b48 0%, #2d3a5c 45%, #1a2238 100%);
+  background: var(--mb-gradient-page);
 }
 
 .ai-page-header {
@@ -182,9 +175,9 @@
 }
 
 .scene-chip--on {
-  color: #2d5a8e;
-  background: rgba(111, 143, 207, 0.18);
-  border-color: rgba(111, 143, 207, 0.45);
+  color: var(--mb-accent, var(--mb-text-primary));
+  background: var(--mb-accent-soft, rgba(111, 143, 207, 0.18));
+  border-color: var(--mb-accent-medium, rgba(111, 143, 207, 0.45));
   font-weight: 600;
 }
 

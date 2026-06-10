@@ -16,16 +16,7 @@
   bottom: 0;
   z-index: 0;
   pointer-events: none;
-}
-
-.mb-theme-dawn .tracks-page-bg {
-  background: linear-gradient(135deg, #d1e9ff 0%, #e8f4ff 42%, #f7faff 72%, #ffffff 100%);
-}
-
-.mb-theme-night .tracks-page-bg {
-  background:
-    radial-gradient(ellipse 120% 60% at 50% -8%, rgba(111, 143, 207, 0.35) 0%, transparent 55%),
-    linear-gradient(180deg, #202b48 0%, #2d3a5c 45%, #1a2238 100%);
+  background: var(--mb-gradient-page);
 }
 
 .tracks-scroll {

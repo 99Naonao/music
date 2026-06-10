@@ -1,5 +1,6 @@
 const { applyGlobalInnerAudioOptions } = require('./utils/audio-ios')
 const theme = require('./utils/theme')
+const channel = require('./utils/channel')
 const themeBehavior = require('./behaviors/theme')
 const { resolveShareIdFromAppLaunch } = require('./utils/share-entry')
 const { log, logWarn } = require('./utils/log')
@@ -68,7 +69,9 @@ function routeIncomingShareGift(launchOpts) {
       log('app-launch', '冷启动无贺卡 shareId', { path })
       return
     }
-    const url = `/pages/create/gift?shareId=${encodeURIComponent(shareId)}`
+    const url = channel.appendChannelToPath(
+      `/pages/create/gift?shareId=${encodeURIComponent(shareId)}`
+    )
     log('app-launch', '冷启动跳转收礼页', {
       shareId: `${shareId.slice(0, 8)}…`,
       path,
@@ -83,13 +86,17 @@ function routeIncomingShareGift(launchOpts) {
 App({
   globalData: {
     mbTheme: 'dawn',
+    mbChannel: 'default',
+    mbBranding: null,
     /** splash → 首页 后首次 home_show 不弹「眠家好物」弹窗（其它运营弹窗仍可弹） */
     skipHomeMianjiaPromoOnce: false
   },
 
   onLaunch(options) {
     applyGlobalInnerAudioOptions()
+    channel.resolveChannelFromLaunch(options || {})
     theme.initTheme(this)
+    channel.ensureInit(options || {})
     preloadSubPackages()
     setupMiniProgramUpdate()
     routeIncomingShareGift(options)

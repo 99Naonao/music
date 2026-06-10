@@ -2,6 +2,17 @@ const { API_BASE_URL, TIMEOUT } = require('./config')
 const { showAlert } = require('./show-alert')
 const { apiPath, log, logWarn, logError } = require('./log')
 
+function getChannelHeader() {
+  try {
+    const channel = require('./channel')
+    const id = channel.getChannelId()
+    if (id && id !== 'default') return { 'X-Channel': id }
+  } catch (e) {
+    /* ignore */
+  }
+  return {}
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -57,6 +68,7 @@ function request(options) {
       const header = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...getChannelHeader(),
         ...(wxOptions.header || {})
       }
 

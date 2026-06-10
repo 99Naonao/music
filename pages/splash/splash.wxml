@@ -1,16 +1,32 @@
 <page-meta page-style="{{pageMetaStyle}}" />
-<view class="splash-page splash-page--{{variant}}" bindtap="onTapSkip">
-  <view class="splash-body {{showContent ? 'splash-body-in' : ''}}">
-    <view class="splash-hero-wrap">
+<view
+  class="splash-page splash-page--{{variant}} {{splashFullBleed ? 'splash-page--full' : ''}}"
+  bindtap="onTapSkip"
+>
+  <image
+    wx:if="{{splashFullBleed}}"
+    class="splash-bg"
+    src="{{heroSrc}}"
+    mode="aspectFill"
+    show-menu-by-longpress="{{false}}"
+    binderror="onHeroImageError"
+  />
+  <view wx:if="{{splashFullBleed}}" class="splash-scrim"></view>
+
+  <view class="splash-body {{showContent ? 'splash-body-in' : ''}} {{splashFullBleed ? 'splash-body--full' : ''}}">
+    <view wx:if="{{!splashFullBleed}}" class="splash-hero-wrap">
       <image
         class="splash-hero"
         src="{{heroSrc}}"
         mode="aspectFit"
         show-menu-by-longpress="{{false}}"
+        binderror="onHeroImageError"
       />
     </view>
-    <text class="splash-title">眠音盒</text>
-    <text class="splash-subtitle">AI声波音乐盒</text>
-    <text class="splash-slogan">让每一夜都被温柔守护</text>
+    <view class="splash-copy">
+      <text class="splash-title" style="color: {{splashTitleColor}};">{{splashTitle}}</text>
+      <text class="splash-subtitle" style="color: {{splashSubtitleColor}};">{{splashSubtitle}}</text>
+      <text class="splash-slogan" style="color: {{splashSloganColor}};">{{splashSlogan}}</text>
+    </view>
   </view>
 </view>

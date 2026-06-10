@@ -1,15 +1,52 @@
 .splash-page {
+  position: relative;
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   padding: 0 48rpx 80rpx;
-  /* 与 page-meta 一致：左上 → 右下 */
-  background: linear-gradient(135deg, #d1e9ff 0%, #e8f4ff 42%, #f7faff 72%, #ffffff 100%);
+  overflow: hidden;
+  background: var(--mb-gradient-page, #f4f0fa);
+}
+
+/* 渠道远程开屏：全屏铺满 */
+.splash-page--full {
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-end;
+  background: #0f0b14;
+}
+
+.splash-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.splash-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52%;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 11, 20, 0) 0%,
+    rgba(15, 11, 20, 0.55) 45%,
+    rgba(15, 11, 20, 0.88) 100%
+  );
+  pointer-events: none;
 }
 
 .splash-body {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,6 +54,13 @@
   opacity: 0;
   transform: translateY(24rpx);
   transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.splash-body--full {
+  justify-content: flex-end;
+  min-height: 100vh;
+  padding: 0 56rpx calc(120rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .splash-body-in {
@@ -38,8 +82,18 @@
   height: 100%;
 }
 
+.splash-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.splash-body--full .splash-copy {
+  align-items: flex-start;
+}
+
 .splash-title {
-  color: rgb(25, 63, 163);
   font-size: 56rpx;
   font-weight: 700;
   letter-spacing: 4rpx;
@@ -47,7 +101,6 @@
 }
 
 .splash-subtitle {
-  color: rgb(93, 134, 202);
   font-size: 32rpx;
   font-weight: 500;
   margin-bottom: 20rpx;
@@ -55,31 +108,30 @@
 
 .splash-slogan {
   font-size: 26rpx;
-  font-weight: 200;
+  font-weight: 300;
 }
 
-/* 晨雾浅蓝 · 与设计稿一致 */
-.splash-page--dawn .splash-title {
+/* 默认眠音盒 · 晨雾（无 inline color 时兜底） */
+.splash-page--dawn:not(.splash-page--full) .splash-title {
   color: #1e3a5f;
 }
 
-.splash-page--dawn .splash-subtitle {
+.splash-page--dawn:not(.splash-page--full) .splash-subtitle {
   color: #4a6fa5;
 }
 
-.splash-page--dawn .splash-slogan {
+.splash-page--dawn:not(.splash-page--full) .splash-slogan {
   color: #7a8fa8;
 }
 
-/* 眠夜深蓝 */
-.splash-page--night .splash-title {
+.splash-page--night:not(.splash-page--full) .splash-title {
   color: #fffdf5;
 }
 
-.splash-page--night .splash-subtitle {
+.splash-page--night:not(.splash-page--full) .splash-subtitle {
   color: rgba(245, 245, 240, 0.82);
 }
 
-.splash-page--night .splash-slogan {
+.splash-page--night:not(.splash-page--full) .splash-slogan {
   color: rgba(245, 245, 240, 0.55);
 }

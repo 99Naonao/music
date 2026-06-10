@@ -17,6 +17,8 @@ const { resolveCardCustomCover } = require('../../utils/card-cover')
 const { showPointsReward } = require('../../utils/show-points-reward')
 const { markMineStatsStale } = require('../../utils/mine-stats-cache')
 const { log, logWarn } = require('../../utils/log')
+const channel = require('../../utils/channel')
+const channelShare = require('../../utils/channel-share')
 const {
   getWorkCoverDisplay,
   normalizeHostedCoverUrl,
@@ -82,6 +84,7 @@ Page({
   },
 
   onLoad(options) {
+    channel.applyFromPageOptions(options || {})
     let shareId = resolveShareIdFromOptions(options)
     if (!shareId) {
       shareId = resolveShareIdFromEntry()
@@ -179,6 +182,8 @@ Page({
   },
 
   pickOwnShareCardImageUrl() {
+    const channelCover = channelShare.getChannelShareCoverUrl()
+    if (channelCover) return channelCover
     const payload = getOwnSharePayloadFromStorage()
     if (!payload) return SHARE_CARD_FALLBACK_IMAGE
     const { cardData, coverImage } = payload
@@ -193,7 +198,9 @@ Page({
     const sid = shareId != null ? String(shareId).trim() : ''
     if (!sid || !isShareUuid(sid)) return ''
     if (sid === String(this._incomingShareId || '').trim()) return ''
-    return `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
+    return channel.appendChannelToPath(
+      `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
+    )
   },
 
   buildOwnShareAppMessageSync() {
@@ -205,17 +212,25 @@ Page({
         payload && payload.musicId,
         cardData.workTitle || ''
       ) || '专属助眠曲'
-    const title = `${recipient}，送你一份「${workTitle}」`
+    const title = channelShare.buildShareTitle(recipient, workTitle)
     const sid = this.data.ownShareId || readCreatorShareId()
     const path = this.buildOwnSharePagePath(sid)
-    const imageUrl = this.pickOwnShareCardImageUrl()
+    const imageUrl = channelShare.pickShareImageUrl(
+      null,
+      null,
+      this.pickOwnShareCardImageUrl()
+    )
     if (!path) {
       logWarn('gift-page', '转发自己的贺卡 path 无效', {
         own: briefShareId(sid),
         incoming: briefShareId(this._incomingShareId)
       })
     }
-    return { title, path: path || '/pages/create/create', imageUrl }
+    return {
+      title,
+      path: path || channel.appendChannelToPath('/pages/create/create'),
+      imageUrl
+    }
   },
 
   async primeOwnShareRecord() {
@@ -280,9 +295,9 @@ Page({
     if (!this.data.canEarnSharePoints) {
       this.promptNeedOwnCardForPoints()
       return {
-        title: '眠音盒 · 助眠贺卡',
-        path: '/pages/create/create',
-        imageUrl: SHARE_CARD_FALLBACK_IMAGE
+        title: channelShare.buildFallbackShareTitle(),
+        path: channel.appendChannelToPath('/pages/create/create'),
+        imageUrl: channelShare.pickShareImageUrl(null, null, SHARE_CARD_FALLBACK_IMAGE)
       }
     }
     if (!this.isLoggedInForShare()) {
@@ -296,9 +311,9 @@ Page({
         }
       })
       return {
-        title: '眠音盒 · 助眠贺卡',
-        path: '/pages/create/create',
-        imageUrl: SHARE_CARD_FALLBACK_IMAGE
+        title: channelShare.buildFallbackShareTitle(),
+        path: channel.appendChannelToPath('/pages/create/create'),
+        imageUrl: channelShare.pickShareImageUrl(null, null, SHARE_CARD_FALLBACK_IMAGE)
       }
     }
     const payload = this.buildOwnShareAppMessageSync()

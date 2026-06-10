@@ -32,9 +32,18 @@ async function fetchCampaignList(scene) {
   if (cached) return cached
 
   try {
+    let channelId = 'default'
+    try {
+      const channel = require('./channel')
+      channelId = channel.getChannelId() || 'default'
+    } catch (e) {
+      /* ignore */
+    }
     const res = await request({
       url: '/api/promo/active',
-      data: scene ? { scene, platform: 'miniapp' } : { platform: 'miniapp' },
+      data: scene
+        ? { scene, platform: 'miniapp', channel: channelId }
+        : { platform: 'miniapp', channel: channelId },
       silentFail: true
     })
     if (res && res.code === 0 && res.data && Array.isArray(res.data.list)) {

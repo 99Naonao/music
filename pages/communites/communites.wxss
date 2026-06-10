@@ -84,16 +84,16 @@
   padding: 10rpx 24rpx;
   font-size: 24rpx;
   color: var(--mb-text-muted);
-  background: rgba(86, 143, 209, 0.08);
+  background: var(--mb-accent-soft, rgba(86, 143, 209, 0.08));
   border-radius: 999rpx;
   border: 2rpx solid transparent;
 }
 
 .circle-sort-chip.active {
-  color: var(--mb-accent, #568fd1);
+  color: var(--mb-accent, var(--mb-text-primary));
   font-weight: 600;
-  background: rgba(86, 143, 209, 0.14);
-  border-color: rgba(86, 143, 209, 0.35);
+  background: var(--mb-accent-medium, rgba(86, 143, 209, 0.14));
+  border-color: var(--mb-accent-medium, rgba(86, 143, 209, 0.35));
 }
 
 .mb-theme-night .circle-sort-chip {
@@ -287,7 +287,7 @@
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: linear-gradient(145deg, #6f8fcf 0%, #568fd1 100%);
+  background: var(--mb-btn-primary);
   box-shadow: 0 12rpx 32rpx rgba(86, 143, 209, 0.45);
   display: flex;
   align-items: center;

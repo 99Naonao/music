@@ -14,26 +14,32 @@
     </view>
     <view class="setting-item setting-item--last">
       <text class="item-label">通知设置</text>
-      <switch class="item-switch" checked color="#568fd1"/>
+      <switch class="item-switch" checked color="{{mbAccent}}"/>
     </view>
   </view>
 
+  <!-- 外观主题（官方 16 套 / 渠道 14 套，不含官方经典） -->
   <view class="setting-group setting-group--theme">
     <view class="setting-section-title">外观主题</view>
-    <view
-      wx:for="{{themeOptions}}"
-      wx:key="id"
-      class="theme-option {{mbTheme === item.id ? 'theme-option-active' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="onSelectTheme"
-    >
-      <view class="theme-preview theme-preview-{{item.id}}"></view>
-      <view class="theme-option-text">
-        <text class="theme-option-name">{{item.name}}</text>
-        <text class="theme-option-desc">{{item.desc}}</text>
+    <scroll-view class="theme-scroll" scroll-x enable-flex show-scrollbar="{{false}}" scroll-left="{{themeScrollLeft}}">
+      <view class="theme-scroll-inner">
+        <view
+          wx:for="{{appearanceThemeOptions}}"
+          wx:key="id"
+          class="theme-card {{appearanceThemePresetId === item.id ? 'theme-card--active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onSelectAppearanceTheme"
+        >
+          <view
+            class="theme-card-preview"
+            style="background: linear-gradient(165deg, {{item.windowBg}} 0%, {{item.navBg}} 48%, {{item.primaryColor}} 100%);"
+          ></view>
+          <text class="theme-card-name">{{item.name}}</text>
+          <text class="theme-card-desc">{{item.desc}}</text>
+          <view wx:if="{{appearanceThemePresetId === item.id}}" class="theme-card-check">✓</view>
+        </view>
       </view>
-      <text wx:if="{{mbTheme === item.id}}" class="theme-option-check">✓</text>
-    </view>
+    </scroll-view>
   </view>
 
   <view class="setting-group">

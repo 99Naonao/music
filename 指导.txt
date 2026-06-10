@@ -1,334 +1,612 @@
 ================================================================================
-眠音盒小程序 · 弹窗推荐方案（不含「接着播」）
+眠音盒 · 可视化运营后台 · 架构指导
 ================================================================================
 版本：v1.0
-范围：运营/商品/活动类弹窗的展示策略与实现路径；不涉及全局续播、后台音频。
-
-参考产品：酷狗、网易云等「时不时弹一下」的能力，本质是：
-  触发时机 + 频控 + 远程配置 + 统一弹窗 UI，与播放器无关。
-
---------------------------------------------------------------------------------
-一、目标
---------------------------------------------------------------------------------
-
-1. 在合适场景向用户展示推荐（眠家好物、活动、歌单、功能引导等）。
-2. 可配置「多久弹一次、每天几次、点关闭后多久再弹」。
-3. 全站关闭状态一致：任意页面选「今天不再显示」，其他页面当天也不再弹同类推荐。
-4. 不打扰核心流程：生成中、支付中、录音中、分享画布导出中等场景禁止弹窗。
-
-非目标（本方案不做）：
-  - 切页/返回后续播
-  - 与 InnerAudioContext / global-audio 联动
+日期：2026-06
+视角：系统架构师
+关联文档：
+  · 产品分析（渠道换皮、后台必要性、M1～M5）：./分析 第十五、十六节
+  · 运营弹窗联调说明：./弹窗测试.txt
+  · 后端代码：D:\中数\backProject\backend（Express + better-sqlite3 单体）
+  · 小程序：本仓库（WeChat Mini Program）
 
 --------------------------------------------------------------------------------
-二、现状（2025 实施前）
+一、文档目的
 --------------------------------------------------------------------------------
 
-已有「弱推荐」形态，非居中弹窗：
+在「同一 AppID 多渠道换皮 + 运营配置 + 分渠道 KPI」的业务背景下，说明：
 
-  页面              形态           关闭存储 key（各自独立）
-  ----------------  -------------  ------------------------------------------
-  首页 create       横幅条         mb_home_mianjia_entry_dismissed_date
-  完成页 complete   横幅条         mb_complete_mianjia_tip_dismissed_date
-  播放页 player     底部提示条     mb_player_mianjia_tip_dismissed_date
+  1. 现有前后端已具备什么、缺什么；
+  2. 可视化后台应如何分层搭建、部署在哪；
+  3. 分阶段要建设哪些模块（配置 / 看板 / 导出 / 运营迁入）；
+  4. 与小程序、现有 secret API 如何衔接，避免重复建设。
 
-问题：
-  - 三处 key 互不影响，用户以为「全站今天不显示」，实际只关当前页。
-  - 无统一频控（次数、间隔、优先级）。
-  - 无远程开关，发版才能改文案/上下线。
-  - 无「强弹窗」（居中 Modal / 底部 Sheet）能力。
-
-本方案建议：保留横幅作为轻量入口，弹窗走统一调度器；关闭与频控全站共用。
+【架构原则】
+  · 渐进演进：不推翻现有 Node 单体，先加 admin 模块与静态 SPA，再按需拆库。
+  · 配置与报表同源：channel、branding、promo 进 DB，小程序只读公开 API。
+  · 权限与小程序用户隔离：后台账号 ≠ wx_openid Bearer 登录。
+  · Phase 1 埋点、Phase 2 上屏：没有 source_channel 字段，后台做了也查不准。
 
 --------------------------------------------------------------------------------
-三、总体架构
+二、现状盘点（As-Is）
 --------------------------------------------------------------------------------
 
-                    ┌─────────────────────┐
-                    │  远程配置 / 接口     │
-                    │  GET /api/promo/... │
-                    └──────────┬──────────┘
-                               │ 活动列表、开关、素材 URL
-                               ▼
-                    ┌─────────────────────┐
-                    │  promo-scheduler    │  ← utils/promo-scheduler.js（新建）
-                    │  · 是否可弹         │
-                    │  · 频控读写         │
-                    │  · 优先级仲裁       │
-                    └──────────┬──────────┘
-           ┌───────────────────┼───────────────────┐
-           ▼                   ▼                   ▼
-    ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-    │ 首页 onShow │     │ 完成 onShow │     │ 播放 onShow │
-    └──────┬──────┘     └──────┬──────┘     └──────┬──────┘
-           │                   │                   │
-           └───────────────────┼───────────────────┘
-                               ▼
-                    ┌─────────────────────┐
-                    │  promo-popup 组件   │  ← components/promo-popup（新建）
-                    │  居中图 / 底部卡片   │
-                    └─────────────────────┘
+2.1 小程序侧（music 仓库）
 
-页面只负责两件事：
-  1. onShow 时调用 scheduler.tryShow({ scene: 'home' })
-  2. 页面上挂 <promo-popup id="promo-popup" />，由 scheduler 或页面 setData 控制显隐
+  | 能力           | 现状                                      | 后台相关缺口        |
+  |----------------|-------------------------------------------|---------------------|
+  | 用户登录       | Bearer = wx_openid（utils/request.js）    | 无 channel 绑定 API |
+  | 主题/开屏      | 本地 theme、splash 静态资源               | 无远程 branding 拉取 |
+  | 运营弹窗       | promo-fallback.js + GET /api/promo/active | 配置在服务端 JS 文件 |
+  | 意见反馈       | POST /api/feedback                        | 有列表 API 无 UI    |
+  | 音乐/贺卡/社区 | 完整业务流                                | 业务表无 source_channel |
 
---------------------------------------------------------------------------------
-四、弹窗类型（UI）
---------------------------------------------------------------------------------
+2.2 后端侧（backend/src/app.js 单体 ~5000 行）
 
-建议支持三种模板，由配置字段 type 决定：
+  技术栈：Express 4、cors、multer、better-sqlite3、axios、fluent-ffmpeg。
+  数据：SQLite 单文件（生产在宝塔 Node 进程内）。
+  日志：按日滚动 app-YYYY-MM-DD.log / error-YYYY-MM-DD.log。
 
-  类型          说明                          适用
-  ------------  ----------------------------  ------------------
-  center_image  居中图 + 关闭角标 + 主按钮    大促、眠家专题、节日活动
-  bottom_card   底部卡片（类似现有眠家条）    轻引导，不打断浏览
-  toast_link    仅 Toast + 可点文字链        极低打扰，试验用
+  已有「半管理」能力（无可视化界面）：
 
-交互统一：
-  - 主按钮：跳转（小程序 path / 外链 web-view / 眠家分包页）
-  - 关闭：右上角 X 或「关闭」
-  - 关闭二次确认（与现有一致）：
-      · 仅本次关闭 → 本次会话内不再弹该 promoId
-      · 今天不再显示 → 写入全站 dismiss（见第五节）
+  | 接口 / 模块                         | 鉴权方式                          | 说明                    |
+  |-------------------------------------|-----------------------------------|-------------------------|
+  | GET /api/feedback?secret=           | FEEDBACK_ADMIN_SECRET             | 分页查 user_feedback    |
+  | GET /api/community/admin/posts      | secret 或 x-admin-secret          | 关键词查帖              |
+  | DELETE /api/community/admin/post/:id| 同上                              | 删帖                    |
+  | src/promo-data.js                   | 无（改文件 + 重启/发版）          | 运营弹窗活动            |
+  | scripts/sync-card-templates.js      | x-sync-secret                     | 贺卡模板同步            |
+  | GET /api/promo/active               | 公开                              | 小程序拉弹窗配置        |
+  | POST /api/promo/event               | 公开/轻量                         | 弹窗曝光埋点            |
 
-注意：微信规范上避免诱导分享、虚假关闭；活动需可关闭，不要无限弹。
+  小程序用户鉴权：authMiddleware 校验 Authorization: Bearer {wx_openid}。
+  **后台不能使用同一套 Bearer**，必须独立 admin_users + Session/JWT。
+
+2.3 产品结论（摘自 分析 §15）
+
+  · 试点 1～2 家渠道：可暂不做完整后台（secret + SQL + 日志）。
+  · 渠道 ≥3、KPI 合同、第三方要看自己的数：**必须上可视化后台**。
+  · 推荐路径：**自研轻量 Admin（W2）**，报表层可选 Metabase 等 BI 补充（W4），
+    但不能只做 BI——Logo/开屏上下线必须 M1 配置台。
 
 --------------------------------------------------------------------------------
-五、触发时机（scene）
+三、目标架构（To-Be）总览
 --------------------------------------------------------------------------------
 
-用 scene 标识「在哪儿尝试弹」，便于配置与统计：
+3.1 逻辑分层
 
-  scene           建议触发点                    默认是否启用
-  --------------  ----------------------------  --------------
-  app_launch      app.js onLaunch 后延迟 800ms   关（易打扰）
-  home_show       首页 tab onShow               开
-  complete_show   生成完成页 onShow             开
-  player_show     播放页 onShow                 开
-  after_generate  生成成功写入 myWorks 后        开（转化好）
-  community_show  盒友圈 onShow                 关
-  mine_show       我的 onShow                   关
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ L1 展示层 · Admin SPA（Vue3 / React）                            │
+  │     admin.xxx.com 或 api.xxx.com/admin/                          │
+  │     渠道配置 | 看板 | 导出 | 反馈 | 社区 | 弹窗 | 审计            │
+  └────────────────────────────┬─────────────────────────────────────┘
+                               │ HTTPS + Cookie/JWT
+  ┌────────────────────────────▼─────────────────────────────────────┐
+  │ L2 网关层 · Nginx（宝塔）                                        │
+  │     /api/* → Node:3000    /admin/* → 静态 dist    IP 白名单可选   │
+  └────────────────────────────┬─────────────────────────────────────┘
+                               │
+  ┌────────────────────────────▼─────────────────────────────────────┐
+  │ L3 应用层 · Node Express（现有 app.js 渐进拆分）                   │
+  │     /api/*           小程序公开 + 用户 Bearer                      │
+  │     /api/admin/*     后台专用（adminAuthMiddleware）               │
+  │     模块：admin-auth, admin-channels, admin-stats, admin-promo…    │
+  └────────────────────────────┬─────────────────────────────────────┘
+                               │
+  ┌────────────────────────────▼─────────────────────────────────────┐
+  │ L4 数据层 · SQLite（短期）→ PostgreSQL（渠道规模化后）             │
+  │     业务表 + channel/branding + admin 表 + 聚合表 daily_channel_stats │
+  └──────────────────────────────────────────────────────────────────┘
 
-触发流程（每处相同）：
+3.2 与小程序的数据流（渠道换皮 + 后台配置）
 
-  onShow() {
-    if (isBlockingRoute()) return          // 生成中/登录强制页等
-    promoScheduler.tryShow({ scene: 'home_show' })
-  }
+  第三方扫码 (channel=partner_a)
+       │
+       ▼
+  小程序 splash/onLaunch ──► POST /api/user/channel-bind（登录后）
+       │                              │
+       │                              ▼
+       │                     user_channel_bindings
+       ▼
+  GET /api/branding?channel=partner_a ◄── channels + channel_branding 表
+       │
+       ▼
+  本地 Storage 缓存 mb_channel + theme 应用
+       │
+       ▼
+  业务 API 带 X-Channel 或 query channel ──► music_tracks.source_channel 等
 
-  // tryShow 内部异步，不阻塞首屏渲染；建议 request 完成后再弹
+  **后台 M1 改 branding → 小程序下次拉取或 TTL 刷新即生效，无需发版。**
 
-禁止弹窗的黑名单页面（硬编码）：
-  - pages/create/generating
-  - pages/create/tracks（若正在录音）
-  - package-community/pages/post/create
-  - 任何 showLoading / 分享 canvas 绘制中
+3.3 推荐仓库布局（backend 增量，不强制一次重构）
 
---------------------------------------------------------------------------------
-六、频控规则（核心）
---------------------------------------------------------------------------------
+  backend/
+    src/
+      app.js                    # 入口，挂载路由
+      admin/
+        index.js                # app.use('/api/admin', adminRouter)
+        auth.js                 # 登录、登出、me、改密
+        middleware.js           # adminAuthMiddleware、requireRole
+        channels.js             # 渠道 CRUD、branding、启停
+        stats.js                # 看板聚合、导出任务
+        promo.js                # 弹窗 CRUD（替代 promo-data.js 直改）
+        feedback.js             # 包装现有 feedback 列表
+        community.js            # 包装现有 community admin
+        audit.js                # 操作日志查询
+      services/
+        channel-service.js
+        stats-aggregator.js     # 夜间 cron 或按需聚合
+      jobs/
+        aggregate-daily-stats.js  # node-cron / 宝塔计划任务
+    admin-web/                  # 新建：Vite + Vue3 + Element Plus（或 React+AntD）
+      src/views/Channels.vue
+      src/views/Dashboard.vue
+      ...
+    deploy/
+      nginx-admin.conf.example  # /admin 与 /api/admin 反代示例
 
-6.1 全站统一的本地存储（替代现有三个 key）
-
-  key 说明：
-    mb_promo_dismiss_date          值：YYYY-MM-DD（上海时区）
-                                   含义：用户选了「今天不再显示」任一弹窗
-
-    mb_promo_session_closed_ids    值：JSON 数组 promoId
-                                   含义：本次冷启动内「仅本次关闭」的 id 列表
-
-    mb_promo_last_show_at          值：时间戳 ms
-                                   含义：上一次任意弹窗展示时间（用于最小间隔）
-
-    mb_promo_daily_count_YYYYMMDD  值：数字
-                                   含义：当天已展示次数（跨 scene 累计）
-
-  判定能否展示（伪代码）：
-
-    function canShow(promo, scene) {
-      if (!MIANJIA_ENTRY_ENABLED && promo.category === 'mianjia') return false
-      if (getDismissDate() === today()) return false
-      if (sessionClosed.includes(promo.id)) return false
-      if (dailyCount >= promo.maxPerDay) return false
-      if (now - lastShowAt < promo.minIntervalMs) return false
-      if (!promo.scenes.includes(scene)) return false
-      if (promo.startAt / promo.endAt 不在有效期) return false
-      return true
-    }
-
-  建议默认阈值（可配置覆盖）：
-    maxPerDay: 1              // 全站每天最多 1 次强弹窗
-    minIntervalMs: 4 * 3600e3 // 两次弹窗至少间隔 4 小时
-    priority: 数字越大越优先   // 多活动同时命中只弹一个
-
-6.2 与现有横幅的关系
-
-  - 横幅（mianjia-entry）：轻量常驻，可继续保留；关闭走统一 mb_promo_dismiss_date。
-  - 强弹窗（center_image）：走 scheduler，与横幅互斥或降权：
-      若当天已弹过强弹窗，当天不再弹横幅（可选，产品定）。
-
-6.3 「仅本次关闭」vs「今天不再显示」
-
-  与现网交互一致，但存储改为全站：
-    仅本次关闭 → sessionClosed  push promoId
-    今天不再显示 → setDismissDate(today)，并 hide 所有 scene 的弹窗/横幅
+  **第一阶段可不改 app.js 体积**：admin/* 独立文件，app.js 仅 require('./admin')。
 
 --------------------------------------------------------------------------------
-七、远程配置与接口（推荐）
+四、需要搭建什么（模块清单）
 --------------------------------------------------------------------------------
 
-7.1 接口草案
+按优先级与产品文档 M1～M5 对齐。
 
-  GET /api/promo/active
-  Query: scene=home_show, platform=miniapp
-  Response:
-    {
-      "code": 0,
-      "data": {
-        "list": [
-          {
-            "id": "mianjia_2025_q2",
-            "type": "center_image",
-            "priority": 100,
-            "scenes": ["home_show", "complete_show", "player_show"],
-            "title": "眠家深睡 · 好物推荐",
-            "subtitle": "搭配助眠音乐，探索精选",
-            "imageUrl": "https://.../banner.png",
-            "buttonText": "去看看",
-            "linkType": "miniapp",
-            "linkPath": "/package-mall/pages/mianjia/index",
-            "maxPerDay": 1,
-            "minIntervalHours": 4,
-            "startAt": "2025-01-01T00:00:00+08:00",
-            "endAt": "2025-12-31T23:59:59+08:00",
-            "enabled": true
-          }
-        ]
-      }
-    }
+4.1 M1 渠道与换皮配置（Phase 2 必做 · 最高优先级）
 
-  POST /api/promo/event（可选，用于统计）
-  Body: { promoId, scene, action: "show" | "click" | "close_once" | "close_today" }
+  解决：运营/商务改 Logo、开屏、主题色、功能开关，不再找研发改 DB/JSON。
 
-7.2 无后端时的兜底
+  后台页面：
+    · 渠道列表：channel_id、名称、状态(draft/active/disabled)、合同起止、备注
+    · 新建/编辑渠道：基础信息 + Branding 表单
+    · Branding 字段（与小程序约定 JSON 结构）：
+        splashImageUrl, splashTitle, splashSlogan
+        primaryColor, secondaryColor, logoUrl
+        features: { showMall, showCommunity, showPromo, ... }
+    · 素材上传：复用 POST /api/upload/image（admin 登录后调，或后台专用 upload）
+    · 预览说明：生成 path?channel=xxx 与小程序码参数文档
+    · 一键启用/禁用：disabled 时 GET /api/branding 返回默认皮或 404+小程序回退
 
-  utils/promo-fallback.js 内写 1～2 条本地配置，与 mianjia-config 开关联动；
-  接口失败 silentFail，不弹窗，不影响主流程。
+  对外 API（小程序用，公开或轻缓存）：
+    GET  /api/branding?channel=xxx
+    POST /api/user/channel-bind   （需用户 Bearer，body: { channel }）
 
-7.3 后台运营（后期）
+  后台 API：
+    GET    /api/admin/channels
+    POST   /api/admin/channels
+    GET    /api/admin/channels/:id
+    PUT    /api/admin/channels/:id
+    PATCH  /api/admin/channels/:id/status
+    PUT    /api/admin/channels/:id/branding
+    GET    /api/admin/channels/:id/audit-log
 
-  简单 SQLite 表 promo_campaigns，或 JSON 热更新；
-  宝塔改配置 + pm2 restart，不必每次发小程序版（素材图仍要 HTTPS 合法域名）。
+4.2 M2 数据看板（Phase 2 强烈建议）
 
---------------------------------------------------------------------------------
-八、小程序文件规划
---------------------------------------------------------------------------------
+  解决：内部看 DAU、生成数、贺卡数，按渠道、日期筛选。
 
-  新建：
-    utils/promo-scheduler.js      频控 + tryShow + 关闭回调
-    utils/promo-fallback.js       本地兜底活动
-    components/promo-popup/       弹窗 UI（wxml/wxss/js/json）
+  后台页面：
+    · 总览卡片：今日 DAU、新增绑定、音乐完成数、贺卡数、反馈数
+    · 趋势图：近 7/30 天折线（按 channel 筛选）
+    · 渠道对比：表格 Top N
 
-  修改：
-    app.js                        可选：拉取活动列表缓存 5 分钟
-    pages/create/create.js        onShow → tryShow；横幅关闭改调 scheduler
-    pages/create/complete.js      同上
-    pages/create/player.js        同上
-    utils/mianjia-config.js       增加 PROMO_ENABLED、默认阈值
+  后台 API：
+    GET /api/admin/stats/overview?from=&to=&channel=
+    GET /api/admin/stats/timeseries?metric=dau&from=&to=&channel=
+    GET /api/admin/stats/channels-ranking?from=&to=
 
-  废弃（迁移后删除）：
-    三个独立 MIANJIA_*_DISMISS_KEY，统一迁移到 mb_promo_dismiss_date
-    （迁移逻辑：若任一旧 key 为今天，则写入新 key，避免升级后重复弹）
+  **依赖 Phase 1 埋点**（见第五节）；无埋点则看板只能做「全站粗统计」。
 
---------------------------------------------------------------------------------
-九、组件接口示例
---------------------------------------------------------------------------------
+4.3 M3 报表导出（有 KPI 合同则必做）
 
-  // 页面 wxml
-  <promo-popup
-    visible="{{promoVisible}}"
-    promo="{{promoPayload}}"
-    bind:close="onPromoClose"
-    bind:confirm="onPromoConfirm"
-  />
+  解决：商务每月交付 Excel，避免研发手写 SQL。
 
-  // 页面 js
-  const promoScheduler = require('../../utils/promo-scheduler')
+  后台页面：
+    · 选择渠道、日期区间、指标勾选 → 导出 CSV/XLSX
+    · 大表异步：POST 创建任务 → GET 任务状态 → 下载链接
 
-  onShow() {
-    promoScheduler.tryShow({
-      scene: 'home_show',
-      onShow: (payload) => this.setData({ promoVisible: true, promoPayload: payload })
-    })
-  }
+  后台 API：
+    GET  /api/admin/export/preview?...        # 前 100 行预览
+    POST /api/admin/export/jobs               # 创建导出
+    GET  /api/admin/export/jobs/:id
+    GET  /api/admin/export/jobs/:id/download
 
-  onPromoClose(e) {
-    promoScheduler.handleClose(e.detail)  // { promoId, mode: 'session'|'today' }
-    this.setData({ promoVisible: false })
-  }
+  实现建议：服务端用 exceljs 或 csv-stringify；文件落 uploads/exports/，24h 清理。
 
-  onPromoConfirm(e) {
-    promoScheduler.handleClick(e.detail)
-    promoScheduler.navigate(e.detail.linkPath)
-    this.setData({ promoVisible: false })
-  }
+4.4 M4 现有能力迁入（Phase 2～3）
 
---------------------------------------------------------------------------------
-十、实施步骤（建议分三期）
---------------------------------------------------------------------------------
+  把 secret 查询改为登录后台即可操作：
 
-  第一期（1～2 天，可不发后端）
-    · 新建 promo-scheduler + promo-popup（center_image 一种）
-    · 全站统一 dismiss / 日次数 / 最小间隔
-    · 首页 onShow 接一条本地兜底活动（眠家商城）
-    · 迁移三个旧 dismiss key
+  | 原能力              | 迁入方式                                      |
+  |---------------------|-----------------------------------------------|
+  | GET /api/feedback   | Admin 反馈列表页，复用 SQL，adminAuth 替代 secret |
+  | community admin     | Admin 社区审核页                              |
+  | promo-data.js       | 表 promo_campaigns + Admin CRUD + 缓存刷新    |
+  | sync-card-templates | 可选：Admin 触发同步按钮（仍调现有 script 逻辑）|
 
-  第二期
-    · 完成页、播放页接入同一 scheduler
-    · 横幅关闭与弹窗共用频控
-    · GET /api/promo/active 对接后端
+  迁移策略：**保留旧 secret 接口一个版本周期**，日志打 deprecated，防外部脚本断裂。
 
-  第三期
-    · 上报 show/click/close
-    · 后台配置多条活动、优先级、AB
-    · bottom_card 模板、after_generate 场景
+4.5 M5 Partner 门户（Phase 3 · 可选）
+
+  第三方登录只看本 channel：
+    · 角色 partner，channel_id 写死绑定
+    · 仅 M2 只读看板 + M3 导出（本渠道）
+    · 可选：本渠道 branding 编辑（需我方审批流，二期再做）
+
+  与内部 Admin 同源：同一 SPA，路由与菜单按 role 过滤。
+
+4.6 Phase 1 必须先做、但不一定有 UI 的部分
+
+  换皮 MVP 无后台时，研发仍需：
+
+    · 建表 channels / channel_branding / user_channel_bindings
+    · 业务表加 source_channel（music_tracks、greeting_cards、card_shares、play_history 等）
+    · 实现 GET /api/branding、channel-bind
+    · 小程序：splash 读 channel、theme 远程覆盖、Storage 持久 mb_channel
+
+  详见 分析 第八～十四节；**这是后台准确性的前置条件**。
 
 --------------------------------------------------------------------------------
-十一、测试清单
+五、数据库设计（增量 DDL 建议）
 --------------------------------------------------------------------------------
 
-  [ ] 首页选「今天不再显示」→ 完成页/播放页当天不再弹
-  [ ] 仅本次关闭 → 切 tab 再回来可不弹；杀进程重进可再弹（未选今天）
-  [ ] 同一天手动进三次首页，最多弹 maxPerDay 次
-  [ ] 间隔不足 minInterval 不弹
-  [ ] 生成中页 onShow 不弹
-  [ ] 接口失败不白屏、不 Toast 报错
-  [ ] 夜览主题下弹窗对比度正常
-  [ ] 点击主按钮正确跳转眠家分包
+在 initDatabase() 或独立 migrations/001-admin.sql 中追加：
+
+  -- 渠道主表
+  CREATE TABLE IF NOT EXISTS channels (
+      id TEXT PRIMARY KEY,              -- 如 partner_a，与 query channel 一致
+      name TEXT NOT NULL,
+      status TEXT DEFAULT 'draft',      -- draft | active | disabled
+      contract_start DATE,
+      contract_end DATE,
+      created_at DATETIME DEFAULT (datetime('now','localtime')),
+      updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
+
+  -- 换皮配置（1:1 或版本化均可；MVP 1:1）
+  CREATE TABLE IF NOT EXISTS channel_branding (
+      channel_id TEXT PRIMARY KEY,
+      splash_image_url TEXT,
+      splash_title TEXT,
+      splash_slogan TEXT,
+      primary_color TEXT,
+      secondary_color TEXT,
+      logo_url TEXT,
+      features_json TEXT,               -- JSON 字符串
+      updated_by TEXT,
+      updated_at DATETIME DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (channel_id) REFERENCES channels(id)
+  );
+
+  -- 用户渠道绑定（最近使用仍保持第三方皮）
+  CREATE TABLE IF NOT EXISTS user_channel_bindings (
+      user_id TEXT PRIMARY KEY,
+      channel_id TEXT NOT NULL,
+      bound_at DATETIME DEFAULT (datetime('now','localtime')),
+      source TEXT,                        -- qrcode | share | manual
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (channel_id) REFERENCES channels(id)
+  );
+
+  -- 业务表 ALTER（示例）
+  -- ALTER TABLE music_tracks ADD COLUMN source_channel TEXT;
+  -- ALTER TABLE card_shares ADD COLUMN source_channel TEXT;
+
+  -- 后台账号（与 users 分离）
+  CREATE TABLE IF NOT EXISTS admin_users (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,        -- bcrypt
+      role TEXT DEFAULT 'operator',       -- super | operator | readonly | partner
+      partner_channel_id TEXT,            -- role=partner 时必填
+      is_active INTEGER DEFAULT 1,
+      last_login_at DATETIME,
+      created_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_user_id TEXT,
+      action TEXT NOT NULL,               -- channel.update | branding.update | ...
+      target_type TEXT,
+      target_id TEXT,
+      detail_json TEXT,
+      ip TEXT,
+      created_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
+
+  -- 运营弹窗（替代 promo-data.js 硬编码）
+  CREATE TABLE IF NOT EXISTS promo_campaigns (
+      id TEXT PRIMARY KEY,
+      payload_json TEXT NOT NULL,         -- 与 promo-fallback 字段对齐
+      enabled INTEGER DEFAULT 1,
+      priority INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
+
+  -- 日聚合（M2 性能；由定时任务写入）
+  CREATE TABLE IF NOT EXISTS daily_channel_stats (
+      stat_date DATE NOT NULL,
+      channel_id TEXT NOT NULL,           -- '' 或 'default' 表示全站默认
+      dau INTEGER DEFAULT 0,
+      new_bindings INTEGER DEFAULT 0,
+      music_completed INTEGER DEFAULT 0,
+      cards_created INTEGER DEFAULT 0,
+      PRIMARY KEY (stat_date, channel_id)
+  );
+
+  -- 可选：原始事件（量大时再上）
+  CREATE TABLE IF NOT EXISTS biz_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_type TEXT NOT NULL,
+      channel_id TEXT,
+      user_id TEXT,
+      payload_json TEXT,
+      created_at DATETIME DEFAULT (datetime('now','localtime'))
+  );
+
+指标口径（与 分析 §15.7 一致）：
+  · DAU：当日至少一次带 channel 标识的 API 或 dedicated heartbeat
+  · 音乐完成：music_tracks.status='completed' AND source_channel
+  · 渠道绑定：user_channel_bindings 按日 count
 
 --------------------------------------------------------------------------------
-十二、与「酷狗 / 网易云」对照（便于理解）
+六、Admin API 与鉴权设计
 --------------------------------------------------------------------------------
 
-  能力              大厂常见做法                 本方案对应
-  ----------------  ---------------------------  ---------------------------
-  弹不弹            服务端配置 + 人群            /api/promo/active + enabled
-  弹几次            日上限、会话上限             maxPerDay + sessionClosed
-  何时弹            启动、首页、播放、行为事件   scene 枚举
-  弹什么            优先级队列                   priority 取最高一条
-  关掉之后          本地 + 服务端埋点            dismiss_date + 可选 event 上报
-  不打断听歌        与播放器解耦                 本方案明确不涉及续播
+6.1 鉴权方案（推荐）
+
+  方案 A（推荐，单体友好）：Session + HttpOnly Cookie
+    POST /api/admin/auth/login  { username, password }
+    → Set-Cookie: admin_sid=...; HttpOnly; Secure; SameSite=Strict
+    adminAuthMiddleware 查 session 表或 signed cookie
+
+  方案 B：JWT Bearer（适合前后端完全分离部署）
+    POST /api/admin/auth/login → { token, expiresIn }
+    后续 Authorization: Bearer <jwt>，payload 含 sub, role, channelId
+
+  密码：bcrypt 哈希，禁止明文 env；首个 super 账号用 scripts/seed-admin.js 初始化。
+
+6.2 权限矩阵
+
+  | 角色      | M1 渠道 | M2 看板 | M3 导出 | M4 审核 | M5 本渠道 |
+  |-----------|---------|---------|---------|---------|-----------|
+  | super     | 全部    | 全部    | 全部    | 全部    | —         |
+  | operator  | 编辑    | 全部    | 是      | 是      | —         |
+  | readonly  | 只读    | 只读    | 否      | 只读    | —         |
+  | partner   | 否      | 本渠道  | 本渠道  | 否      | 可选编辑  |
+
+  实现：requireRole('super','operator') 中间件；partner 强制 SQL WHERE channel_id = req.admin.partnerChannelId。
+
+6.3 与现有 secret API 的关系
+
+  | 旧方式                          | 新方式                    |
+  |---------------------------------|---------------------------|
+  | ?secret=FEEDBACK_ADMIN_SECRET   | Admin 登录 + /api/admin/feedback |
+  | x-admin-secret 社区管理         | /api/admin/community/*    |
+  | 改 promo-data.js                | /api/admin/promo/* + DB   |
+
+  环境变量 FEEDBACK_ADMIN_SECRET 可保留作 emergency  break-glass，生产日志告警。
+
+6.4 公开 API 不变性
+
+  小程序继续用：
+    · Bearer wx_openid（用户态）
+    · GET /api/promo/active（可改为读 DB，响应结构不变）
+    · GET /api/branding（新增）
+
+  CORS：admin 域名若与 API 不同源，仅 /api/admin/* 对 admin 域名放行 credentials。
 
 --------------------------------------------------------------------------------
-十三、产品建议（眠音盒场景）
+七、Admin 前端技术选型
 --------------------------------------------------------------------------------
 
-  1. 强弹窗建议每天最多 1 次，避免助眠用户反感。
-  2. 晚间 21:00～07:00 可提高眠家/助眠商品权重，白天可降低或只显示横幅。
-  3. 新用户首次完成生成后（after_generate）转化率通常最好，可单独配一条高优先级活动。
-  4. 弹窗主视觉与小程序「雾白 + 雾蓝」一致，勿用刺眼高饱和红底促销风。
+7.1 推荐栈
+
+  · Vite + Vue 3 + TypeScript + Element Plus（或 React + Ant Design）
+  · 理由：国内文档多、Form/Table 成熟，CRUD 2～3 周可交付 M1+M2
+  · 图表：ECharts 或 Chart.js（折线/柱状即可，不做复杂 BI）
+  · 构建产物：admin-web/dist → backend/deploy/admin/ 或宝塔静态站点
+
+7.2 核心页面路由
+
+  /login
+  /dashboard                 # M2 总览
+  /channels                  # M1 列表
+  /channels/:id              # M1 编辑 + branding
+  /promo                     # M4 弹窗列表
+  /promo/:id                 # M4 编辑
+  /feedback                  # M4
+  /community                 # M4
+  /export                    # M3
+  /audit                     # 操作日志
+  /settings/account          # 改密、管理员（super）
+
+7.3 与后端的协作约定
+
+  · 统一响应格式：沿用现有 sendSuccess / sendError（code、message、data）
+  · 列表分页：page, limit, total
+  · 时间：东八区展示，接口 ISO 或 yyyy-MM-dd HH:mm:ss 与现网一致
+  · 上传：Admin 内嵌图片上传组件 → POST /api/upload/image（需给 admin 单独发 token 或专用 admin upload 接口）
+
+--------------------------------------------------------------------------------
+八、统计与定时任务
+--------------------------------------------------------------------------------
+
+8.1 聚合策略
+
+  短期（SQLite、日活万级内）：
+    · 宝塔「计划任务」每日 01:00 执行 node scripts/aggregate-daily-stats.js
+    · 脚本扫描 biz_events 或业务表 + 日志解析（次选），写入 daily_channel_stats
+    · 看板读聚合表，避免在线大表 GROUP BY
+
+  中期：
+    · 关键动作写 biz_events（music.completed、card.created、app.launch）
+    · 小程序可选：启动时 POST /api/event/launch { channel }（轻量）
+
+8.2 日志与监控
+
+  · 保留现有 app/error 日志；Admin 不提供完整日志检索（成本高）
+  · M2 可增加「封面上传失败率」：grep error 日志或 biz_events type=cover.upload_fail
+  · 告警仍走宝塔/企业微信 webhook（与后台独立）
+
+--------------------------------------------------------------------------------
+九、部署与运维（宝塔现状）
+--------------------------------------------------------------------------------
+
+9.1 推荐部署拓扑
+
+  域名示例：
+    api.lebanhaomian.com     → Node 3000（现有）
+    admin.lebanhaomian.com   → 静态 dist + 反代 /api → Node
+
+  Nginx 要点：
+    location /api/ { proxy_pass http://127.0.0.1:3000; }
+    location / { root /www/wwwroot/admin/dist; try_files $uri /index.html; }
+
+  安全：
+    · admin 子域限制 IP 白名单（公司/VPN）
+    · 全站 HTTPS
+    · 禁止 Admin dist 目录 listing
+
+9.2 发布流程
+
+  1. backend：git pull → npm install（若有新依赖 bcrypt、exceljs）→ pm2 restart
+  2. admin-web：npm run build → 覆盖 dist
+  3. DB 迁移：首次跑 migrations 或 initDatabase 增量 ALTER
+  4. seed-admin.js 仅首次执行
+
+9.3 SQLite 边界（决策 D10）
+
+  · 渠道 <20、并发 admin 用户 <10、日活 <5万：SQLite 足够
+  · 导出 Job、聚合 Job 避免与主进程争锁：导出用只读连接或短时 batch
+  · 超阈值：迁 PostgreSQL，admin 与 API 连接串分离只读副本做报表
+
+--------------------------------------------------------------------------------
+十、小程序改造要点（与后台联调）
+--------------------------------------------------------------------------------
+
+  1. utils/channel.js（新建）
+     · resolveChannelFromLaunch(options)
+     · persistChannel / getPersistedChannel
+     · 请求头 X-Channel 或在 request.js 统一 append
+
+  2. pages/splash/splash.js
+     · onLoad 读 query.channel → 存 Storage → fetchBranding()
+
+  3. utils/theme.js
+     · mergeRemoteBranding(localTheme, remoteBranding)
+
+  4. 登录成功后
+     · POST /api/user/channel-bind
+
+  5. 创建音乐/贺卡时
+     · 后端从 header 或 user binding 写入 source_channel
+
+  6. promo
+     · 仍 GET /api/promo/active；后端改读 promo_campaigns 表即可，小程序无感
+
+--------------------------------------------------------------------------------
+十一、分阶段实施路线图
+--------------------------------------------------------------------------------
+
+  Phase 0 · 决策（1～2 天）
+    □ 确认 D7～D10（见 分析 §15.10）
+    □ 确定 admin 域名与 IP 白名单
+    □ 确定首个 super 管理员账号归属
+
+  Phase 1 · 换皮 MVP（无可视化后台，约 2～3 周）
+    □ DB：channels / branding / bindings + source_channel 字段
+    □ API：GET /api/branding、POST /api/user/channel-bind
+    □ 小程序：channel 解析 + Storage + theme
+    □ 配置方式：SQL 或临时 scripts/upsert-channel.js
+    □ 1 家试点渠道
+
+  Phase 2 · 可视化后台最小版（约 2～3 周，可与 Phase 1 末尾重叠）
+    □ admin_users + 登录 + audit
+    □ M1 渠道/branding CRUD + 启停
+    □ M2 看板（3～5 指标 + 折线）
+    □ M3 CSV/Excel 导出
+    □ daily_channel_stats 定时聚合
+    □ promo 迁入 DB + Admin 编辑（建议与 M1 同期，D9）
+    □ M4 反馈列表、社区审核页
+
+  Phase 3 · 规模化
+    □ M5 Partner 门户
+    □ 结算报表、合同周期提醒
+    □ 评估 SQLite → PG、Metabase 只读连接
+    □ 审批流（partner 改素材需我方审）
+
+  人力粗估（1 全栈）：
+    Phase 1 后端+小程序：10～15 人天
+    Phase 2 Admin 全家桶：10～15 人天
+    合计商用可运营版本：约 4～6 周（含联调与试点）
+
+--------------------------------------------------------------------------------
+十二、风险与架构决策记录
+--------------------------------------------------------------------------------
+
+  R1 单体 app.js 持续膨胀
+      → admin 路由拆到 src/admin/*，六个月内不强制微服务。
+
+  R2 secret API 与 Admin 双轨
+      → Phase 2 完成后 secret 仅 break-glass，文档标明废弃时间。
+
+  R3 报表不准
+      → Phase 1 未埋 source_channel 则禁止对外承诺分渠道 KPI。
+
+  R4 素材合规
+      → 渠道 Logo/开屏走微信 imgSecCheck（content-security.js 已支持 MUSIC 凭证）。
+
+  R5 第三方看不到微信外壳品牌
+      → 产品层已接受（分析 §三）；后台无法解决 AppID 名称/图标。
+
+  R6 Admin 公网被扫
+      → IP 白名单 + 强密码 + 登录失败锁定 + 审计。
+
+--------------------------------------------------------------------------------
+十三、验收清单（Phase 2 后台 Go-Live）
+--------------------------------------------------------------------------------
+
+  [ ] 运营可在 Admin 新建渠道、上传开屏图、启用，无需 SSH
+  [ ] 小程序带 ?channel= 进入 5 分钟内看到新皮（含缓存策略验证）
+  [ ] 禁用渠道后，新用户回默认皮；已绑定用户策略符合产品约定
+  [ ] 看板按 channel 筛选，数据与 SQL 抽样一致
+  [ ] Excel 导出含合同所需字段，万级行 5 分钟内可下载
+  [ ] 反馈/社区可在 Admin 处理，无需复制 secret
+  [ ] promo 在 Admin 改标题后，小程序下次拉 active 生效
+  [ ] 所有写操作有 audit_logs 记录
+  [ ] admin 未登录访问 /api/admin/* 返回 401
+  [ ] partner 账号无法访问其他 channel 数据
+
+--------------------------------------------------------------------------------
+十四、参考：现有后端管理接口位置（便于迁移）
+--------------------------------------------------------------------------------
+
+  文件：backend/src/app.js
+    · GET  /api/feedback              约 2876 行（FEEDBACK_ADMIN_SECRET）
+    · GET  /api/community/admin/posts 约 2922 行
+    · DELETE /api/community/admin/post/:id 约 2963 行
+    · GET  /api/promo/active          约 4164 行
+    · POST /api/promo/event           约 4171 行
+
+  文件：backend/src/promo-data.js
+    · ACTIVE_CAMPAIGNS 数组 → 迁移至 promo_campaigns 表
+
+  脚本：backend/scripts/sync-card-templates.js
+    · 贺卡模板同步 → 可选 Admin「一键同步」
+
+--------------------------------------------------------------------------------
+十五、结论（架构师摘要）
+--------------------------------------------------------------------------------
+
+  1. **要建的是「轻量运营中台」而非大而全 CMS**：核心是 M1 配置 + M2/M3 数。
+  2. **后端在现有 Express 单体上扩展 /api/admin/**，SQLite 短期够用，表结构先按渠道埋点设计。
+  3. **前端单独 admin-web SPA**，宝塔 Nginx 静态托管 + 反代 API，内网或 IP 限制。
+  4. **与小程序契约**：GET /api/branding、channel-bind、source_channel；promo 响应结构不变。
+  5. **Phase 1 可以没有 UI，但必须有数据和公开 API**；Phase 2 再把 secret 能力产品化。
+  6. **产品细节、角色诉求、待决策项**以 ./分析 第十五、十六节为准；本文侧重实现架构与搭建清单。
 
 ================================================================================
-文档结束 · 实施时以 utils/promo-scheduler.js 为单一入口，避免各页各自写 if
+文档结束 · 变更请同步 分析 与 backend README
 ================================================================================

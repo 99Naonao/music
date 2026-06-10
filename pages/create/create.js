@@ -12,6 +12,8 @@ const {
 const promoPageBehavior = require('../../behaviors/promo-page')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
+const channel = require('../../utils/channel')
+const { resolveRemoteImageUrl } = require('../../utils/remote-image')
 const {
   mapLibraryTrackItem,
   buildLibraryPlayerUrl,
@@ -84,6 +86,11 @@ Page({
     statusBarHeight: 44,
     greeting: '晚上好',
     greetingSub: '欢迎回家，今天想听点什么呢？',
+    homeAiTitle: 'AI智能生成',
+    homeAiDesc: '为你生成专属助眠音乐',
+    homeBannerTitle: '眠家深睡 · 好物推荐',
+    homeBannerDesc: '搭配助眠音乐，探索眠加商城精选',
+    homeAiMascot: '/static/new_logo/logo_bg.png',
     scenes: [
       {
         id: 1,
@@ -139,6 +146,39 @@ Page({
     })
   },
 
+  syncChannelBrandingUI() {
+    const showMall = channel.getFeature('hideMall', false)
+      ? false
+      : MIANJIA_ENTRY_ENABLED
+    const branding = channel.getBranding()
+    const remoteLogo =
+      channel.isChannelActive() && branding && branding.logoUrl
+        ? branding.logoUrl
+        : ''
+    const patch = {
+      showMianjiaEntry: showMall,
+      greetingSub: channel.getCopy(
+        'homeGreetingSub',
+        '欢迎回家，今天想听点什么呢？'
+      ),
+      homeAiTitle: channel.getCopy('homeAiTitle', 'AI智能生成'),
+      homeAiDesc: channel.getCopy('homeAiDesc', '为你生成专属助眠音乐'),
+      homeBannerTitle: channel.getCopy('homeBannerTitle', '眠家深睡 · 好物推荐'),
+      homeBannerDesc: channel.getCopy(
+        'homeBannerDesc',
+        '搭配助眠音乐，探索眠加商城精选'
+      ),
+      homeAiMascot: '/static/new_logo/logo_bg.png'
+    }
+    this.setData(patch)
+    if (!remoteLogo) return
+    resolveRemoteImageUrl(remoteLogo).then((localSrc) => {
+      if (localSrc) {
+        this.setData({ homeAiMascot: localSrc })
+      }
+    })
+  },
+
   onLoad() {
     const sys = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.updateMiniPlayerLayout()
@@ -148,6 +188,7 @@ Page({
       sceneRows: buildSceneRows(this.data.scenes),
       showMianjiaBanner: !isMianjiaHomeBannerDismissedToday()
     })
+    this.syncChannelBrandingUI()
     this.loadMiniPlayer()
     this.loadHomeLibrary()
     this._unsubGlobalAudio = globalAudio.subscribe((s) => this.syncMiniPlayState(s))
@@ -156,6 +197,10 @@ Page({
   onShow() {
     setTabBarSelected(this, 0)
     this.updateMiniPlayerLayout()
+    this.syncChannelBrandingUI()
+    channel.ensureInit().then(() => {
+      this.syncChannelBrandingUI()
+    })
     this.setData({
       greeting: buildGreeting(),
       showMianjiaBanner: !isMianjiaHomeBannerDismissedToday()

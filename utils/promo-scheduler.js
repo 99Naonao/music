@@ -352,6 +352,15 @@ async function tryShow(opts) {
     logWarn('promo', 'PROMO_ENABLED=false')
     return false
   }
+  try {
+    const channel = require('./channel')
+    if (channel.getFeature('hidePromo', false)) {
+      logWarn('promo', '渠道 hidePromo=true')
+      return false
+    }
+  } catch (e) {
+    /* ignore */
+  }
 
   if (isBlockedRoute(getCurrentRoute())) {
     logWarn('promo', '当前页面在黑名单', { route: getCurrentRoute() })

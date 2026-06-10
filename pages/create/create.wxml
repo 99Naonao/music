@@ -26,11 +26,13 @@
     <view class="ai-card">
       <view class="ai-card-body">
         <view class="ai-card-copy">
-          <text class="ai-card-title">AI智能生成</text>
-          <text class="ai-card-desc">为你生成专属助眠音乐</text>
+          <text class="ai-card-title">{{homeAiTitle}}</text>
+          <text class="ai-card-desc">{{homeAiDesc}}</text>
           <view class="ai-card-btn" bindtap="goToCreate">开始生成</view>
         </view>
-        <image class="ai-card-mascot" src="/static/new_logo/logo_bg.png" mode="aspectFit"/>
+        <view class="ai-card-mascot-wrap">
+          <image class="ai-card-mascot" src="{{homeAiMascot}}" mode="aspectFit"/>
+        </view>
       </view>
     </view>
 
@@ -41,8 +43,8 @@
       bindtap="goToMianjia"
     >
       <view class="mianjia-entry-text">
-        <text class="mianjia-entry-title">眠家深睡 · 好物推荐</text>
-        <text class="mianjia-entry-desc">搭配助眠音乐，探索眠加商城精选</text>
+        <text class="mianjia-entry-title">{{homeBannerTitle}}</text>
+        <text class="mianjia-entry-desc">{{homeBannerDesc}}</text>
       </view>
       <text class="mianjia-entry-link">去看看 ›</text>
       <view class="mianjia-entry-close" catchtap="onCloseMianjiaBanner">
@@ -148,11 +150,10 @@
       </view>
     </view>
     <view class="mini-player-play" catchtap="toggleMiniPlay">
-      <image
-        class="mini-player-btn-icon"
-        src="{{miniPlayerPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}"
-        mode="aspectFit"
-      />
+      <view class="mini-player-btn {{miniPlayerPlaying ? 'mini-player-btn--pause' : 'mini-player-btn--play'}}">
+        <view wx:if="{{!miniPlayerPlaying}}" class="mini-player-triangle"></view>
+        <view wx:else class="mini-player-pause-bars"></view>
+      </view>
     </view>
   </view>
 

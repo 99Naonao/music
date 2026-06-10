@@ -37,6 +37,7 @@ const downloads = require('../../utils/downloads')
 const promoPageBehavior = require('../../behaviors/promo-page')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
+const channel = require('../../utils/channel')
 
 const MIANJIA_TIP_DISMISS_KEY = 'mb_player_mianjia_tip_dismissed_date'
 
@@ -102,8 +103,16 @@ Page({
     syncTabBarPageLayout(this, { footerRpx: 0, withScrollHeight: false })
   },
 
+  syncChannelFeatures() {
+    const showMall = channel.getFeature('hideMall', false)
+      ? false
+      : MIANJIA_ENTRY_ENABLED
+    this.setData({ showMianjiaEntry: showMall })
+  },
+
   onShow() {
     setTabBarSelected(this, 1)
+    this.syncChannelFeatures()
     this.updatePageLayout()
     this.syncSleepTimerUI()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
@@ -257,6 +266,7 @@ Page({
   },
 
   onLoad(options) {
+    this.syncChannelFeatures()
     this.setData({ showMianjiaTip: !isMianjiaTipDismissedToday() })
     this.updatePageLayout()
     this._playSource = options.from || 'player'

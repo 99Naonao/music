@@ -5,21 +5,109 @@
 }
 
 .setting-group {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--mb-card-bg, rgba(255, 255, 255, 0.92));
   border: 1rpx solid var(--mb-card-border);
   border-radius: 20rpx;
   margin: 0 24rpx 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(30, 58, 95, 0.05);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .mb-theme-night .setting-group {
-  background: var(--mb-card-bg);
   box-shadow: none;
 }
 
 .setting-group--theme {
-  padding: 8rpx 0 16rpx;
+  padding: 8rpx 0 24rpx;
+  overflow: visible;
+}
+
+.theme-scroll {
+  width: 100%;
+}
+
+.theme-scroll-inner {
+  display: flex;
+  flex-direction: row;
+  gap: 20rpx;
+  padding: 4rpx 28rpx 8rpx;
+  box-sizing: border-box;
+}
+
+.theme-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200rpx;
+  flex-shrink: 0;
+  padding: 20rpx 16rpx 18rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid var(--mb-card-border);
+  background: var(--mb-card-bg, rgba(255, 255, 255, 0.55));
+  box-sizing: border-box;
+}
+
+.theme-card--active {
+  border-color: var(--mb-accent, #568fd1);
+  background: var(--mb-accent-soft, rgba(86, 143, 209, 0.12));
+  box-shadow: 0 6rpx 20rpx var(--mb-accent-soft, rgba(86, 143, 209, 0.2));
+}
+
+.mb-theme-night .theme-card--active {
+  border-color: var(--mb-accent, var(--mb-mist-blue));
+  background: var(--mb-accent-soft, var(--mb-mint-12));
+}
+
+.theme-card-preview {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 20rpx;
+  flex-shrink: 0;
+  margin-bottom: 16rpx;
+}
+
+.theme-card-name {
+  display: block;
+  width: 100%;
+  font-size: 26rpx;
+  color: var(--mb-text-primary);
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.theme-card-desc {
+  display: block;
+  width: 100%;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: var(--mb-text-muted);
+  text-align: center;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.theme-card-check {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: var(--mb-accent, #568fd1);
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.mb-theme-night .theme-card-check {
+  background: var(--mb-mist-blue);
 }
 
 .setting-section-title {
@@ -55,39 +143,6 @@
   transform: scale(0.85);
 }
 
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 20rpx 28rpx;
-  margin: 0 16rpx 12rpx;
-  border-radius: 16rpx;
-  border: 2rpx solid var(--mb-card-border);
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.mb-theme-night .theme-option {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: transparent;
-}
-
-.theme-option-active {
-  border-color: #568fd1;
-  background: rgba(86, 143, 209, 0.12);
-}
-
-.mb-theme-night .theme-option-active {
-  border-color: var(--mb-mist-blue);
-  background: var(--mb-mint-12);
-}
-
-.theme-preview {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 16rpx;
-  flex-shrink: 0;
-}
-
 .theme-preview-night {
   background: linear-gradient(180deg, #202b48 0%, #1a2238 100%);
 }
@@ -96,42 +151,13 @@
   background: linear-gradient(180deg, #e1f0ff 0%, #ffffff 100%);
 }
 
-.theme-option-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
-
-.theme-option-name {
-  font-size: 28rpx;
-  color: var(--mb-text-primary);
-  font-weight: 600;
-}
-
-.theme-option-desc {
-  font-size: 22rpx;
-  color: var(--mb-text-muted);
-}
-
-.theme-option-check {
-  font-size: 32rpx;
-  color: #568fd1;
-  font-weight: 700;
-}
-
-.mb-theme-night .theme-option-check {
-  color: var(--mb-mist-blue);
-}
-
 .logout-wrap {
   padding: 32rpx 24rpx 0;
 }
 
 .btn-logout {
   width: 100%;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--mb-card-bg, rgba(255, 255, 255, 0.92));
   border: 1rpx solid var(--mb-card-border);
   border-radius: 48rpx;
   color: #e74c3c;
@@ -141,7 +167,7 @@
 }
 
 .mb-theme-night .btn-logout {
-  background: var(--mb-card-bg);
+  color: #ff7b6b;
 }
 
 .btn-logout::after {

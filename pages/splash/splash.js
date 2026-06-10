@@ -1,26 +1,40 @@
 const theme = require('../../utils/theme')
+const channel = require('../../utils/channel')
 const { isShareUuid } = require('../../utils/share-entry')
 const { log, logWarn } = require('../../utils/log')
 
 const SPLASH_MS = 2000
-const HERO_SRC = '/static/new_logo/logo_bg.png'
+const HERO_FALLBACK = '/static/new_logo/logo_bg.png'
 
 Page({
   data: {
     variant: 'dawn',
     pageMetaStyle: theme.getSplashPageMetaStyle('dawn'),
-    heroSrc: HERO_SRC,
+    heroSrc: HERO_FALLBACK,
+    splashFullBleed: false,
+    splashTitle: '眠音盒',
+    splashSubtitle: 'AI声波音乐盒',
+    splashSlogan: '让每一夜都被温柔守护',
+    splashTitleColor: '',
+    splashSubtitleColor: '',
+    splashSloganColor: '',
     showContent: false
   },
 
-  onLoad() {
+  onLoad(options) {
     this._left = false
-    this.applySplashTheme()
+    channel.resolveChannelFromLaunch({ query: options || {} })
+    this.applyChannelSplash()
 
-    const shareId = this.resolveIncomingShareId()
+    channel.ensureInit({ query: options || {} }).then(() => {
+      this.applyChannelSplash()
+    })
+
+    const shareId = this.resolveIncomingShareId(options)
     if (shareId) {
       this._left = true
-      const url = `/pages/create/gift?shareId=${encodeURIComponent(shareId)}`
+      const base = `/pages/create/gift?shareId=${encodeURIComponent(shareId)}`
+      const url = channel.appendChannelToPath(base)
       log('splash', '检测到分享贺卡，跳转收礼页', {
         shareId: `${shareId.slice(0, 8)}…`,
         url
@@ -35,9 +49,42 @@ Page({
     this._timer = setTimeout(() => this.goMain(), SPLASH_MS)
   },
 
-  /** 好友点分享卡片冷启动时，首屏可能是 splash，需转去贺卡页 */
-  resolveIncomingShareId() {
+  applyChannelSplash() {
+    const splash = channel.getSplashDisplay()
+    const userTheme = theme.getEffectiveThemeId()
+    const fullBleed = !!(splash.fullBleed && splash.useRemoteImage)
+
+    this.setData({
+      variant: userTheme,
+      pageMetaStyle: theme.getSplashPageMetaStyle(userTheme),
+      heroSrc: splash.imageUrl || HERO_FALLBACK,
+      splashFullBleed: fullBleed,
+      splashTitle: splash.title,
+      splashSubtitle: splash.subtitle,
+      splashSlogan: splash.slogan,
+      splashTitleColor: splash.titleColor || '',
+      splashSubtitleColor: splash.subtitleColor || '',
+      splashSloganColor: splash.sloganColor || ''
+    })
+    theme.applyChromeTheme(userTheme)
+  },
+
+  onHeroImageError() {
+    logWarn('splash', '开屏图加载失败，回退默认布局')
+    this.setData({
+      heroSrc: HERO_FALLBACK,
+      splashFullBleed: false,
+      splashTitleColor: '',
+      splashSubtitleColor: '',
+      splashSloganColor: ''
+    })
+  },
+
+  resolveIncomingShareId(pageOptions) {
     try {
+      if (pageOptions && pageOptions.shareId && isShareUuid(pageOptions.shareId)) {
+        return String(pageOptions.shareId).trim()
+      }
       if (typeof wx.getLaunchOptionsSync === 'function') {
         const launch = wx.getLaunchOptionsSync()
         const path = String(launch.path || '')
@@ -62,7 +109,7 @@ Page({
   },
 
   onShow() {
-    this.applySplashTheme()
+    this.applyChannelSplash()
   },
 
   onUnload() {
@@ -70,16 +117,6 @@ Page({
       clearTimeout(this._timer)
       this._timer = null
     }
-  },
-
-  applySplashTheme() {
-    const userTheme = theme.getTheme()
-    this.setData({
-      variant: 'dawn',
-      pageMetaStyle: theme.getSplashPageMetaStyle('dawn'),
-      heroSrc: HERO_SRC
-    })
-    theme.applyChromeTheme(userTheme)
   },
 
   onTapSkip() {
@@ -101,6 +138,7 @@ Page({
     } catch (e) {
       /* ignore */
     }
+    theme.refreshAfterChannelBranding()
     wx.reLaunch({ url: '/pages/create/create' })
   }
 })

@@ -139,7 +139,7 @@
   bottom: 0;
   width: 40rpx;
   height: 40rpx;
-  background: #568fd1;
+  background: var(--mb-btn-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;

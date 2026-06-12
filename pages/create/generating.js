@@ -1,5 +1,5 @@
 // AI音乐生成页面 - 调用后端MiniMax API真实生成音乐
-const { request } = require('../../utils/request')
+const { request, isRetryableNetworkError } = require('../../utils/request')
 const { showAlert } = require('../../utils/show-alert')
 const { showPointsReward } = require('../../utils/show-points-reward')
 const { API_BASE_URL, MUSIC_GENERATION_TIMEOUT_MS, TIMEOUT, devApiMode } = require('../../utils/config')
@@ -356,6 +356,8 @@ Page({
 
     // 轮询后端状态（约每 3s 一次）。服务端默认轮询 MiniMax 约 6 分钟，此处须略大于服务端次数，避免先被前端判超时
     let pollCount = 0
+    let pollNetFails = 0
+    const maxPollNetFails = 8
     const maxPolls = this.data.mock ? 3 : 140
 
     this.pollTimer = setInterval(async () => {
@@ -364,8 +366,11 @@ Page({
 
       try {
         const statusRes = await request({
-          url: `/api/music/${musicId}/status`
+          url: `/api/music/${musicId}/status`,
+          retry: 3
         })
+
+        pollNetFails = 0
 
         if (statusRes.code === 0 && statusRes.data) {
           const track = statusRes.data
@@ -394,8 +399,28 @@ Page({
           throw new Error('生成超时，请稍后到作品库查看')
         }
       } catch (error) {
+        const msg = error && (error.message || error.errMsg) ? String(error.message || error.errMsg) : ''
+        const isBizFailure =
+          msg.includes('音乐生成失败') ||
+          msg.includes('服务端等待超时') ||
+          msg.includes('生成超时')
+
+        if (
+          !isBizFailure &&
+          isRetryableNetworkError(error) &&
+          pollNetFails + 1 < maxPollNetFails &&
+          pollCount <= maxPolls
+        ) {
+          pollNetFails += 1
+          console.warn('[轮询] 网络波动，继续等待', pollNetFails, msg)
+          this.setData({
+            statusText: `网络波动，继续等待生成…（${pollNetFails}/${maxPollNetFails}）`
+          })
+          return
+        }
+
         console.error('[轮询] 失败:', error)
-        this.onGenerationError(error.message || '生成异常')
+        this.onGenerationError(msg || '生成异常')
       }
     }, 3000)
   },

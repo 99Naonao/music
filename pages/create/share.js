@@ -26,7 +26,7 @@ const {
 const { resolveCardCustomCover, resolveCardShareCover } = require('../../utils/card-cover')
 const { getWorkCoverDisplay } = require('../../utils/work-cover')
 const { markMineStatsStale } = require('../../utils/mine-stats-cache')
-const { resolveWorkDisplayTitle } = require('../../utils/work-meta')
+const { resolveWorkDisplayTitle, resolveWorkDurationSec, findWorkInLibrary } = require('../../utils/work-meta')
 const {
   resolveShareIdFromOptions,
   resolveShareIdFromEntry,
@@ -43,6 +43,7 @@ const { log, logWarn } = require('../../utils/log')
 const channel = require('../../utils/channel')
 const channelShare = require('../../utils/channel-share')
 const promoPageBehavior = require('../../behaviors/promo-page')
+const { getWindowMetrics } = require('../../utils/page-layout')
 
 function defaultCardBlessing() {
   return (
@@ -59,6 +60,19 @@ function briefShareId(id) {
 
 /** 分享卡片封面兜底（须为包内真实路径） */
 const SHARE_CARD_FALLBACK_IMAGE = '/static/music_library/greeting_card.png'
+const SHARE_DEFAULT_DURATION_SEC = 180
+
+function resolveSharePageDurationSec(cardData, musicId) {
+  if (musicId) {
+    const fromLib = resolveWorkDurationSec(findWorkInLibrary(musicId))
+    if (fromLib != null && fromLib > 0) return fromLib
+  }
+  if (cardData && cardData.musicInfo) {
+    const fromInfo = resolveWorkDurationSec(cardData.musicInfo)
+    if (fromInfo != null && fromInfo > 0) return fromInfo
+  }
+  return SHARE_DEFAULT_DURATION_SEC
+}
 
 Page({
   behaviors: [promoPageBehavior],
@@ -99,7 +113,16 @@ Page({
     shareMessageDisplay: '',
     shareMessageLines: [''],
     shareFixedLines: false,
-    cardOverlayStyle: { to: '', message: '' }
+    cardOverlayStyle: { to: '', message: '' },
+    pageBottomPaddingPx: 48
+  },
+
+  updatePageBottomPadding() {
+    const m = getWindowMetrics()
+    const px = Math.ceil((m.safeBottom || 0) + 48)
+    if (px !== this.data.pageBottomPaddingPx) {
+      this.setData({ pageBottomPaddingPx: px })
+    }
   },
 
   applyCardOverlayLayout(meta) {
@@ -181,6 +204,7 @@ Page({
   },
 
   onLoad(options) {
+    this.updatePageBottomPadding()
     channel.applyFromPageOptions(options || {})
     let incomingShareId = resolveShareIdFromOptions(options)
     if (!incomingShareId) {
@@ -262,7 +286,12 @@ Page({
       this.refreshMusicCover()
       this.refreshShareWorkTitle()
       if (patch.audioUrl) {
-        this.initAudioPlayer(patch.audioUrl)
+        const dur = resolveSharePageDurationSec(
+          patch.cardData || cardData,
+          patch.musicId
+        )
+        this.initAudioPlayer(patch.audioUrl, dur)
+        if (patch.musicId) this.fetchShareDurationFromServer(patch.musicId)
       }
       channel.ensureInit({ query: options || {} }).then(() => {
         this._cachedShareCardImage = null
@@ -283,6 +312,7 @@ Page({
   },
 
   onShow() {
+    this.updatePageBottomPadding()
     const ok = this.isLoggedInForShare()
     this.setData({ canShare: ok })
     if (this.data.isSharedView) {
@@ -538,20 +568,65 @@ Page({
     if (this.playTimer) {
       clearInterval(this.playTimer)
     }
+    if (this._durationProbeTimers) {
+      this._durationProbeTimers.forEach((id) => clearTimeout(id))
+      this._durationProbeTimers = []
+    }
   },
 
-  initAudioPlayer(url) {
+  initAudioPlayer(url, initialDurationSec) {
+    if (this.audioCtx) {
+      this.audioCtx.destroy()
+      this.audioCtx = null
+    }
+    if (this._durationProbeTimers) {
+      this._durationProbeTimers.forEach((id) => clearTimeout(id))
+    }
+    this._durationProbeTimers = []
+    this._progressDragging = false
+
+    const fallbackDur =
+      Number(initialDurationSec) > 0
+        ? Math.floor(Number(initialDurationSec))
+        : SHARE_DEFAULT_DURATION_SEC
+    this._durationFromServer = Number(initialDurationSec) > 0
+    this.setData({
+      currentTime: 0,
+      isPlaying: false,
+      duration: fallbackDur
+    })
+
     this.audioCtx = wx.createInnerAudioContext()
     patchInnerAudioForIOS(this.audioCtx)
     applyGlobalInnerAudioOptions()
     this.audioCtx.src = url
 
+    const applyDurationFromNative = () => {
+      if (this._durationFromServer) return
+      const d = Math.floor(this.audioCtx.duration || 0)
+      if (d > 0) {
+        this.setData({ duration: d })
+      }
+    }
+
     this.audioCtx.onCanplay(() => {
-      this.setData({ duration: Math.floor(this.audioCtx.duration) || 180 })
+      applyDurationFromNative()
     })
 
     this.audioCtx.onTimeUpdate(() => {
-      this.setData({ currentTime: Math.floor(this.audioCtx.currentTime) })
+      if (this._progressDragging) return
+      const cur = Math.floor(this.audioCtx.currentTime || 0)
+      const patch = { currentTime: cur }
+      if (!this._durationFromServer) {
+        const d = Math.floor(this.audioCtx.duration || 0)
+        if (d > 0) patch.duration = d
+      }
+      this.setData(patch)
+    })
+
+    ;[200, 700, 2000, 5000].forEach((delay) => {
+      const tid = setTimeout(() => applyDurationFromNative(), delay)
+      this._durationProbeTimers.push(tid)
     })
 
     this.audioCtx.onEnded(() => {
@@ -562,6 +637,27 @@ Page({
       console.error('音频播放错误:', err)
       showAlert('提示', '音频加载失败，请稍后重试。')
     })
+  },
+
+  onProgressChanging(e) {
+    this._progressDragging = true
+    const max = this.data.duration || SHARE_DEFAULT_DURATION_SEC
+    const v = Math.min(Math.max(0, e.detail.value), max)
+    this.setData({ currentTime: Math.floor(v) })
+  },
+
+  onProgressChange(e) {
+    this._progressDragging = false
+    const max = this.data.duration || SHARE_DEFAULT_DURATION_SEC
+    const sec = Math.min(Math.max(0, e.detail.value), max)
+    if (this.audioCtx) {
+      try {
+        this.audioCtx.seek(sec)
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    this.setData({ currentTime: Math.floor(sec) })
   },
 
   onShareAppMessage() {
@@ -778,6 +874,24 @@ Page({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   },
 
+  async fetchShareDurationFromServer(musicId) {
+    if (!musicId) return
+    try {
+      const res = await request({
+        url: `/api/music/${encodeURIComponent(String(musicId))}/status`,
+        silentFail: true
+      })
+      if (res.code !== 0 || !res.data) return
+      const dur = resolveWorkDurationSec(res.data)
+      if (dur != null && dur > 0) {
+        this._durationFromServer = true
+        this.setData({ duration: dur })
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  },
+
   async fetchShareWorkTitleFromServer(musicId) {
     if (!musicId) return
     try {
@@ -842,7 +956,14 @@ Page({
             this.refreshCardCustomCover()
             this.refreshMusicCover()
             if (result.patch.audioUrl) {
-              this.initAudioPlayer(result.patch.audioUrl)
+              const dur = resolveSharePageDurationSec(
+                result.patch.cardData,
+                result.patch.musicId
+              )
+              this.initAudioPlayer(result.patch.audioUrl, dur)
+              if (result.patch.musicId) {
+                this.fetchShareDurationFromServer(result.patch.musicId)
+              }
             }
             if (!workTitle) {
               this.refreshShareWorkTitle()

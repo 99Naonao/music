@@ -6,11 +6,12 @@
   root-background-color="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
+<wxs src="./time-format.wxs" module="tf" />
 <wxs src="./blessing-preview.wxs" module="bp" />
 <view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
   <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
   <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
-  <view class="mb-page-body share-page">
+  <view class="mb-page-body share-page" style="padding-bottom: {{pageBottomPaddingPx}}px;">
   <!-- P0：礼物感说明（与完成页 / 分享卡一致） -->
   <view class="share-gift-strip">
     <text class="share-gift-title">晚安贺卡</text>
@@ -31,21 +32,34 @@
         <view wx:else class="share-cover-default">
           <image class="share-cover-default-icon" src="/static/music_library/panel.png" mode="aspectFit"/>
         </view>
-        <view class="share-cover-overlay">
-          <view class="share-play-btn" bindtap="togglePlay">
-            <image class="play-btn-icon" src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}" mode="aspectFit"/>
+        <view class="share-cover-overlay share-cover-overlay--lite">
+          <view class="share-cover-play" bindtap="togglePlay" hover-class="none">
+            <image
+              class="share-cover-play-icon"
+              src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}"
+              mode="aspectFit"
+            />
           </view>
         </view>
       </view>
     </view>
     <text class="share-music-title">{{shareWorkTitle}}</text>
     <text class="share-music-info">{{musicInfo.instrument}} · {{musicInfo.frequency}} · {{musicInfo.bpm}}BPM</text>
-    <view class="share-progress">
-      <view class="share-progress-bar" style="width: {{currentTime/duration*100}}%"></view>
-    </view>
-    <view class="share-time">
-      <text>{{formatTime(currentTime)}}</text>
-      <text>{{formatTime(duration)}}</text>
+    <view class="share-progress-row">
+      <text class="share-time-text">{{tf.formatTime(currentTime)}}</text>
+      <slider
+        class="share-progress-slider"
+        min="0"
+        max="{{duration > 0 ? duration : 180}}"
+        value="{{currentTime}}"
+        block-size="14"
+        activeColor="{{mbAccent || '#568fd1'}}"
+        backgroundColor="{{mbAccentSoft || 'rgba(86,143,209,0.28)'}}"
+        block-color="#ffffff"
+        bindchanging="onProgressChanging"
+        bindchange="onProgressChange"
+      />
+      <text class="share-time-text">{{tf.formatTime(duration)}}</text>
     </view>
   </view>
 

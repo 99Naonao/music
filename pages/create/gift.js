@@ -26,9 +26,21 @@ const {
   isPersistedCoverUrl
 } = require('../../utils/work-cover')
 const { resolveWorkDurationSec } = require('../../utils/work-meta')
+const { getWindowMetrics } = require('../../utils/page-layout')
 
 const SHARE_CARD_FALLBACK_IMAGE = '/static/music_library/greeting_card.png'
 const INCOMING_GIFT_STORAGE_KEY = 'mb_incoming_gift_share'
+const GIFT_DEFAULT_DURATION_SEC = 180
+
+function resolveGiftDurationSec(initialSec, raw) {
+  const n = Number(initialSec)
+  if (n > 0) return Math.floor(n)
+  if (raw && typeof raw === 'object') {
+    const fromRaw = resolveWorkDurationSec(raw)
+    if (fromRaw != null && fromRaw > 0) return fromRaw
+  }
+  return GIFT_DEFAULT_DURATION_SEC
+}
 
 function briefShareId(id) {
   const s = id != null ? String(id).trim() : ''
@@ -70,8 +82,7 @@ Page({
     audioUrl: null,
     isPlaying: false,
     currentTime: 0,
-    duration: 0,
-    audioReady: false,
+    duration: GIFT_DEFAULT_DURATION_SEC,
     shareId: null,
     shareWorkTitle: '专属助眠曲',
     sharedLoadError: '',
@@ -83,10 +94,20 @@ Page({
     canShare: false,
     ownShareReady: false,
     canEarnSharePoints: false,
-    ownShareId: ''
+    ownShareId: '',
+    pageBottomPaddingPx: 48
+  },
+
+  updatePageBottomPadding() {
+    const m = getWindowMetrics()
+    const px = Math.ceil((m.safeBottom || 0) + 48)
+    if (px !== this.data.pageBottomPaddingPx) {
+      this.setData({ pageBottomPaddingPx: px })
+    }
   },
 
   onLoad(options) {
+    this.updatePageBottomPadding()
     channel.applyFromPageOptions(options || {})
     let shareId = resolveShareIdFromOptions(options)
     if (!shareId) {
@@ -112,6 +133,7 @@ Page({
   },
 
   onShow() {
+    this.updatePageBottomPadding()
     this.syncOwnShareState()
     this.tryRecordGiftInbox()
   },
@@ -432,7 +454,8 @@ Page({
         this.setData(result.patch, () => {
           this.refreshMusicCover()
           if (result.patch.audioUrl) {
-            this.initAudioPlayer(result.patch.audioUrl, result.patch.duration)
+            const dur = resolveGiftDurationSec(result.patch.duration, result.raw)
+            this.initAudioPlayer(result.patch.audioUrl, dur)
           }
           const workTitle = result.patch.shareWorkTitle
           if (!workTitle || workTitle === '专属助眠曲') {
@@ -487,7 +510,6 @@ Page({
       const dur = resolveWorkDurationSec(res.data)
       if (dur != null && dur > 0) {
         patch.duration = dur
-        patch.audioReady = true
         this._durationFromServer = true
       }
       if (Object.keys(patch).length) {
@@ -529,16 +551,12 @@ Page({
     this._durationProbeTimers = []
     this._progressDragging = false
 
-    const serverDur =
-      Number(initialDurationSec) > 0 ? Math.floor(Number(initialDurationSec)) : 0
-    if (serverDur > 0) {
-      this._durationFromServer = true
-    }
+    const fallbackDur = resolveGiftDurationSec(initialDurationSec, this._giftRaw)
+    this._durationFromServer = Number(initialDurationSec) > 0
     this.setData({
-      audioReady: serverDur > 0,
       currentTime: 0,
       isPlaying: false,
-      duration: serverDur > 0 ? serverDur : 0
+      duration: fallbackDur
     })
 
     this.audioCtx = wx.createInnerAudioContext()
@@ -550,7 +568,7 @@ Page({
       if (this._durationFromServer) return
       const d = Math.floor(this.audioCtx.duration || 0)
       if (d > 0) {
-        this.setData({ duration: d, audioReady: true })
+        this.setData({ duration: d })
       }
     }
 
@@ -560,8 +578,13 @@ Page({
 
     this.audioCtx.onTimeUpdate(() => {
       if (this._progressDragging) return
-      this.setData({ currentTime: Math.floor(this.audioCtx.currentTime || 0) })
-      applyDurationFromNative()
+      const cur = Math.floor(this.audioCtx.currentTime || 0)
+      const patch = { currentTime: cur }
+      if (!this._durationFromServer) {
+        const d = Math.floor(this.audioCtx.duration || 0)
+        if (d > 0) patch.duration = d
+      }
+      this.setData(patch)
     })
 
     ;[200, 700, 2000, 5000].forEach((delay) => {
@@ -575,7 +598,6 @@ Page({
 
     this.audioCtx.onError((err) => {
       console.error('[gift] audio error', err)
-      this.setData({ audioReady: false })
       showAlert('提示', '音频加载失败，请稍后重试。')
     })
   },

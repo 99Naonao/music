@@ -57,6 +57,7 @@ module.exports = Behavior({
       const detail = (e && e.detail) || {}
       promoScheduler.handleClose(detail)
       this.setData({ promoVisible: false, promoPayload: null })
+      this._callPromoDismissedHook()
     },
 
     onPromoConfirm(e) {
@@ -68,6 +69,7 @@ module.exports = Behavior({
       })
       promoScheduler.navigate(payload)
       this.setData({ promoVisible: false, promoPayload: null })
+      this._callPromoDismissedHook()
     },
 
     onPromoSnooze(e) {
@@ -77,6 +79,13 @@ module.exports = Behavior({
         mode: 'snooze'
       })
       this.setData({ promoVisible: false, promoPayload: null })
+      this._callPromoDismissedHook()
+    },
+
+    _callPromoDismissedHook() {
+      if (typeof this.onPromoDismissed === 'function') {
+        this.onPromoDismissed()
+      }
     },
 
     /** 诊断自然触发为何不弹：tryPromoDiagnose('home_show').then(console.log) */

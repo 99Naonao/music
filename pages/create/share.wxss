@@ -1,7 +1,6 @@
 @import '../../styles/card-art-text-stroke.wxss';
 .share-page {
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: 20rpx 30rpx 0;
 }
 
 .share-gift-strip {
@@ -171,6 +170,63 @@
   justify-content: space-between;
   color: var(--mb-text-muted);
   font-size: 24rpx;
+}
+
+/* 送礼页播放器：透明播放键 + 可拖拽进度条 */
+.share-cover-overlay--lite {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.share-cover-play {
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-cover-play:active {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
+.share-cover-play-icon {
+  width: 80rpx;
+  height: 80rpx;
+  filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.35));
+}
+
+.share-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+  margin-top: 8rpx;
+  margin-bottom: 8rpx;
+  padding: 0 4rpx;
+  box-sizing: border-box;
+}
+
+.share-time-text {
+  font-size: 24rpx;
+  color: var(--mb-text-muted);
+  min-width: 80rpx;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.share-progress-slider {
+  flex: 1;
+  margin: 0;
 }
 
 /* 贺卡预览 */

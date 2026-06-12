@@ -3,7 +3,7 @@ const { showAlert } = require('../../utils/show-alert')
 const { fetchShopCentre, patchUserInfoFromCentre, isPersistedAvatarUrl } = require('../../utils/shop-xinglu')
 const { uploadAvatarTempFile } = require('../../utils/avatar-upload')
 const { log, logWarn } = require('../../utils/log')
-const { setTabBarSelected } = require('../../utils/tab-bar')
+const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
 
 /** 积分/作品/帖子等统计缓存时长（毫秒），期内切回「我的」不重复打重接口 */
 const {
@@ -40,6 +40,7 @@ Page({
   onLoad() {
     this._statsFetchedAt = 0
     this._statsLoading = false
+    syncTabBarPageLayout(this, { extraPx: 20, withScrollHeight: false })
     this.checkLoginStatus()
   },
 
@@ -57,6 +58,7 @@ Page({
 
   onShow() {
     setTabBarSelected(this, 3)
+    syncTabBarPageLayout(this, { extraPx: 20, withScrollHeight: false })
     this.syncChannelFeatures()
     this.checkLoginStatus()
     this.tryPromoShow(SCENES.MINE, { recordVisitAfter: false })

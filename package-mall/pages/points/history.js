@@ -27,17 +27,26 @@ Page({
   },
 
   onShow() {
-    this.loadHistory()
+    this.loadHistory({ silent: !!this._historyLoaded })
   },
 
   onPullDownRefresh() {
     this.loadHistory().finally(() => wx.stopPullDownRefresh())
   },
 
-  async loadHistory() {
+  applyFilter(records, filter) {
+    if (filter === 'income') return records.filter((r) => r.type === 'income')
+    if (filter === 'expense') return records.filter((r) => r.type === 'expense')
+    return records
+  },
+
+  async loadHistory(options = {}) {
+    const { silent = false } = options
     const userInfo = wx.getStorageSync('userInfo')
     const openid = userInfo && userInfo.openid
     if (!openid) {
+      this._allRecords = []
+      this._historyLoaded = false
       this.setData({
         loading: false,
         records: [],
@@ -47,15 +56,11 @@ Page({
       return
     }
 
-    const filter = this.data.filter
-    const query = { page: 1, limit: 100 }
-    if (filter === 'income') {
-      query.kind = 'income'
-    } else if (filter === 'expense') {
-      query.kind = 'expense'
+    if (!silent) {
+      this.setData({ loading: true })
     }
 
-    this.setData({ loading: true })
+    const query = { page: 1, limit: 100 }
     try {
       const res = await request({
         url: `/api/points/${encodeURIComponent(openid)}/history`,
@@ -63,6 +68,7 @@ Page({
         silentFail: true
       })
       if (res.code !== 0 || !res.data) {
+        this._allRecords = []
         this.setData({ loading: false, records: [], totalIncome: 0, totalExpense: 0 })
         return
       }
@@ -79,8 +85,10 @@ Page({
         }
       })
 
+      this._allRecords = list
+      this._historyLoaded = true
       this.setData({
-        records: list,
+        records: this.applyFilter(list, this.data.filter),
         totalIncome: Number(summary.totalIncome) || 0,
         totalExpense: Number(summary.totalExpense) || 0,
         loading: false
@@ -93,7 +101,10 @@ Page({
 
   setFilter(e) {
     const filter = e.currentTarget.dataset.filter
-    if (!filter) return
-    this.setData({ filter }, () => this.loadHistory())
+    if (!filter || filter === this.data.filter) return
+    this.setData({
+      filter,
+      records: this.applyFilter(this._allRecords || [], filter)
+    })
   }
 })

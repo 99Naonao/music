@@ -97,6 +97,9 @@ async function fetchSharedCardPayload(shareId) {
       textLayout: cardData.textLayout
     })
 
+    const coverImage = normalizeHostedCoverUrl(data.coverImage || '')
+    const cardCustomCover = resolveCardCustomCover(coverImage)
+
     const hasArt = !!(
       cardCustomCover ||
       (cardData.artistBgImage && String(cardData.artistBgImage).trim())
@@ -110,8 +113,6 @@ async function fetchSharedCardPayload(shareId) {
       hasArtBg: hasArt
     })
 
-    const coverImage = normalizeHostedCoverUrl(data.coverImage || '')
-    const cardCustomCover = resolveCardCustomCover(coverImage)
     if (cardCustomCover) {
       cardData.artistBgImage = ''
     } else if (cardData.artistBgImage) {

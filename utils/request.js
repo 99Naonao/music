@@ -21,11 +21,13 @@ function sleep(ms) {
 function isRetryableNetworkError(err) {
   if (!err) return false
   const errno = err.errno
-  if (errno === 5 || errno === 600001) return true
+  if (errno === 5 || errno === 600001 || errno === -101) return true
   const msg = String(err.errMsg || err.message || '').toLowerCase()
   if (msg.includes('timeout')) return true
   if (msg.includes('timed_out')) return true
   if (msg.includes('time out')) return true
+  if (msg.includes('connection_reset') || msg.includes('err_connection_reset')) return true
+  if (msg.includes('reset') && msg.includes('connection')) return true
   if (msg.includes('connection') && (msg.includes('fail') || msg.includes('refused'))) return true
   return false
 }
@@ -160,4 +162,4 @@ function request(options) {
   })()
 }
 
-module.exports = { request }
+module.exports = { request, isRetryableNetworkError }

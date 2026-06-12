@@ -9,7 +9,7 @@
 <view class="mine-page mb-theme-{{mbTheme}}">
   <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
   <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
-  <view class="mine-body">
+  <view class="mine-body" style="padding-bottom: {{pageBottomPaddingPx}}px;">
 
     <!-- 未登录：顶部登录区 -->
     <view wx:if="{{!isLoggedIn}}" class="mine-login-card">
@@ -184,7 +184,6 @@
       </view>
     </view>
 
-    <view class="mine-bottom-space"></view>
   </view>
 
   <promo-popup

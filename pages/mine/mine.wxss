@@ -8,7 +8,7 @@
 .mine-body {
   position: relative;
   z-index: 1;
-  padding: 24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  padding: 24rpx 32rpx 0;
   box-sizing: border-box;
 }
 
@@ -324,8 +324,4 @@
   color: var(--mb-text-muted);
   font-weight: 300;
   line-height: 1;
-}
-
-.mine-bottom-space {
-  height: 24rpx;
 }

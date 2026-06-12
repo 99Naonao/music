@@ -164,14 +164,14 @@ Page({
       promoActivity.touchMusicGenerate()
       this.loadWorkMetaFromServer(musicId)
       wx.nextTick(() => {
-        setTimeout(() => this.tryPromoShow(SCENES.AFTER_GENERATE, { recordVisitAfter: false }), 600)
+        setTimeout(() => {
+          this.tryPromoShow(SCENES.AFTER_GENERATE, { recordVisitAfter: false })
+        }, 600)
       })
     }
 
     if (forceCoverPrompt) {
       setTimeout(() => promptChooseWorkCoverIfNeeded(this), 400)
-    } else if (musicId && !hasCustomCover) {
-      setTimeout(() => promptChooseWorkCoverIfNeeded(this), 500)
     }
 
     this.loadCardPreviews()

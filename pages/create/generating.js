@@ -9,6 +9,23 @@ const { resolveVoiceUrlForCreate } = require('../../utils/voice-upload')
 const { resolveReferenceUrlForCreate } = require('../../utils/reference-music')
 const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
 const { isDailyTaskCompleted } = require('../../utils/daily-tasks')
+const themeMod = require('../../utils/theme')
+const channel = require('../../utils/channel')
+const { resolveRemoteImageUrl, getCachedRemoteImageUrl } = require('../../utils/remote-image')
+
+const DEFAULT_GEN_LOGO = '/static/new_logo/logo_bg.png'
+
+/** 生成页 Tab 栏与页面渐变底色一致，避免底部白条 */
+function syncGeneratingTabBar(page) {
+  setTabBarSelected(page, 1)
+  const chrome = themeMod.getPageChromeColors()
+  const comp = page.selectComponent && page.selectComponent('#custom-tab-bar')
+  if (comp) {
+    comp.setData({
+      tabBg: chrome.mbPageBgBottom || chrome.mbPageBg
+    })
+  }
+}
 
 /**
  * 多次 GET /health，直到连通或用尽次数。
@@ -81,23 +98,65 @@ Page({
     mock: false,
     scrollHeight: 500,
     tabBarOffsetPx: 48,
-    pageBottomPaddingPx: 120
+    pageBottomPaddingPx: 120,
+    genHeroMascot: DEFAULT_GEN_LOGO
   },
 
   updatePageLayout() {
     syncTabBarPageLayout(this, { footerRpx: 120 })
   },
 
+  syncChannelLogo() {
+    const branding = channel.getBranding()
+    const remoteLogo =
+      channel.isChannelActive() && branding && branding.logoUrl
+        ? branding.logoUrl
+        : ''
+    this._genLogoRemoteUrl = remoteLogo || ''
+    const patch = {}
+
+    if (!remoteLogo) {
+      patch.genHeroMascot = DEFAULT_GEN_LOGO
+    } else {
+      const cached = getCachedRemoteImageUrl(remoteLogo)
+      if (cached) {
+        patch.genHeroMascot = cached
+      } else if (
+        this.data.genHeroMascot &&
+        this.data.genHeroMascot !== DEFAULT_GEN_LOGO
+      ) {
+        /* 保留已下载的渠道 logo，避免闪回官方图 */
+      } else {
+        patch.genHeroMascot = DEFAULT_GEN_LOGO
+      }
+      resolveRemoteImageUrl(remoteLogo).then((localSrc) => {
+        if (
+          localSrc &&
+          localSrc !== DEFAULT_GEN_LOGO &&
+          this._genLogoRemoteUrl === remoteLogo
+        ) {
+          this.setData({ genHeroMascot: localSrc })
+        }
+      })
+    }
+
+    if (Object.keys(patch).length) {
+      this.setData(patch)
+    }
+  },
+
   onLoad() {
     this._cancelled = false
     this.updatePageLayout()
-    setTabBarSelected(this, 1)
+    syncGeneratingTabBar(this)
+    this.syncChannelLogo()
     this.startGeneration()
   },
 
   onShow() {
-    setTabBarSelected(this, 1)
+    syncGeneratingTabBar(this)
     this.updatePageLayout()
+    this.syncChannelLogo()
   },
 
   onUnload() {
@@ -129,6 +188,7 @@ Page({
 
   async startGeneration() {
     if (this._cancelled) return
+    this.syncChannelLogo()
     log('generate', '开始 AI 音乐生成')
     try {
       const createConfig = wx.getStorageSync('createConfig') || {}
@@ -316,6 +376,9 @@ Page({
             this.onGenerationComplete(musicId, audioUrl, ms)
             return
           }
+          if (track.status === 'cancelled') {
+            return
+          }
           if (track.status === 'failed') {
             throw new Error('音乐生成失败')
           }
@@ -416,13 +479,21 @@ Page({
   cancelGeneration() {
     wx.showModal({
       title: '取消生成',
-      content: '确定要取消吗？若任务已提交，后台可能仍在处理。',
+      content: '若合成仍在进行，可能会消耗配额，但结果不会进入完成页或作品列表',
       confirmText: '确定取消',
       cancelText: '继续等待',
       success: (res) => {
         if (!res.confirm) return
         this._cancelled = true
         this.clearTimers()
+        const musicId = this.data.musicId
+        if (musicId) {
+          request({
+            url: `/api/music/${encodeURIComponent(String(musicId))}/cancel`,
+            method: 'POST',
+            silentFail: true
+          }).catch(() => {})
+        }
         const pages = getCurrentPages()
         if (pages.length > 1) {
           wx.navigateBack()

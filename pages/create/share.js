@@ -155,7 +155,8 @@ Page({
     const body =
       stripLeadingRecipientSalutation(raw, recipient) || raw || ''
     const hasArt = !!(
-      cardData.artistBgImage && String(cardData.artistBgImage).trim()
+      resolveCardCustomCover(this.data.coverImage || cardData.coverImage) ||
+      (cardData.artistBgImage && String(cardData.artistBgImage).trim())
     )
     const formatted = formatCardBlessingForPreview(body, {
       template: {

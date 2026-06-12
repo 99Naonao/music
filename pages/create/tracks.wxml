@@ -2,8 +2,8 @@
   page-style="{{pageMetaStyle}}"
   background-color="{{mbPageBg}}"
   background-color-top="{{mbNavBg}}"
-  background-color-bottom="{{mbPageBg}}"
-  root-background-color="{{mbPageBg}}"
+  background-color-bottom="{{mbPageBgBottom}}"
+  root-background-color="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <view class="tracks-page mb-theme-{{mbTheme}}">

@@ -19,7 +19,6 @@ Component({
 
   methods: {
     refresh() {
-      const chrome = theme.getPageChromeColors()
       const layout = theme.getPageLayoutMetrics()
       const h = layout.safeBottomPx || 0
       if (!h) {
@@ -27,7 +26,9 @@ Component({
         return
       }
       this.setData({
-        fillStyle: `height:${h}px;background-color:${chrome.mbPageBg};`
+        fillStyle:
+          `height:${h}px;background-color:var(--mb-bg-page-bottom,var(--mb-bg-page));` +
+          'background-image:var(--mb-gradient-page);background-attachment:fixed;background-size:100% 100%;'
       })
     }
   }

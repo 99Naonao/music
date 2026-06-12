@@ -29,11 +29,18 @@ const THEMES = {
   }
 }
 
+/** page-meta / 手势条区域应与渐变末端一致，而非 windowBg */
+const PAGE_THEME_BOTTOM = {
+  dawn: '#ffffff',
+  night: '#1a2238'
+}
+
 /** page-meta 注入的 CSS 变量（须与 styles/theme-skins.wxss 一致） */
 const PAGE_VAR_STYLE = {
   night: [
     '--mb-gradient-page:linear-gradient(180deg,#202b48 0%,#2d3a5c 45%,#1a2238 100%)',
     '--mb-bg-page:#202b48',
+    '--mb-bg-page-bottom:#1a2238',
     '--mb-bg-page-alt:#2d3a5c',
     '--mb-bg-elevated:rgba(45,58,92,0.65)',
     '--mb-text-primary:#fffdf5',
@@ -60,6 +67,7 @@ const PAGE_VAR_STYLE = {
   dawn: [
     '--mb-gradient-page:linear-gradient(135deg,#d1e9ff 0%,#e8f4ff 42%,#f7faff 72%,#ffffff 100%)',
     '--mb-bg-page:#e8f2fc',
+    '--mb-bg-page-bottom:#ffffff',
     '--mb-bg-page-alt:#f5faff',
     '--mb-bg-elevated:rgba(255,255,255,0.92)',
     '--mb-text-primary:#1e3a5f',
@@ -124,9 +132,11 @@ function buildChannelPageVarStyle(t) {
     const darkAccentSoft = `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
     const darkAccentMedium = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`
     const gradientPage = `linear-gradient(180deg,${windowBg} 0%,${navBg} 48%,${windowBg} 100%)`
+    const pageBottom = normalizeHexColor(windowBg, '#202b48')
     return [
       `--mb-gradient-page:${gradientPage}`,
       `--mb-bg-page:${windowBg}`,
+      `--mb-bg-page-bottom:${pageBottom}`,
       `--mb-bg-page-alt:${navBg}`,
       `--mb-bg-elevated:rgba(30,36,56,0.72)`,
       `--mb-text-primary:${textPrimary}`,
@@ -158,6 +168,7 @@ function buildChannelPageVarStyle(t) {
   return [
     `--mb-gradient-page:${gradientPage}`,
     `--mb-bg-page:${windowBg}`,
+    `--mb-bg-page-bottom:#ffffff`,
     `--mb-bg-page-alt:${navBg}`,
     `--mb-bg-elevated:rgba(255,255,255,0.94)`,
     `--mb-text-primary:${textPrimary}`,
@@ -358,29 +369,33 @@ function normalizeHexColor(hex, fallback) {
 function getPageLayoutMetrics() {
   let pageHeightPx = 0
   let safeBottomPx = 0
+  let shellHeightPx = 0
   try {
     const { getWindowMetrics } = require('./page-layout')
     const m = getWindowMetrics()
     safeBottomPx = m.safeBottom || 0
-    pageHeightPx = Math.ceil((m.windowHeight || 0) + safeBottomPx)
+    shellHeightPx = Math.ceil(m.windowHeight || 0)
+    pageHeightPx = Math.ceil(shellHeightPx + safeBottomPx)
   } catch (e) {
     pageHeightPx = 0
+    shellHeightPx = 0
   }
-  return { pageHeightPx, safeBottomPx }
+  return { pageHeightPx, shellHeightPx, safeBottomPx }
 }
 
+const PAGE_GRADIENT_BG =
+  'background-color:var(--mb-bg-page);background-image:var(--mb-gradient-page);'
+
 function buildPageShellStyle(chrome, metrics) {
-  const bg = (chrome && chrome.mbPageBg) || '#e8f2fc'
-  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
-  if (!h) return `background-color:${bg};min-height:100vh;`
-  return `background-color:${bg};min-height:${h}px;height:${h}px;`
+  const h = metrics && metrics.shellHeightPx ? metrics.shellHeightPx : 0
+  if (!h) return `${PAGE_GRADIENT_BG}min-height:100vh;box-sizing:border-box;`
+  return `${PAGE_GRADIENT_BG}height:${h}px;min-height:${h}px;max-height:${h}px;box-sizing:border-box;`
 }
 
 function buildPageBgStyle(chrome, metrics) {
-  const bg = (chrome && chrome.mbPageBg) || '#e8f2fc'
-  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
-  if (!h) return `background-color:${bg};`
-  return `background-color:${bg};height:${h}px;`
+  const h = metrics && metrics.shellHeightPx ? metrics.shellHeightPx : 0
+  if (!h) return ''
+  return `height:${h}px;`
 }
 
 /** 开屏全屏图模式：fixed 铺满窗口（含底部手势区） */
@@ -411,11 +426,24 @@ function buildSplashShellStyle(chrome, metrics, fullBleed) {
   return `position:fixed;left:0;top:0;width:100%;height:${h}px;background-color:${bg};z-index:0;pointer-events:none;`
 }
 
+function getPageBgBottomColor(id) {
+  const overrides = getChannelThemeOverrides()
+  if (overrides) {
+    if (isDarkChannelTheme(overrides)) {
+      return normalizeHexColor(overrides.windowBg || overrides.navBg, '#202b48')
+    }
+    return '#ffffff'
+  }
+  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
+  return PAGE_THEME_BOTTOM[key] || PAGE_THEME_BOTTOM.dawn
+}
+
 function getPageChromeColors(id) {
   const meta = getThemeMeta(id == null ? getEffectiveThemeId() : id)
   const mbPageBg = normalizeHexColor(meta.windowBg || meta.navBg, '#e8f2fc')
   const mbNavBg = normalizeHexColor(meta.navBg || meta.windowBg, mbPageBg)
-  return { mbPageBg, mbNavBg }
+  const mbPageBgBottom = getPageBgBottomColor(id)
+  return { mbPageBg, mbNavBg, mbPageBgBottom }
 }
 
 function getThemeOptions() {
@@ -423,12 +451,12 @@ function getThemeOptions() {
 }
 
 function applyPageBackground(id) {
-  const { mbPageBg, mbNavBg } = getPageChromeColors(id)
+  const { mbPageBg, mbNavBg, mbPageBgBottom } = getPageChromeColors(id)
   try {
     wx.setBackgroundColor({
       backgroundColor: mbPageBg,
       backgroundColorTop: mbNavBg,
-      backgroundColorBottom: mbPageBg
+      backgroundColorBottom: mbPageBgBottom
     })
   } catch (e) {
     /* 低版本基础库可忽略 */
@@ -439,7 +467,7 @@ function applyPageBackground(id) {
         style: {
           backgroundColor: mbPageBg,
           backgroundColorTop: mbNavBg,
-          backgroundColorBottom: mbPageBg
+          backgroundColorBottom: mbPageBgBottom
         }
       })
     }

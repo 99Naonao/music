@@ -15,11 +15,15 @@ const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const channel = require('../../utils/channel')
 const { resolveRemoteImageUrl, getCachedRemoteImageUrl } = require('../../utils/remote-image')
 const {
-  mapLibraryTrackItem,
   buildLibraryPlayerUrl,
   libraryTrackToPlayWork,
   pickLibraryMiniCover
 } = require('../../utils/library-music')
+const {
+  getCachedList,
+  isCacheFresh,
+  fetchLibraryList
+} = require('../../utils/library-cache')
 
 function clearTrackSession() {
   try {
@@ -211,7 +215,6 @@ Page({
     })
     this.syncChannelBrandingUI()
     this.loadMiniPlayer()
-    this.loadHomeLibrary()
     this._unsubGlobalAudio = globalAudio.subscribe((s) => this.syncMiniPlayState(s))
   },
 
@@ -533,27 +536,36 @@ Page({
     })
   },
 
-  async loadHomeLibrary() {
-    this.setData({ libraryLoading: true })
+  async loadHomeLibrary(options = {}) {
+    const force = !!(options && options.force)
+    const cached = getCachedList()
+    const hasPreview = (this.data.libraryPreview || []).length > 0
+    const hasCache = !!(cached && cached.length)
+
+    if (!force && (hasPreview || hasCache)) {
+      const preview = hasPreview
+        ? this.data.libraryPreview
+        : cached.slice(0, 8)
+      this.setData({ libraryPreview: preview, libraryLoading: false })
+      this.syncMiniPlayerCoverFromLibrary(preview)
+      if (!force && isCacheFresh()) return
+    } else {
+      this.setData({ libraryLoading: true })
+    }
+
     try {
-      const res = await request({
-        url: '/api/music/library',
-        data: { limit: 12 },
-        silentFail: true
-      })
-      if (res.code === 0 && res.data && Array.isArray(res.data.list)) {
-        const libraryPreview = res.data.list
-          .map(mapLibraryTrackItem)
-          .filter((t) => t && t.audioUrl)
-          .slice(0, 8)
-        this.setData({ libraryPreview, libraryLoading: false })
-        this.syncMiniPlayerCoverFromLibrary(libraryPreview)
-        return
-      }
+      const list = await fetchLibraryList({ force })
+      const libraryPreview = (list || []).slice(0, 8)
+      this.setData({ libraryPreview, libraryLoading: false })
+      this.syncMiniPlayerCoverFromLibrary(libraryPreview)
     } catch (e) {
       console.warn('[create] loadHomeLibrary', e)
+      if (!hasPreview && !hasCache) {
+        this.setData({ libraryPreview: [], libraryLoading: false })
+      } else {
+        this.setData({ libraryLoading: false })
+      }
     }
-    this.setData({ libraryPreview: [], libraryLoading: false })
   },
 
   playLibraryTrack(e) {

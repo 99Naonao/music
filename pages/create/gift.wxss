@@ -1,15 +1,28 @@
 @import './share.wxss';
 
-/* 收礼页：播放/暂停仅图标，不要绿色圆底 */
-.gift-page .share-play-btn {
+/* 收礼页：播放/暂停仅图标，无圆底/渐变 */
+.gift-play-btn {
   width: auto;
   height: auto;
-  background: transparent;
+  padding: 0;
+  margin: 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none;
   border-radius: 0;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.gift-page .play-btn-icon {
+.gift-play-btn:active {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
+.gift-play-btn-icon {
   width: 72rpx;
   height: 72rpx;
   filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.35));

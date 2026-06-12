@@ -1,7 +1,7 @@
 @import '../../styles/card-art-text-stroke.wxss';
 .share-page {
-  min-height: 100vh;
-    padding: 20rpx 30rpx;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 }
 
 .share-gift-strip {

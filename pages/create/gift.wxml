@@ -2,8 +2,8 @@
   page-style="{{pageMetaStyle}}"
   background-color="{{mbPageBg}}"
   background-color-top="{{mbNavBg}}"
-  background-color-bottom="{{mbPageBg}}"
-  root-background-color="{{mbPageBg}}"
+  background-color-bottom="{{mbPageBgBottom}}"
+  root-background-color="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <wxs src="./time-format.wxs" module="tf" />
@@ -29,8 +29,8 @@
             <image class="share-cover-default-icon" src="/static/music_library/panel.png" mode="aspectFit"/>
           </view>
           <view class="share-cover-overlay">
-            <view class="share-play-btn" bindtap="togglePlay">
-              <image class="play-btn-icon" src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}" mode="aspectFit"/>
+            <view class="gift-play-btn" bindtap="togglePlay" hover-class="none">
+              <image class="gift-play-btn-icon" src="{{isPlaying ? '/static/new_logo/pause.png' : '/static/new_logo/play.png'}}" mode="aspectFit"/>
             </view>
           </view>
         </view>

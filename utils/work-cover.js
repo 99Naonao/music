@@ -2,6 +2,7 @@
 
 const { API_BASE_URL } = require('./config')
 const { log, logWarn } = require('./log')
+const { parseResponseBody, getApiErrorMessage, isApiSuccess } = require('./api-response')
 
 const DEFAULT_WORK_COVER = '/static/music_library/icon_category_sleep.png'
 const STORAGE_KEY = 'workCovers'
@@ -109,30 +110,24 @@ function isOurHostedCoverUrl(url) {
 }
 
 function parseUploadResponseBody(res) {
-  let raw = res && res.data
-  if (raw == null || raw === '') return null
-  if (typeof raw === 'object') return raw
+  const data = parseResponseBody(res)
+  if (data) return data
+  const raw = res && res.data
   if (typeof raw === 'string') {
     const text = raw.trim().replace(/^\uFEFF/, '')
-    try {
-      return JSON.parse(text)
-    } catch (e) {
-      const m =
-        text.match(/https?:\/\/[^"'\s]+\/api\/music\/cover\?[^"'\s]+/i) ||
-        text.match(
-          /https?:\/\/[^"'\s]+\/api\/(?:music\/cover|upload\/(?:file|image))\/[^"'\s]+/i
-        )
-      if (m) return { code: 0, data: { url: m[0] } }
-      return null
-    }
+    const m =
+      text.match(/https?:\/\/[^"'\s]+\/api\/music\/cover\?[^"'\s]+/i) ||
+      text.match(
+        /https?:\/\/[^"'\s]+\/api\/(?:music\/cover|upload\/(?:file|image))\/[^"'\s]+/i
+      )
+    if (m) return { code: 0, data: { url: m[0] } }
   }
   return null
 }
 
 function isUploadBizSuccess(data) {
+  if (isApiSuccess(data)) return true
   if (!data || typeof data !== 'object') return false
-  const code = data.code
-  if (code === 0 || code === '0') return true
   if (data.data && (data.data.url || data.data.path)) return true
   if (data.url || data.path) return true
   return false
@@ -273,46 +268,88 @@ function downloadRemoteImageToTemp(remoteUrl) {
   })
 }
 
+function getFileSizeBytes(filePath) {
+  return new Promise((resolve, reject) => {
+    wx.getFileSystemManager().getFileInfo({
+      filePath,
+      success: (res) => resolve(res.size || 0),
+      fail: reject
+    })
+  })
+}
+
+/** 微信 imgSecCheck 限制 1MB；上传前尽量压到 900KB 以内 */
+async function compressImageForUpload(filePath, maxBytes = 900 * 1024) {
+  let current = filePath
+  try {
+    let size = await getFileSizeBytes(current)
+    if (size <= maxBytes) return current
+
+    const qualities = [80, 65, 50, 40]
+    for (const quality of qualities) {
+      const compressed = await new Promise((resolve, reject) => {
+        wx.compressImage({
+          src: current,
+          quality,
+          success: (res) => resolve(res.tempFilePath),
+          fail: reject
+        })
+      })
+      current = compressed
+      size = await getFileSizeBytes(current)
+      if (size <= maxBytes) return current
+    }
+    logWarn('work-cover', '压缩后仍接近 1MB', { size })
+  } catch (e) {
+    logWarn('work-cover', '图片压缩跳过', { message: e && e.message })
+  }
+  return current
+}
+
+function rejectUploadWithResponse(reject, res) {
+  reject(new Error(getApiErrorMessage(res, parseUploadResponseBody(res), '上传失败')))
+}
+
 function uploadWorkCoverTempFile(tempPath) {
   if (!tempPath) return Promise.resolve('')
 
-  const runUpload = (localPath) => {
+  const runUpload = async (localPath) => {
     const token = wx.getStorageSync('token')
     if (!token) {
-      return Promise.reject(new Error('请先登录后再上传封面'))
+      throw new Error('请先登录后再上传封面')
     }
+
+    const prepared = await compressImageForUpload(localPath)
 
     return new Promise((resolve, reject) => {
       wx.uploadFile({
         url: `${API_BASE_URL}/api/upload/image`,
-        filePath: localPath,
+        filePath: prepared,
         name: 'image',
         header: { Authorization: `Bearer ${token}` },
         success: (res) => {
           const status = res && res.statusCode
-          if (status != null && (status < 200 || status >= 300)) {
-            reject(new Error(`上传失败 HTTP ${status}`))
-            return
-          }
           const data = parseUploadResponseBody(res)
-          if (!data || !isUploadBizSuccess(data)) {
-            const msg =
-              (data && (data.message || data.error)) || '上传失败'
-            reject(new Error(String(msg)))
+          if (data && isUploadBizSuccess(data)) {
+            const rawUrl = parseUploadImageUrlFromResponse(data)
+            const hosted = normalizeHostedCoverUrl(rawUrl)
+            if (!hosted) {
+              reject(new Error('上传成功但未返回图片地址'))
+              return
+            }
+            log('work-cover', '封面上传成功', {
+              status,
+              rawUrl: rawUrl.slice(0, 100),
+              hosted: hosted.slice(0, 100)
+            })
+            resolve(hosted)
             return
           }
-          const rawUrl = parseUploadImageUrlFromResponse(data)
-          const hosted = normalizeHostedCoverUrl(rawUrl)
-          if (!hosted) {
-            reject(new Error('上传成功但未返回图片地址'))
+          if (status != null && (status < 200 || status >= 300)) {
+            rejectUploadWithResponse(reject, res)
             return
           }
-          log('work-cover', '封面上传成功', {
-            status,
-            rawUrl: rawUrl.slice(0, 100),
-            hosted: hosted.slice(0, 100)
-          })
-          resolve(hosted)
+          rejectUploadWithResponse(reject, res)
         },
         fail: reject
       })

@@ -1,13 +1,16 @@
-const { request } = require('../../utils/request')
 const { log } = require('../../utils/log')
 const { safeTrim } = require('../../utils/safe-trim')
 const { showAlert } = require('../../utils/show-alert')
 const globalAudio = require('../../utils/global-audio')
 const {
-  mapLibraryTrackItem,
   buildLibraryPlayerUrl,
   libraryTrackToPlayWork
 } = require('../../utils/library-music')
+const {
+  getCachedList,
+  isCacheFresh,
+  fetchLibraryList
+} = require('../../utils/library-cache')
 
 Page({
   data: {
@@ -32,38 +35,50 @@ Page({
     this.loadLibrary()
   },
 
-  async loadLibrary() {
-    this.setData({ loading: true })
-    try {
-      const res = await request({
-        url: '/api/music/library',
-        data: { limit: 100 }
-      })
-      if (res.code === 0) {
-        const list = (res.data.list || [])
-          .map((raw) => {
-            const item = mapLibraryTrackItem(raw)
-            if (!item) return null
-            return {
-              ...item,
-              description: item.description || '',
-              duration: item.durationText,
-              plays: this.formatPlays(item.plays != null ? item.plays : 0)
-            }
-          })
-          .filter(Boolean)
-        this.setData({
-          allMusicList: list,
-          musicList: list,
-          loading: false
-        })
-      } else {
-        throw new Error(res.error)
+  mapRecordList(list) {
+    return (list || []).map((item) => ({
+      ...item,
+      description: item.description || '',
+      duration: item.durationText,
+      plays: this.formatPlays(item.plays != null ? item.plays : 0)
+    }))
+  },
+
+  applyLibraryList(list) {
+    const records = this.mapRecordList(list)
+    this.setData({
+      allMusicList: records,
+      musicList: records,
+      loading: false
+    })
+  },
+
+  async loadLibrary(options = {}) {
+    const force = !!(options && options.force)
+    const cached = getCachedList()
+    const hasData = (this.data.allMusicList || []).length > 0
+    const hasCache = !!(cached && cached.length)
+
+    if (!force && (hasData || hasCache)) {
+      if (!hasData && hasCache) {
+        this.applyLibraryList(cached)
       }
+      if (!force && isCacheFresh()) return
+    } else {
+      this.setData({ loading: true })
+    }
+
+    try {
+      const list = await fetchLibraryList({ force })
+      this.applyLibraryList(list)
     } catch (err) {
       console.error('加载曲库失败:', err)
-      this.setData({ loading: false })
-      showAlert('加载失败', '曲库暂时无法加载，请下拉刷新重试。')
+      if (!hasData && !hasCache) {
+        this.setData({ loading: false })
+        showAlert('加载失败', '曲库暂时无法加载，请下拉刷新重试。')
+      } else {
+        this.setData({ loading: false })
+      }
     }
   },
 

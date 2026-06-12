@@ -5,4 +5,8 @@
   bottom: 0;
   z-index: 9998;
   pointer-events: none;
+  background-color: var(--mb-bg-page-bottom, var(--mb-bg-page));
+  background-image: var(--mb-gradient-page);
+  background-attachment: fixed;
+  background-size: 100% 100%;
 }

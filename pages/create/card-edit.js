@@ -60,18 +60,49 @@ Page({
     cardOverlayStyle: { to: '', message: '' }
   },
 
+  hasCardArtBackground(opts = {}) {
+    if (opts.hasArtBg !== undefined) return !!opts.hasArtBg
+    if (this.data.coverImage) return true
+    if (!this.data.useDefaultBg && (this.data.cardPreviewBgImage || opts.bgImageUrl)) {
+      return true
+    }
+    return false
+  },
+
+  syncCustomCoverDraft(path) {
+    const draft = wx.getStorageSync('playerCardDraft') || {}
+    wx.setStorageSync('playerCardDraft', {
+      ...draft,
+      cardCustomCover: path ? String(path) : '',
+      cardCustomCoverTemplateId: path ? String(this.data.templateId || '') : ''
+    })
+  },
+
+  onCustomCoverChanged(path) {
+    if (!path) {
+      this.setData({ coverImage: '' }, () => {
+        this.syncCustomCoverDraft('')
+        this.updatePreviewTypography()
+      })
+      return
+    }
+    this.setData({ coverImage: path }, () => {
+      this.syncCustomCoverDraft(path)
+      this.applyOverlayLayout({
+        id: this.data.templateId,
+        categoryId: this.data.templateCategoryId || 'general',
+        textLayout: this.data.templateTextLayout
+      })
+      this.updatePreviewTypography({ hasArtBg: true })
+    })
+  },
+
   updatePreviewTypography(opts = {}) {
     const recipient = this.data.recipientName || ''
     const raw = this.data.message || ''
     const body =
       stripLeadingRecipientSalutation(raw, recipient) || raw || ''
-    const hasArt =
-      opts.hasArtBg !== undefined
-        ? !!opts.hasArtBg
-        : !!(
-            !this.data.useDefaultBg &&
-            (this.data.cardPreviewBgImage || opts.bgImageUrl)
-          )
+    const hasArt = this.hasCardArtBackground(opts)
     const formatted = formatCardBlessingForPreview(body, {
       template: {
         id: this.data.templateId,
@@ -110,12 +141,23 @@ Page({
     const musicId = draft.musicId || null
     const workTitle = resolveWorkDisplayTitle(musicId, draft.workTitle || '')
 
+    const storedCover = draft.cardCustomCover || ''
+    const coverTpl = draft.cardCustomCoverTemplateId || ''
+    let coverImage = ''
+    if (storedCover) {
+      if (coverTpl) {
+        coverImage = coverTpl === templateId ? storedCover : ''
+      } else if (draft.selectedTemplate && draft.selectedTemplate.id === templateId) {
+        coverImage = storedCover
+      }
+    }
+
     this.setData({
       workTitle,
       musicInfo: draft.musicInfo || this.data.musicInfo,
       musicId,
       audioUrl: draft.audioUrl || null,
-      coverImage: draft.cardCustomCover || '',
+      coverImage,
       recipientName: recipient,
       message,
       templateId
@@ -170,7 +212,7 @@ Page({
       () => {
         this.applyOverlayLayout(tpl)
         this.updatePreviewTypography({
-          hasArtBg: !!bgImage,
+          hasArtBg: this.hasCardArtBackground({ bgImageUrl: bgImage }),
           bgImageUrl: bgImage
         })
       }
@@ -195,12 +237,16 @@ Page({
       templateId: DEFAULT_TEMPLATE_ID,
       templateName: '默认背景',
       useDefaultBg: true,
+      coverImage: '',
       cardPreviewBgImage: '',
       selectedTemplate: this.data.selectedTemplate || 1
     })
+    this.syncCustomCoverDraft('')
     const draft = wx.getStorageSync('playerCardDraft') || {}
     wx.setStorageSync('playerCardDraft', {
       ...draft,
+      cardCustomCover: '',
+      cardCustomCoverTemplateId: '',
       selectedTemplate: {
         id: DEFAULT_TEMPLATE_ID,
         name: '默认背景',
@@ -210,6 +256,8 @@ Page({
         bgImageUrl: ''
       }
     })
+    this.applyOverlayLayout({ id: DEFAULT_TEMPLATE_ID, categoryId: 'general' })
+    this.updatePreviewTypography({ hasArtBg: false })
   },
 
   async fetchTemplate(templateId, opts = {}) {
@@ -247,7 +295,7 @@ Page({
       sourceType: ['camera'],
       success: (res) => {
         const path = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath
-        if (path) this.setData({ coverImage: path })
+        if (path) this.onCustomCoverChanged(path)
       }
     })
   },
@@ -259,13 +307,13 @@ Page({
       sourceType: ['album'],
       success: (res) => {
         const path = res.tempFiles && res.tempFiles[0] && res.tempFiles[0].tempFilePath
-        if (path) this.setData({ coverImage: path })
+        if (path) this.onCustomCoverChanged(path)
       }
     })
   },
 
   removeCover() {
-    this.setData({ coverImage: '' })
+    this.onCustomCoverChanged('')
   },
 
   inputRecipient(e) {
@@ -394,7 +442,8 @@ Page({
       ...draft,
       recipient,
       message,
-      cardCustomCover: cardCover
+      cardCustomCover: cardCover,
+      cardCustomCoverTemplateId: cardCover ? String(cardPayload.templateId || '') : ''
     })
 
     let shareId = null

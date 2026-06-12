@@ -1,6 +1,8 @@
 .complete-page {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -113,11 +115,13 @@
   padding: 16rpx 24rpx;
   box-sizing: border-box;
   font-size: 22rpx;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.45;
-  color: var(--mb-mist-blue, #6f8fcf);
+  color: var(--mb-text-secondary);
   text-align: center;
   text-decoration: underline;
+  text-decoration-color: var(--mb-accent, #568fd1);
+  text-underline-offset: 4rpx;
   background: transparent;
   border: none;
 }

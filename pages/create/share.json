@@ -1,4 +1,5 @@
 {
+  "disableScroll": true,
   "usingComponents": {
     "points-reward-modal": "/components/points-reward-modal/index",
     "promo-popup": "/components/promo-popup/index"

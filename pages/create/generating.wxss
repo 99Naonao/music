@@ -1,7 +1,11 @@
 .generating-page {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .generating-page-bg {
@@ -12,13 +16,13 @@
   bottom: 0;
   z-index: 0;
   pointer-events: none;
-  background: var(--mb-gradient-page);
+  background-color: var(--mb-bg-page);
+  background-image: var(--mb-gradient-page);
 }
 
 .generating-body {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -41,6 +45,10 @@
 
 .generating-body--error {
   justify-content: center;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
 }
 
 .gen-header {
@@ -241,7 +249,7 @@
   margin-top: 8rpx;
 }
 
-/* 底部按钮 */
+/* 底部按钮：透明底，露出页面渐变（避免白条与主题脱节） */
 .gen-footer-fixed {
   position: fixed;
   left: 0;
@@ -249,13 +257,8 @@
   z-index: 10;
   padding: 12rpx 48rpx;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.98);
-  border-top: 1rpx solid rgba(107, 122, 140, 0.1);
-}
-
-.mb-theme-night .gen-footer-fixed {
-  background: rgba(26, 34, 56, 0.98);
-  border-top-color: rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border-top: none;
 }
 
 .gen-footer {
@@ -309,8 +312,8 @@
   padding: 0;
   margin: 0;
   font-size: 30rpx;
-  color: var(--mb-text-secondary);
-  background: transparent;
+  color: var(--mb-text-primary);
+  background: var(--mb-card-bg);
   border: 1rpx solid var(--mb-border-strong);
   border-radius: 44rpx;
 }

@@ -2,8 +2,8 @@
   page-style="{{pageMetaStyle}}"
   background-color="{{mbPageBg}}"
   background-color-top="{{mbNavBg}}"
-  background-color-bottom="{{mbPageBg}}"
-  root-background-color="{{mbPageBg}}"
+  background-color-bottom="{{mbPageBgBottom}}"
+  root-background-color="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <view class="generating-page mb-theme-{{mbTheme}}">
@@ -24,7 +24,7 @@
 
       <view class="gen-hero">
         <view class="gen-hero-glow"></view>
-        <image class="gen-hero-img" src="/static/new_logo/logo_bg.png" mode="aspectFit" />
+        <image class="gen-hero-img" src="{{genHeroMascot}}" mode="aspectFit" />
       </view>
 
       <view class="gen-progress-block">

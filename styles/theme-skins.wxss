@@ -37,6 +37,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* 覆盖各页 wxss 里写在 mb-page-body 上的 min-height:100vh，避免与 flex 滚动高度冲突导致滑到底顿一下 */
+.mb-page > .mb-page-body {
+  min-height: 0;
+}
+
 /* 页内已有纵向 scroll-view（固定头+列表）时，避免双层滚动 */
 .mb-page-body.mb-page-body--nested-scroll {
   overflow: hidden;
@@ -51,9 +56,20 @@
   width: 100%;
   z-index: 0;
   pointer-events: none;
+  background-color: var(--mb-bg-page);
+  background-image: var(--mb-gradient-page);
 }
 
-/* Android 手势条区域：page-meta 注入 --mb-safe-bottom，与主题色一致 */
+/* 底部固定操作条：半透明 + 主题色，避免纯白/深灰条与渐变脱节 */
+.mb-footer-surface {
+  background: var(--mb-night-fade-95, var(--mb-bg-elevated));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1rpx solid var(--mb-border-subtle);
+  box-sizing: border-box;
+}
+
+/* Android 手势条区域：page-meta 注入 --mb-safe-bottom，与页面渐变末端对齐 */
 page::after {
   content: '';
   position: fixed;
@@ -62,7 +78,10 @@ page::after {
   bottom: 0;
   width: 100%;
   height: var(--mb-safe-bottom, 0px);
-  background-color: var(--mb-bg-page);
+  background-color: var(--mb-bg-page-bottom, var(--mb-bg-page));
+  background-image: var(--mb-gradient-page);
+  background-attachment: fixed;
+  background-size: 100% 100%;
   z-index: 9998;
   pointer-events: none;
 }

@@ -2,19 +2,7 @@
 
 const { API_BASE_URL } = require('./config')
 const { log, logWarn } = require('./log')
-
-function parseUploadResponseBody(res) {
-  if (!res || !res.data) return null
-  try {
-    return typeof res.data === 'string' ? JSON.parse(res.data) : res.data
-  } catch (e) {
-    return null
-  }
-}
-
-function isUploadBizSuccess(data) {
-  return data && (data.code === 0 || data.success === true)
-}
+const { parseResponseBody, getApiErrorMessage, isApiSuccess } = require('./api-response')
 
 function parseUploadAudioUrlFromResponse(data) {
   const payload = data && data.data ? data.data : data
@@ -49,24 +37,18 @@ function uploadVoiceTempFile(tempPath) {
       name: 'audio',
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
-        const status = res && res.statusCode
-        if (status != null && (status < 200 || status >= 300)) {
-          reject(new Error(`上传失败 HTTP ${status}`))
+        const data = parseResponseBody(res)
+        if (data && isApiSuccess(data)) {
+          const url = String(parseUploadAudioUrlFromResponse(data) || '').trim()
+          if (!url) {
+            reject(new Error('上传成功但未返回音频地址'))
+            return
+          }
+          log('voice-upload', '人声音轨上传成功', { url: url.slice(0, 100) })
+          resolve(url)
           return
         }
-        const data = parseUploadResponseBody(res)
-        if (!data || !isUploadBizSuccess(data)) {
-          const msg = (data && (data.message || data.error)) || '上传失败'
-          reject(new Error(String(msg)))
-          return
-        }
-        const url = String(parseUploadAudioUrlFromResponse(data) || '').trim()
-        if (!url) {
-          reject(new Error('上传成功但未返回音频地址'))
-          return
-        }
-        log('voice-upload', '人声音轨上传成功', { url: url.slice(0, 100) })
-        resolve(url)
+        reject(new Error(getApiErrorMessage(res, data, '上传失败')))
       },
       fail: reject
     })

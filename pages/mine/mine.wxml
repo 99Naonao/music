@@ -2,11 +2,11 @@
   page-style="{{pageMetaStyle}}"
   background-color="{{mbPageBg}}"
   background-color-top="{{mbNavBg}}"
-  background-color-bottom="{{mbPageBg}}"
-  root-background-color="{{mbPageBg}}"
+  background-color-bottom="{{mbPageBgBottom}}"
+  root-background-color="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
-<view class="mine-page mb-theme-{{mbTheme}}" style="background-color: {{mbPageBg}};">
+<view class="mine-page mb-theme-{{mbTheme}}">
   <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
   <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
   <view class="mine-body">

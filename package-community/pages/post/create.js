@@ -1,5 +1,6 @@
 const { request } = require('../../../utils/request')
 const { API_BASE_URL } = require('../../../utils/config')
+const { parseResponseBody, getApiErrorMessage, isApiSuccess } = require('../../../utils/api-response')
 const { safeTrim } = require('../../../utils/safe-trim')
 const { log } = require('../../../utils/log')
 const { showAlert } = require('../../../utils/show-alert')
@@ -141,16 +142,12 @@ Page({
             name: 'image',
             header: { Authorization: `Bearer ${token}` },
             success: (uploadRes) => {
-              try {
-                const data = JSON.parse(uploadRes.data)
-                if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300 && data.code === 0) {
-                  resolve(data.data.url)
-                } else {
-                  reject(new Error(data.message || data.error || '上传失败'))
-                }
-              } catch (e) {
-                reject(new Error('上传响应解析失败'))
+              const data = parseResponseBody(uploadRes)
+              if (data && isApiSuccess(data) && data.data && data.data.url) {
+                resolve(data.data.url)
+                return
               }
+              reject(new Error(getApiErrorMessage(uploadRes, data, '上传失败')))
             },
             fail: reject
           })

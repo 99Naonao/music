@@ -1,6 +1,7 @@
 const { API_BASE_URL, TIMEOUT } = require('./config')
 const { showAlert } = require('./show-alert')
 const { apiPath, log, logWarn, logError } = require('./log')
+const { parseResponseBody, bizCode, getApiErrorMessage } = require('./api-response')
 
 function getChannelHeader() {
   try {
@@ -34,12 +35,6 @@ function defaultRetryForMethod(method) {
   if (m === 'GET' || m === 'HEAD') return 2
   if (m === 'DELETE') return 1
   return 0
-}
-
-function bizCode(data) {
-  if (!data || typeof data !== 'object') return undefined
-  if (data.code !== undefined) return data.code
-  return undefined
 }
 
 function request(options) {
@@ -79,13 +74,14 @@ function request(options) {
         timeout: wxOptions.timeout != null ? wxOptions.timeout : TIMEOUT,
         success: (res) => {
           const ms = Date.now() - t0
+          const data = parseResponseBody(res)
           if (res.statusCode >= 200 && res.statusCode < 300) {
-            const code = bizCode(res.data)
+            const code = bizCode(data)
             log('request', `✓ ${method} ${path} ${ms}ms`, {
               status: res.statusCode,
               code: code !== undefined ? code : '(no code)'
             })
-            resolve(res.data)
+            resolve(data != null ? data : res.data)
           } else if (res.statusCode === 401) {
             logWarn('request', `✗ ${method} ${path} ${ms}ms 未授权`, {
               status: res.statusCode
@@ -106,20 +102,16 @@ function request(options) {
               reject(e)
             }
           } else {
-            const data = res.data
-            const bizMsg =
-              data && typeof data === 'object' && (data.message || data.msg)
-                ? String(data.message || data.msg)
-                : ''
+            const bizMsg = getApiErrorMessage(res, data, '请求失败')
             logWarn('request', `✗ ${method} ${path} ${ms}ms`, {
               status: res.statusCode,
-              message: bizMsg || '(无 message)'
+              message: bizMsg
             })
             if (silentFail && data && typeof data === 'object') {
               resolve(data)
               return
             }
-            reject(new Error(bizMsg || `HTTP ${res.statusCode}`))
+            reject(new Error(bizMsg))
           }
         },
         fail: (err) => {

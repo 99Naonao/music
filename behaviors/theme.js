@@ -10,6 +10,7 @@ function buildThemePageData(themeId) {
     mbTheme: id,
     pageMetaStyle: theme.getPageMetaStyle(id),
     mbPageBg: chrome.mbPageBg,
+    mbPageBgBottom: chrome.mbPageBgBottom,
     mbNavBg: chrome.mbNavBg,
     pageHeightPx: layout.pageHeightPx,
     pageShellStyle: theme.buildPageShellStyle(chrome, layout),
@@ -34,6 +35,7 @@ module.exports = Behavior({
         this.data.mbTheme !== next.mbTheme ||
         this.data.pageMetaStyle !== next.pageMetaStyle ||
         this.data.mbPageBg !== next.mbPageBg ||
+        this.data.mbPageBgBottom !== next.mbPageBgBottom ||
         this.data.mbNavBg !== next.mbNavBg ||
         this.data.pageHeightPx !== next.pageHeightPx ||
         this.data.pageShellStyle !== next.pageShellStyle ||

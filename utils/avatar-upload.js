@@ -4,6 +4,7 @@
 
 const { API_BASE_URL } = require('./config')
 const { normalizeHostedUploadUrl } = require('./shop-xinglu')
+const { parseResponseBody, getApiErrorMessage, isApiSuccess } = require('./api-response')
 
 function isPersistedAvatarUrl(url) {
   if (!url || typeof url !== 'string') return false
@@ -43,16 +44,12 @@ function uploadAvatarTempFile(tempPath) {
       name: 'image',
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
-        try {
-          const data = JSON.parse(res.data)
-          if (data.code === 0 && data.data && data.data.url) {
-            resolve(normalizeHostedUploadUrl(data.data.url))
-            return
-          }
-          reject(new Error((data && (data.message || data.error)) || '头像上传失败'))
-        } catch (e) {
-          reject(new Error('上传响应解析失败'))
+        const data = parseResponseBody(res)
+        if (data && isApiSuccess(data) && data.data && data.data.url) {
+          resolve(normalizeHostedUploadUrl(data.data.url))
+          return
         }
+        reject(new Error(getApiErrorMessage(res, data, '头像上传失败')))
       },
       fail: (err) => reject(err || new Error('头像上传失败'))
     })

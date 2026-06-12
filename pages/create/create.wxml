@@ -1,4 +1,11 @@
-<page-meta page-style="{{pageMetaStyle}}" />
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
 <view
   class="create-home mb-theme-{{mbTheme}} {{miniPlayer ? 'create-home--has-player' : ''}}"
   style="{{miniPlayer ? 'padding-bottom: ' + homeBottomPaddingPx + 'px;' : ''}}"
@@ -7,12 +14,13 @@
 
   <view class="create-home-content">
     <!-- 顶部问候 -->
-    <view class="home-header" style="padding-top: {{statusBarHeight}}px;">
-      <view class="home-header-text">
-        <text class="home-greeting">{{greeting}}</text>
-        <text class="home-subtitle">{{greetingSub}}</text>
-      </view>
-      <!-- <view class="home-header-actions">
+    <view class="home-header-shell" style="padding-top: {{statusBarHeight}}px;">
+      <view class="home-header">
+        <view class="home-header-text">
+          <text class="home-greeting">{{greeting}}</text>
+          <text class="home-subtitle">{{greetingSub}}</text>
+        </view>
+        <!-- <view class="home-header-actions">
         <view class="home-icon-btn" bindtap="onTapSearch">
           <image class="home-icon-img" src="/static/create_step/library.png" mode="aspectFit"/>
         </view>
@@ -20,6 +28,7 @@
           <image class="home-icon-img" src="/static/self_icon/icon_posts.png" mode="aspectFit"/>
         </view>
       </view> -->
+      </view>
     </view>
 
     <!-- AI 智能生成 -->

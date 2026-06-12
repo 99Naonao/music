@@ -1,11 +1,19 @@
-<page-meta page-style="{{pageMetaStyle}}" />
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<view class="splash-shell" style="{{splashShellStyle}}"></view>
 <view
   class="splash-page splash-page--{{variant}} {{splashFullBleed ? 'splash-page--full' : ''}}"
+  style="{{pageShellStyle}}"
   bindtap="onTapSkip"
 >
   <image
     wx:if="{{splashFullBleed}}"
-    class="splash-bg"
+    class="splash-bg splash-bg--full"
     src="{{heroSrc}}"
     mode="aspectFill"
     show-menu-by-longpress="{{false}}"
@@ -13,8 +21,19 @@
   />
   <view wx:if="{{splashFullBleed}}" class="splash-scrim"></view>
 
-  <view class="splash-body {{showContent ? 'splash-body-in' : ''}} {{splashFullBleed ? 'splash-body--full' : ''}}">
-    <view wx:if="{{!splashFullBleed}}" class="splash-hero-wrap">
+  <view
+    wx:if="{{splashFullBleed}}"
+    class="splash-body splash-body--full {{showContent ? 'splash-body-in' : ''}}"
+  >
+    <view class="splash-copy">
+      <text class="splash-title" style="color: {{splashTitleColor}};">{{splashTitle}}</text>
+      <text class="splash-subtitle" style="color: {{splashSubtitleColor}};">{{splashSubtitle}}</text>
+      <text class="splash-slogan" style="color: {{splashSloganColor}};">{{splashSlogan}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!splashFullBleed}}" class="splash-body {{showContent ? 'splash-body-in' : ''}}">
+    <view class="splash-hero-wrap">
       <image
         class="splash-hero"
         src="{{heroSrc}}"

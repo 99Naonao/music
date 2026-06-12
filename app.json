@@ -52,6 +52,7 @@
         "pages/profile/edit",
         "pages/profile/play-history",
         "pages/profile/favorites",
+        "pages/profile/gift-inbox",
         "pages/profile/downloads"
       ],
       "name": "profile-ext"
@@ -80,8 +81,8 @@
     "custom": true,
     "color": "#6b7a8c",
     "selectedColor": "#2d5a8e",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "white",
+    "backgroundColor": "#1a1a2e",
+    "borderStyle": "black",
     "list": [
       {
         "iconPath": "static/home.png",
@@ -124,7 +125,11 @@
     }
   },
   "style": "v2",
+  "renderer": "webview",
   "componentFramework": "glass-easel",
+  "usingComponents": {
+    "mb-bottom-safe": "/components/mb-bottom-safe/index"
+  },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

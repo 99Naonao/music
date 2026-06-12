@@ -39,6 +39,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  padding-top: 32rpx;
   padding-bottom: 28rpx;
 }
 

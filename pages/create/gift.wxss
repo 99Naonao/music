@@ -1,1 +1,38 @@
 @import './share.wxss';
+
+/* 收礼页：播放/暂停仅图标，不要绿色圆底 */
+.gift-page .share-play-btn {
+  width: auto;
+  height: auto;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.gift-page .play-btn-icon {
+  width: 72rpx;
+  height: 72rpx;
+  filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.35));
+}
+
+.gift-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+  padding: 8rpx 4rpx 0;
+  box-sizing: border-box;
+}
+
+.gift-time {
+  font-size: 24rpx;
+  color: var(--mb-text-muted);
+  min-width: 72rpx;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.gift-slider {
+  flex: 1;
+}

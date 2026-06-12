@@ -1,0 +1,53 @@
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-body gift-inbox-page">
+
+    <view class="gift-inbox-header">
+      <text class="gift-inbox-count" wx:if="{{items.length}}">共 {{items.length}} 张</text>
+      <text class="gift-inbox-count" wx:else>登录后打开好友贺卡会自动收录到这里</text>
+    </view>
+
+    <view class="gift-inbox-loading" wx:if="{{loading && !items.length}}">
+      <text>加载中…</text>
+    </view>
+
+    <view class="gift-inbox-list" wx:else>
+      <view
+        class="gift-inbox-item"
+        wx:for="{{items}}"
+        wx:key="shareId"
+        bindtap="onTapItem"
+        data-index="{{index}}"
+      >
+        <image
+          class="gift-inbox-cover"
+          src="{{item.cover}}"
+          mode="aspectFill"
+          binderror="onCoverError"
+          data-index="{{index}}"
+        />
+        <view class="gift-inbox-info">
+          <text class="gift-inbox-title">{{item.workTitle}}</text>
+          <text class="gift-inbox-sub">{{item.subtitle}}</text>
+          <text class="gift-inbox-preview" wx:if="{{item.messagePreview}}">{{item.messagePreview}}</text>
+          <text class="gift-inbox-time" wx:if="{{item.timeText}}">{{item.timeText}}</text>
+        </view>
+        <text class="gift-inbox-remove" catchtap="onRemove" data-index="{{index}}">移除</text>
+      </view>
+
+      <view class="gift-inbox-empty" wx:if="{{!loading && items.length === 0}}">
+        <text class="gift-inbox-empty-title">还没有收到的贺卡</text>
+        <text class="gift-inbox-empty-hint">好友分享的小程序卡片，在你登录状态下打开后会出现在这里</text>
+      </view>
+    </view>
+  </view>
+</view>

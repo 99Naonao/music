@@ -1,5 +1,6 @@
 const theme = require('../utils/theme')
 const channel = require('../utils/channel')
+const { getWindowMetrics } = require('../utils/page-layout')
 
 const BASE_LIST = [
   {
@@ -60,7 +61,8 @@ Component({
     tabBg: '#ffffff',
     tabColor: '#6b7a8c',
     tabSelected: '#2d5a8e',
-    iconFilter: 'none'
+    iconFilter: 'none',
+    safeBottomPx: 0
   },
 
   lifetimes: {
@@ -78,9 +80,11 @@ Component({
   methods: {
     syncTabBarTheme() {
       const colors = readTabBarColors()
+      const m = getWindowMetrics()
       this.setData({
         theme: theme.getEffectiveThemeId(),
         list: buildTabList(),
+        safeBottomPx: m.safeBottom || 0,
         ...colors
       })
     },

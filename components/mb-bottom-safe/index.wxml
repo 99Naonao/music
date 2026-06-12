@@ -1,0 +1,1 @@
+<view wx:if="{{fillStyle}}" class="mb-bottom-safe" style="{{fillStyle}}"></view>

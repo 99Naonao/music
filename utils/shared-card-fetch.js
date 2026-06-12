@@ -10,10 +10,19 @@ const {
 const { resolveCardCustomCover } = require('./card-cover')
 const { isShareUuid } = require('./share-entry')
 const { normalizeHostedCoverUrl, isPersistedCoverUrl } = require('./work-cover')
+const { resolveWorkDurationSec } = require('./work-meta')
 
 function pickMusicCoverUrl(raw) {
   const url = normalizeHostedCoverUrl(raw || '')
   return url && isPersistedCoverUrl(url) ? url : ''
+}
+
+function pickShareDurationSec(data) {
+  if (!data || typeof data !== 'object') return 0
+  if (data.durationSec != null && Number(data.durationSec) > 0) {
+    return Math.floor(Number(data.durationSec))
+  }
+  return resolveWorkDurationSec(data) || 0
 }
 
 /** 贺卡接口未带封面时，用公开 status 接口补拉 player_cover_url */
@@ -88,7 +97,10 @@ async function fetchSharedCardPayload(shareId) {
       textLayout: cardData.textLayout
     })
 
-    const hasArt = !!(cardData.artistBgImage && String(cardData.artistBgImage).trim())
+    const hasArt = !!(
+      cardCustomCover ||
+      (cardData.artistBgImage && String(cardData.artistBgImage).trim())
+    )
     const formatted = formatCardBlessingForPreview(message, {
       template: {
         id: cardData.templateId,
@@ -98,19 +110,28 @@ async function fetchSharedCardPayload(shareId) {
       hasArtBg: hasArt
     })
 
-    const coverImage = data.coverImage || ''
+    const coverImage = normalizeHostedCoverUrl(data.coverImage || '')
     const cardCustomCover = resolveCardCustomCover(coverImage)
+    if (cardCustomCover) {
+      cardData.artistBgImage = ''
+    } else if (cardData.artistBgImage) {
+      cardData.artistBgImage = normalizeHostedCoverUrl(cardData.artistBgImage)
+    }
 
     const musicCoverUrl = await resolveMusicCoverUrl(
       data.musicId,
       data.musicCoverUrl
     )
 
+    const durationSec = pickShareDurationSec(data)
+
     log('gift-fetch', 'GET 成功', {
       shareId: id,
       recipient,
       workTitle: workTitle || '(空)',
-      hasMusicCover: !!musicCoverUrl
+      hasCustomCover: !!cardCustomCover,
+      hasMusicCover: !!musicCoverUrl,
+      durationSec
     })
 
     return {
@@ -135,7 +156,8 @@ async function fetchSharedCardPayload(shareId) {
         },
         coverImage,
         musicId: data.musicId || null,
-        audioUrl: data.audioUrl || null
+        audioUrl: data.audioUrl || null,
+        duration: durationSec > 0 ? durationSec : 0
       }
     }
   } catch (e) {

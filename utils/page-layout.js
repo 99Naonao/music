@@ -3,19 +3,53 @@
  * iOS 对 flex:1 + height:0 的 scroll-view 常算出 0 高度，须用明确像素高度
  */
 
-function getWindowMetrics() {
+const ANDROID_GESTURE_SAFE_PX = 34
+
+function isAndroidPlatform(sys) {
+  const p = String(sys.platform || '').toLowerCase()
+  if (p === 'android') return true
+  return String(sys.system || '').toLowerCase().indexOf('android') >= 0
+}
+
+/** 底部手势条高度（px）；勿用 screenHeight - windowHeight（Tab 页会把导航栏算进去） */
+function computeSafeBottomPx(sys) {
+  const screenHeight = sys.screenHeight || sys.windowHeight || 0
+  if (sys.safeArea && sys.safeArea.bottom != null) {
+    const inset = screenHeight - sys.safeArea.bottom
+    if (inset > 0 && inset <= 60) {
+      return Math.ceil(inset)
+    }
+  }
+  if (isAndroidPlatform(sys)) {
+    return ANDROID_GESTURE_SAFE_PX
+  }
+  return 0
+}
+
+let _metricsCache = null
+
+function getWindowMetrics(forceRefresh) {
+  if (_metricsCache && !forceRefresh) {
+    return _metricsCache
+  }
   const sys = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
   const windowWidth = sys.windowWidth || 375
   const windowHeight = sys.windowHeight || sys.screenHeight || 667
   const statusBarHeight = sys.statusBarHeight || 44
   const screenHeight = sys.screenHeight || windowHeight
-  const safeBottom =
-    sys.safeArea && sys.safeArea.bottom != null
-      ? Math.max(0, screenHeight - sys.safeArea.bottom)
-      : 0
+  const safeBottom = computeSafeBottomPx(sys)
   const rpx2px = windowWidth / 750
   const tabBarHeight = rpxToPx(96, rpx2px) + safeBottom
-  return { windowWidth, windowHeight, statusBarHeight, tabBarHeight, safeBottom, rpx2px }
+  _metricsCache = {
+    windowWidth,
+    windowHeight,
+    screenHeight,
+    statusBarHeight,
+    tabBarHeight,
+    safeBottom,
+    rpx2px
+  }
+  return _metricsCache
 }
 
 function rpxToPx(rpx, rpx2px) {
@@ -40,7 +74,6 @@ function computeScrollHeightPx(opts = {}) {
 
   let h = m.windowHeight - statusBar - rpxToPx(headerRpx, m.rpx2px) - rpxToPx(bottomRpx, m.rpx2px)
   if (opts.hasTabBar) {
-    // tabBarHeight 已含 safeBottom，勿重复扣除
     h -= m.tabBarHeight
   } else if (useSafe) {
     h -= m.safeBottom
@@ -50,6 +83,7 @@ function computeScrollHeightPx(opts = {}) {
 
 module.exports = {
   getWindowMetrics,
+  computeSafeBottomPx,
   rpxToPx,
   computeScrollHeightPx
 }

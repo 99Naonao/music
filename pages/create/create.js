@@ -13,7 +13,7 @@ const promoPageBehavior = require('../../behaviors/promo-page')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
 const channel = require('../../utils/channel')
-const { resolveRemoteImageUrl } = require('../../utils/remote-image')
+const { resolveRemoteImageUrl, getCachedRemoteImageUrl } = require('../../utils/remote-image')
 const {
   mapLibraryTrackItem,
   buildLibraryPlayerUrl,
@@ -155,6 +155,7 @@ Page({
       channel.isChannelActive() && branding && branding.logoUrl
         ? branding.logoUrl
         : ''
+    const defaultMascot = '/static/new_logo/logo_bg.png'
     const patch = {
       showMianjiaEntry: showMall,
       greetingSub: channel.getCopy(
@@ -167,16 +168,36 @@ Page({
       homeBannerDesc: channel.getCopy(
         'homeBannerDesc',
         '搭配助眠音乐，探索眠加商城精选'
-      ),
-      homeAiMascot: '/static/new_logo/logo_bg.png'
+      )
     }
-    this.setData(patch)
-    if (!remoteLogo) return
-    resolveRemoteImageUrl(remoteLogo).then((localSrc) => {
-      if (localSrc) {
-        this.setData({ homeAiMascot: localSrc })
+    this._homeLogoRemoteUrl = remoteLogo || ''
+
+    if (!remoteLogo) {
+      patch.homeAiMascot = defaultMascot
+    } else {
+      const cached = getCachedRemoteImageUrl(remoteLogo)
+      if (cached) {
+        patch.homeAiMascot = cached
+      } else if (
+        this.data.homeAiMascot &&
+        this.data.homeAiMascot !== defaultMascot
+      ) {
+        /* 已有渠道 logo 本地路径，切 Tab 回来时不闪回官方图 */
+      } else {
+        patch.homeAiMascot = defaultMascot
       }
-    })
+      resolveRemoteImageUrl(remoteLogo).then((localSrc) => {
+        if (
+          localSrc &&
+          localSrc !== defaultMascot &&
+          this._homeLogoRemoteUrl === remoteLogo
+        ) {
+          this.setData({ homeAiMascot: localSrc })
+        }
+      })
+    }
+
+    this.setData(patch)
   },
 
   onLoad() {

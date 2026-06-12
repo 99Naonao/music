@@ -1,6 +1,14 @@
-<page-meta page-style="{{pageMetaStyle}}" />
-<view class="mb-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
   <view class="mb-page-body acc-container">
   <view class="acc-hint">注销后，你的帖子、作品、积分等数据将永久删除且无法恢复。退出登录请前往「我的」页。</view>
   <view class="logout-section">

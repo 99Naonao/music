@@ -1,4 +1,11 @@
-<page-meta page-style="{{pageMetaStyle}}" />
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
 <view class="tracks-page mb-theme-{{mbTheme}}">
   <view class="tracks-page-bg"></view>
 

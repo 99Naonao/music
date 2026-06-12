@@ -6,7 +6,7 @@ const {
   GRADIENT_OPTIONS,
   isDefaultGradientTemplate
 } = require('../../utils/card-gradient')
-const { uploadWorkCoverTempFile, normalizeHostedCoverUrl, isRemoteCoverUrl } = require('../../utils/work-cover')
+const { uploadWorkCoverTempFile, normalizeHostedCoverUrl, isRemoteCoverUrl, isPersistedCoverUrl } = require('../../utils/work-cover')
 const {
   resolveCardTextLayout,
   layoutToOverlayStyles,
@@ -349,9 +349,15 @@ Page({
         cardCover = normalizeHostedCoverUrl(await uploadWorkCoverTempFile(cardCover))
       } catch (e) {
         console.warn('[card-edit] card cover upload', e)
+        showAlert('上传失败', (e && e.message) || '贺卡图片上传失败，请检查网络后重试。')
+        return
       } finally {
         wx.hideLoading()
       }
+    }
+    if (cardCover && !isPersistedCoverUrl(cardCover)) {
+      showAlert('上传失败', '贺卡图片未能保存到云端，请重新选择图片后重试。')
+      return
     }
 
     const useDefaultBg = this.data.useDefaultBg || isDefaultGradientTemplate({

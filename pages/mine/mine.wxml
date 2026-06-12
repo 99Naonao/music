@@ -1,6 +1,14 @@
-<page-meta page-style="{{pageMetaStyle}}" />
-<view class="mine-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
+<view class="mine-page mb-theme-{{mbTheme}}" style="background-color: {{mbPageBg}};">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
   <view class="mine-body">
 
     <!-- 未登录：顶部登录区 -->
@@ -90,6 +98,13 @@
           <image class="mine-menu-icon" src="/static/new_logo/collect.png" mode="aspectFit"/>
         </view>
         <text class="mine-menu-name">我的收藏</text>
+        <text class="mine-menu-arrow">›</text>
+      </view>
+      <view class="mine-menu-item" bindtap="goToGiftInbox">
+        <view class="mine-menu-icon-wrap">
+          <image class="mine-menu-icon" src="/static/music_library/greeting_card.png" mode="aspectFit"/>
+        </view>
+        <text class="mine-menu-name">收到的贺卡</text>
         <text class="mine-menu-arrow">›</text>
       </view>
       <view class="mine-menu-item mine-menu-item--last" bindtap="onTapDownloads">

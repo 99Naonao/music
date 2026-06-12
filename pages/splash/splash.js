@@ -5,30 +5,64 @@ const { log, logWarn } = require('../../utils/log')
 
 const SPLASH_MS = 2000
 const HERO_FALLBACK = '/static/new_logo/logo_bg.png'
+const FULL_BLEED_BG = '#0f0b14'
+
+function patchSplashLayout(chrome, layout, fullBleed) {
+  return {
+    splashShellStyle: theme.buildSplashShellStyle(chrome, layout, fullBleed),
+    pageShellStyle: fullBleed
+      ? theme.buildSplashFullPageStyle(layout)
+      : theme.buildPageShellStyle(chrome, layout)
+  }
+}
+
+function applyFullBleedBackground() {
+  try {
+    wx.setBackgroundColor({
+      backgroundColor: FULL_BLEED_BG,
+      backgroundColorTop: FULL_BLEED_BG,
+      backgroundColorBottom: FULL_BLEED_BG
+    })
+  } catch (e) {
+    /* 低版本基础库可忽略 */
+  }
+}
+
+function buildSplashData() {
+  const id = theme.getEffectiveThemeId()
+  const chrome = theme.getPageChromeColors(id)
+  const layout = theme.getPageLayoutMetrics()
+  const splash = channel.getSplashDisplay()
+  const fullBleed = !!splash.fullBleed
+  const layoutStyles = patchSplashLayout(chrome, layout, fullBleed)
+  return {
+    variant: id,
+    pageMetaStyle: theme.getSplashPageMetaStyle(id),
+    mbPageBg: fullBleed ? FULL_BLEED_BG : chrome.mbPageBg,
+    mbNavBg: fullBleed ? FULL_BLEED_BG : chrome.mbNavBg,
+    pageHeightPx: layout.pageHeightPx,
+    ...layoutStyles,
+    heroSrc: splash.imageUrl || HERO_FALLBACK,
+    splashFullBleed: fullBleed,
+    splashTitle: splash.title,
+    splashSubtitle: splash.subtitle,
+    splashSlogan: splash.slogan,
+    splashTitleColor: splash.titleColor || '',
+    splashSubtitleColor: splash.subtitleColor || '',
+    splashSloganColor: splash.sloganColor || '',
+    showContent: false
+  }
+}
 
 Page({
-  data: {
-    variant: 'dawn',
-    pageMetaStyle: theme.getSplashPageMetaStyle('dawn'),
-    heroSrc: HERO_FALLBACK,
-    splashFullBleed: false,
-    splashTitle: '眠音盒',
-    splashSubtitle: 'AI声波音乐盒',
-    splashSlogan: '让每一夜都被温柔守护',
-    splashTitleColor: '',
-    splashSubtitleColor: '',
-    splashSloganColor: '',
-    showContent: false
-  },
+  data: buildSplashData(),
 
   onLoad(options) {
     this._left = false
     channel.resolveChannelFromLaunch({ query: options || {} })
+    channel.primeBrandingFromCache()
     this.applyChannelSplash()
-
-    channel.ensureInit({ query: options || {} }).then(() => {
-      this.applyChannelSplash()
-    })
+    this.syncSplashChrome()
 
     const shareId = this.resolveIncomingShareId(options)
     if (shareId) {
@@ -43,20 +77,61 @@ Page({
       return
     }
 
+    channel.ensureInit({ query: options || {} }).then(async () => {
+      if (this._left) return
+      const channelId = channel.getChannelId()
+      if (channelId && channelId !== channel.DEFAULT_CHANNEL) {
+        await channel.fetchBranding(channelId, { force: true })
+      }
+      channel.primeBrandingFromCache()
+      this.applyChannelSplash()
+      this.syncSplashChrome()
+    })
+
     wx.nextTick(() => {
-      this.setData({ showContent: true })
+      if (!this._left) {
+        this.setData({ showContent: true })
+      }
     })
     this._timer = setTimeout(() => this.goMain(), SPLASH_MS)
+  },
+
+  syncSplashChrome() {
+    const id = theme.getEffectiveThemeId()
+    const chrome = theme.getPageChromeColors(id)
+    const layout = theme.getPageLayoutMetrics()
+    const fullBleed = !!this.data.splashFullBleed
+    const layoutStyles = patchSplashLayout(chrome, layout, fullBleed)
+    this.setData({
+      variant: id,
+      pageMetaStyle: theme.getSplashPageMetaStyle(id),
+      mbPageBg: fullBleed ? FULL_BLEED_BG : chrome.mbPageBg,
+      mbNavBg: fullBleed ? FULL_BLEED_BG : chrome.mbNavBg,
+      pageHeightPx: layout.pageHeightPx,
+      ...layoutStyles
+    })
+    if (fullBleed) {
+      applyFullBleedBackground()
+    } else {
+      theme.applyPageBackground(id)
+    }
   },
 
   applyChannelSplash() {
     const splash = channel.getSplashDisplay()
     const userTheme = theme.getEffectiveThemeId()
-    const fullBleed = !!(splash.fullBleed && splash.useRemoteImage)
+    const fullBleed = !!splash.fullBleed
+    const chrome = theme.getPageChromeColors(userTheme)
+    const layout = theme.getPageLayoutMetrics()
+    const layoutStyles = patchSplashLayout(chrome, layout, fullBleed)
 
     this.setData({
       variant: userTheme,
       pageMetaStyle: theme.getSplashPageMetaStyle(userTheme),
+      mbPageBg: fullBleed ? FULL_BLEED_BG : chrome.mbPageBg,
+      mbNavBg: fullBleed ? FULL_BLEED_BG : chrome.mbNavBg,
+      pageHeightPx: layout.pageHeightPx,
+      ...layoutStyles,
       heroSrc: splash.imageUrl || HERO_FALLBACK,
       splashFullBleed: fullBleed,
       splashTitle: splash.title,
@@ -66,18 +141,31 @@ Page({
       splashSubtitleColor: splash.subtitleColor || '',
       splashSloganColor: splash.sloganColor || ''
     })
-    theme.applyChromeTheme(userTheme)
+    if (fullBleed) {
+      applyFullBleedBackground()
+    } else {
+      theme.applyChromeTheme(userTheme)
+    }
   },
 
   onHeroImageError() {
     logWarn('splash', '开屏图加载失败，回退默认布局')
+    const id = theme.getEffectiveThemeId()
+    const chrome = theme.getPageChromeColors(id)
+    const layout = theme.getPageLayoutMetrics()
+    const layoutStyles = patchSplashLayout(chrome, layout, false)
     this.setData({
       heroSrc: HERO_FALLBACK,
       splashFullBleed: false,
+      mbPageBg: chrome.mbPageBg,
+      mbNavBg: chrome.mbNavBg,
+      ...layoutStyles,
       splashTitleColor: '',
       splashSubtitleColor: '',
       splashSloganColor: ''
     })
+    theme.applyPageBackground(id)
+    theme.applyChromeTheme(id)
   },
 
   resolveIncomingShareId(pageOptions) {
@@ -109,7 +197,13 @@ Page({
   },
 
   onShow() {
-    this.applyChannelSplash()
+    if (this._left) return
+    channel.ensureInit().then(() => {
+      if (this._left) return
+      channel.primeBrandingFromCache()
+      this.applyChannelSplash()
+      this.syncSplashChrome()
+    })
   },
 
   onUnload() {
@@ -138,7 +232,8 @@ Page({
     } catch (e) {
       /* ignore */
     }
-    theme.refreshAfterChannelBranding()
-    wx.reLaunch({ url: '/pages/create/create' })
+    theme.applyPageBackground()
+    theme.applyChromeTheme()
+    wx.reLaunch({ url: channel.appendChannelToPath('/pages/create/create') })
   }
 })

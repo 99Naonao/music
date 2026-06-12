@@ -1,10 +1,19 @@
-<page-meta page-style="{{pageMetaStyle}}" />
-<view class="mb-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
-  <view class="mb-page-body share-page">
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
+<wxs src="./time-format.wxs" module="tf" />
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-body share-page gift-page">
     <view class="share-gift-strip">
       <text class="share-gift-title">晚安贺卡</text>
-      <text class="share-gift-sub">你收到一份专属晚安礼，试听后可为自己或 TA 制作</text>
+      <text class="share-gift-sub">你收到一份专属晚安礼，试听后可为自己或 TA 制作；登录后会自动保存到「收到的贺卡」</text>
     </view>
 
     <view class="share-load-error" wx:if="{{sharedLoadError}}">
@@ -28,12 +37,22 @@
       </view>
       <text class="share-music-title">{{shareWorkTitle}}</text>
       <text class="share-music-info">{{musicInfo.instrument}} · {{musicInfo.frequency}} · {{musicInfo.bpm}}BPM</text>
-      <view class="share-progress">
-        <view class="share-progress-bar" style="width: {{duration > 0 ? currentTime/duration*100 : 0}}%"></view>
-      </view>
-      <view class="share-time">
-        <text>{{formatTime(currentTime)}}</text>
-        <text>{{formatTime(duration)}}</text>
+      <view class="gift-progress-row">
+        <text class="gift-time">{{tf.formatTime(currentTime)}}</text>
+        <slider
+          class="gift-slider"
+          min="0"
+          max="{{duration > 0 ? duration : 1}}"
+          value="{{currentTime}}"
+          block-size="14"
+          activeColor="{{mbAccent}}"
+          backgroundColor="{{mbAccentSoft}}"
+          block-color="#ffffff"
+          disabled="{{!audioReady}}"
+          bindchanging="onProgressChanging"
+          bindchange="onProgressChange"
+        />
+        <text class="gift-time">{{tf.formatTime(duration)}}</text>
       </view>
     </view>
 

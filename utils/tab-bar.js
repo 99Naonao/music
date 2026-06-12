@@ -84,29 +84,26 @@ function setTabBarSelected(page, index) {
   const iconFilter = channel.isChannelActive()
     ? 'hue-rotate(22deg) saturate(0.82) brightness(0.96)'
     : 'none'
+  const tabPatch = {
+    selected: resolveTabSelectedIndex(null, index),
+    theme: themeMod.getEffectiveThemeId(),
+    tabBg: meta.tabBg,
+    tabColor: meta.tabColor,
+    tabSelected: meta.tabSelected,
+    iconFilter
+  }
   if (typeof page.getTabBar === 'function') {
     const bar = page.getTabBar()
     if (bar) {
-      bar.setData({
-        selected: resolveTabSelectedIndex(bar, index),
-        theme: themeMod.getEffectiveThemeId(),
-        tabBg: meta.tabBg,
-        tabColor: meta.tabColor,
-        tabSelected: meta.tabSelected,
-        iconFilter
-      })
+      tabPatch.selected = resolveTabSelectedIndex(bar, index)
+      bar.setData(tabPatch)
       return
     }
   }
   const comp = page.selectComponent('#custom-tab-bar')
   if (comp) {
-    comp.setData({
-      selected: resolveTabSelectedIndex(comp, index),
-      tabBg: meta.tabBg,
-      tabColor: meta.tabColor,
-      tabSelected: meta.tabSelected,
-      iconFilter
-    })
+    tabPatch.selected = resolveTabSelectedIndex(comp, index)
+    comp.setData(tabPatch)
   }
 }
 

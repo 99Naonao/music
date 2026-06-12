@@ -1,8 +1,16 @@
-<page-meta page-style="{{pageMetaStyle}}" />
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
 <wxs src="./time-format.wxs" module="tf" />
 
-<view class="mb-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
   <view class="mb-page-body player-page" style="padding-bottom: {{pageBottomPaddingPx}}px;">
 
     <view class="player-nav" style="padding-top: {{statusBarHeight}}px;">

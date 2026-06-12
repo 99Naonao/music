@@ -1,12 +1,14 @@
 /**
- * 主题皮肤 · CSS 变量由 page-meta 注入（与 utils/theme.js 一致）
- * 全站页面壳：mb-page / mb-page-bg / *-page-bg
+ * 主题皮肤 · 页面壳（参考 pillow：page 纯色 + 容器 height 100%，Android 不用 100vh 撑高）
  */
 
 .mb-page {
   position: relative;
-  min-height: 100vh;
+  width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .mb-page-bg,
@@ -15,16 +17,52 @@
   position: fixed;
   left: 0;
   top: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
   z-index: 0;
   pointer-events: none;
-  background: var(--mb-gradient-page);
+  background-color: var(--mb-bg-page);
+  background-image: var(--mb-gradient-page);
 }
 
 .mb-page-body {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
+  width: 100%;
   box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 页内已有纵向 scroll-view（固定头+列表）时，避免双层滚动 */
+.mb-page-body.mb-page-body--nested-scroll {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mb-page-chrome {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Android 手势条区域：page-meta 注入 --mb-safe-bottom，与主题色一致 */
+page::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--mb-safe-bottom, 0px);
+  background-color: var(--mb-bg-page);
+  z-index: 9998;
+  pointer-events: none;
 }

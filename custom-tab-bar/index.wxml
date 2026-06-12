@@ -1,6 +1,6 @@
 <view
   class="tab-bar mb-theme-{{theme}}"
-  style="background: {{tabBg}}; border-top: 1rpx solid rgba(0,0,0,0.06);"
+  style="background: {{tabBg}}; border-top: 1rpx solid rgba(0,0,0,0.06); padding-bottom: {{safeBottomPx}}px;"
 >
   <view
     wx:for="{{list}}"

@@ -4,5 +4,6 @@
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "眠音盒",
-  "backgroundColor": "#e1f0ff"
+  "backgroundColor": "#F4F0FA",
+  "backgroundColorContent": "#F4F0FA"
 }

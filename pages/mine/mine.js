@@ -63,6 +63,12 @@ Page({
     if (!this.data.isLoggedIn) return
     const needForce = consumeMineStatsInvalidateFlag()
     this.refreshMinePageData({ force: needForce })
+    try {
+      const giftInbox = require('../../utils/gift-inbox')
+      giftInbox.syncPendingGifts()
+    } catch (e) {
+      /* ignore */
+    }
   },
 
   async onPullDownRefresh() {
@@ -197,6 +203,12 @@ Page({
             })
             this.invalidateMineStatsCache()
             this.refreshMinePageData({ force: true })
+            try {
+              const giftInbox = require('../../utils/gift-inbox')
+              giftInbox.syncPendingGifts()
+            } catch (syncGiftErr) {
+              /* ignore */
+            }
           } else {
             logWarn('login', '登录失败', { message: loginRes.message })
             showAlert('登录失败', loginRes.message || '请稍后重试。')
@@ -463,6 +475,11 @@ Page({
   goToFavorites() {
     if (!this.checkLogin()) return
     wx.navigateTo({ url: '/package-profile/pages/profile/favorites' })
+  },
+
+  goToGiftInbox() {
+    if (!this.checkLogin()) return
+    wx.navigateTo({ url: '/package-profile/pages/profile/gift-inbox' })
   },
 
   onTapFavorites() {

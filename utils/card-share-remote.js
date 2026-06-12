@@ -1,5 +1,10 @@
 const { request } = require('./request')
 const { log, logWarn } = require('./log')
+const {
+  uploadWorkCoverTempFile,
+  normalizeHostedCoverUrl,
+  isPersistedCoverUrl
+} = require('./work-cover')
 
 const CREATOR_SHARE_ID_KEY = 'creatorShareId'
 
@@ -28,6 +33,20 @@ function buildSharePostBody(payload) {
   }
 }
 
+/** 分享前确保自定义贺卡图已上传为可访问的 https 地址 */
+async function ensureShareCoverRemoteUrl(coverImage) {
+  const raw = coverImage != null ? String(coverImage).trim() : ''
+  if (!raw) return ''
+  if (isPersistedCoverUrl(raw)) {
+    return normalizeHostedCoverUrl(raw)
+  }
+  const hosted = normalizeHostedCoverUrl(await uploadWorkCoverTempFile(raw))
+  if (!hosted) {
+    throw new Error('贺卡图片上传失败，请检查网络后重试')
+  }
+  return hosted
+}
+
 /** 登录后创建云端贺卡分享记录，返回 shareId（UUID） */
 async function createCardShareRemote(payload) {
   const body = buildSharePostBody(payload)
@@ -51,6 +70,9 @@ async function createCardShareRemote(payload) {
     hasAudio: !!(body.audioUrl && String(body.audioUrl).trim())
   })
   try {
+    if (body.coverImage && String(body.coverImage).trim()) {
+      body.coverImage = await ensureShareCoverRemoteUrl(body.coverImage)
+    }
     const res = await request({
       url: '/api/card/share',
       method: 'POST',
@@ -107,6 +129,7 @@ function readCreatorShareId() {
 
 module.exports = {
   CREATOR_SHARE_ID_KEY,
+  ensureShareCoverRemoteUrl,
   createCardShareRemote,
   saveCreatorShareId,
   readCreatorShareId

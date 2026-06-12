@@ -19,11 +19,13 @@ const { markMineStatsStale } = require('../../utils/mine-stats-cache')
 const { log, logWarn } = require('../../utils/log')
 const channel = require('../../utils/channel')
 const channelShare = require('../../utils/channel-share')
+const giftInbox = require('../../utils/gift-inbox')
 const {
   getWorkCoverDisplay,
   normalizeHostedCoverUrl,
   isPersistedCoverUrl
 } = require('../../utils/work-cover')
+const { resolveWorkDurationSec } = require('../../utils/work-meta')
 
 const SHARE_CARD_FALLBACK_IMAGE = '/static/music_library/greeting_card.png'
 const INCOMING_GIFT_STORAGE_KEY = 'mb_incoming_gift_share'
@@ -68,7 +70,8 @@ Page({
     audioUrl: null,
     isPlaying: false,
     currentTime: 0,
-    duration: 180,
+    duration: 0,
+    audioReady: false,
     shareId: null,
     shareWorkTitle: '专属助眠曲',
     sharedLoadError: '',
@@ -110,6 +113,7 @@ Page({
 
   onShow() {
     this.syncOwnShareState()
+    this.tryRecordGiftInbox()
   },
 
   onUnload() {
@@ -119,6 +123,10 @@ Page({
     }
     if (this.playTimer) {
       clearInterval(this.playTimer)
+    }
+    if (this._durationProbeTimers) {
+      this._durationProbeTimers.forEach((id) => clearTimeout(id))
+      this._durationProbeTimers = []
     }
   },
 
@@ -420,16 +428,20 @@ Page({
       if (result.ok && result.patch) {
         this._sharedMusicCoverUrl = result.musicCoverUrl || ''
         this._giftRaw = result.raw || {}
+        this._durationFromServer = !!(result.patch.duration > 0)
         this.setData(result.patch, () => {
           this.refreshMusicCover()
           if (result.patch.audioUrl) {
-            this.initAudioPlayer(result.patch.audioUrl)
+            this.initAudioPlayer(result.patch.audioUrl, result.patch.duration)
           }
           const workTitle = result.patch.shareWorkTitle
           if (!workTitle || workTitle === '专属助眠曲') {
             this.refreshShareWorkTitle()
+          }
+          if (result.patch.musicId) {
             this.fetchShareMetaFromServer(result.patch.musicId)
           }
+          this.tryRecordGiftInbox()
           this.syncOwnShareState()
         })
       } else {
@@ -472,12 +484,25 @@ Page({
           patch.musicCoverImage = cover
         }
       }
+      const dur = resolveWorkDurationSec(res.data)
+      if (dur != null && dur > 0) {
+        patch.duration = dur
+        patch.audioReady = true
+        this._durationFromServer = true
+      }
       if (Object.keys(patch).length) {
         this.setData(patch)
       }
     } catch (e) {
       /* ignore */
     }
+  },
+
+  tryRecordGiftInbox() {
+    if (this.data.sharedLoadError) return
+    const shareId = this._incomingShareId || this.data.shareId
+    if (!isShareUuid(shareId)) return
+    giftInbox.touchGiftReceipt(shareId)
   },
 
   retryLoad() {
@@ -493,22 +518,55 @@ Page({
     this.loadGiftCard(sid, { showAlertOnFail: true })
   },
 
-  initAudioPlayer(url) {
+  initAudioPlayer(url, initialDurationSec) {
     if (this.audioCtx) {
       this.audioCtx.destroy()
       this.audioCtx = null
     }
+    if (this._durationProbeTimers) {
+      this._durationProbeTimers.forEach((id) => clearTimeout(id))
+    }
+    this._durationProbeTimers = []
+    this._progressDragging = false
+
+    const serverDur =
+      Number(initialDurationSec) > 0 ? Math.floor(Number(initialDurationSec)) : 0
+    if (serverDur > 0) {
+      this._durationFromServer = true
+    }
+    this.setData({
+      audioReady: serverDur > 0,
+      currentTime: 0,
+      isPlaying: false,
+      duration: serverDur > 0 ? serverDur : 0
+    })
+
     this.audioCtx = wx.createInnerAudioContext()
     patchInnerAudioForIOS(this.audioCtx)
     applyGlobalInnerAudioOptions()
     this.audioCtx.src = url
 
+    const applyDurationFromNative = () => {
+      if (this._durationFromServer) return
+      const d = Math.floor(this.audioCtx.duration || 0)
+      if (d > 0) {
+        this.setData({ duration: d, audioReady: true })
+      }
+    }
+
     this.audioCtx.onCanplay(() => {
-      this.setData({ duration: Math.floor(this.audioCtx.duration) || 180 })
+      applyDurationFromNative()
     })
 
     this.audioCtx.onTimeUpdate(() => {
-      this.setData({ currentTime: Math.floor(this.audioCtx.currentTime) })
+      if (this._progressDragging) return
+      this.setData({ currentTime: Math.floor(this.audioCtx.currentTime || 0) })
+      applyDurationFromNative()
+    })
+
+    ;[200, 700, 2000, 5000].forEach((delay) => {
+      const tid = setTimeout(() => applyDurationFromNative(), delay)
+      this._durationProbeTimers.push(tid)
     })
 
     this.audioCtx.onEnded(() => {
@@ -517,8 +575,30 @@ Page({
 
     this.audioCtx.onError((err) => {
       console.error('[gift] audio error', err)
+      this.setData({ audioReady: false })
       showAlert('提示', '音频加载失败，请稍后重试。')
     })
+  },
+
+  onProgressChanging(e) {
+    this._progressDragging = true
+    const max = this.data.duration || 1
+    const v = Math.min(Math.max(0, e.detail.value), max)
+    this.setData({ currentTime: Math.floor(v) })
+  },
+
+  onProgressChange(e) {
+    this._progressDragging = false
+    const max = this.data.duration || 1
+    const sec = Math.min(Math.max(0, e.detail.value), max)
+    if (this.audioCtx) {
+      try {
+        this.audioCtx.seek(sec)
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    this.setData({ currentTime: Math.floor(sec) })
   },
 
   togglePlay() {
@@ -533,12 +613,6 @@ Page({
       this.audioCtx.play()
       this.setData({ isPlaying: true })
     }
-  },
-
-  formatTime(seconds) {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
   },
 
   goToCreateFromGift() {

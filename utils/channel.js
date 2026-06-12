@@ -57,7 +57,7 @@ function brandingCacheKey(channelId, version) {
   return `${STORAGE_BRANDING_PREFIX}${channelId}_${v}`
 }
 
-function readBrandingCache(channelId) {
+function readBrandingCache(channelId, opts) {
   try {
     const keys = wx.getStorageInfoSync().keys || []
     const prefix = `${STORAGE_BRANDING_PREFIX}${channelId}_`
@@ -65,11 +65,63 @@ function readBrandingCache(channelId) {
     if (!hit.length) return null
     const raw = wx.getStorageSync(hit[hit.length - 1])
     if (!raw || typeof raw !== 'object' || !raw.at || !raw.data) return null
-    if (Date.now() - raw.at > BRANDING_TTL_MS) return null
+    const allowStale = opts && opts.allowStale === true
+    if (!allowStale && Date.now() - raw.at > BRANDING_TTL_MS) return null
     return raw.data
   } catch (e) {
     return null
   }
+}
+
+/** 渠道开屏文案兜底（图片由 branding API / CDN 下发，不打包进小程序） */
+const LOCAL_CHANNEL_SPLASH = {
+  channel_1: {
+    title: '深眠驿站',
+    subtitle: 'AI助眠声波定制',
+    slogan: '今夜，为自己留一刻宁静'
+  }
+}
+
+function withBrandingVersion(url, version) {
+  const raw = url != null ? String(url).trim() : ''
+  if (!raw || !/^https:\/\//i.test(raw)) return raw
+  const v = version != null ? Number(version) : 0
+  if (!v) return raw
+  const sep = raw.indexOf('?') >= 0 ? '&' : '?'
+  return `${raw}${sep}v=${v}`
+}
+
+/** 开屏图：HTTPS 远程全屏；无图时回退默认 logo 布局 */
+function resolveChannelSplashMedia(channelId, brandingPayload) {
+  const s = (brandingPayload && brandingPayload.splash) || {}
+  const version = brandingPayload && brandingPayload.version
+  const remote = s.imageUrl && /^https:\/\//i.test(String(s.imageUrl)) ? String(s.imageUrl) : ''
+  if (remote) {
+    return {
+      imageUrl: withBrandingVersion(remote, version),
+      useRemoteImage: true,
+      fullBleed: true
+    }
+  }
+  return {
+    imageUrl: DEFAULT_SPLASH.imageUrl,
+    useRemoteImage: false,
+    fullBleed: false
+  }
+}
+
+/** 冷启动开屏：先把本地 branding 缓存灌进内存，避免 iOS 首帧闪官方默认 */
+function primeBrandingFromCache() {
+  const id = getChannelId()
+  if (id === DEFAULT_CHANNEL) {
+    _branding = null
+    applyBrandingToApp()
+    return null
+  }
+  const cached = readBrandingCache(id, { allowStale: true })
+  _branding = cached || null
+  applyBrandingToApp()
+  return cached
 }
 
 function writeBrandingCache(channelId, data) {
@@ -176,6 +228,17 @@ function applyBrandingToApp() {
   } catch (e) {
     /* ignore */
   }
+  prefetchBrandingLogo()
+}
+
+function prefetchBrandingLogo() {
+  if (!_branding || !_branding.logoUrl) return
+  try {
+    const { resolveRemoteImageUrl } = require('./remote-image')
+    resolveRemoteImageUrl(_branding.logoUrl)
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 function refreshThemeAfterBranding() {
@@ -199,6 +262,7 @@ function refreshThemeAfterBranding() {
 async function initOnColdStart(options) {
   const fromQuery = (options && options.query && (options.query.channel || options.query.ch)) || ''
   const channelId = resolveChannelFromLaunch(options)
+  primeBrandingFromCache()
   await fetchBranding(channelId, { force: !!fromQuery })
   applyBrandingToApp()
   refreshThemeAfterBranding()
@@ -315,7 +379,7 @@ function getContact() {
 }
 
 function getSplashDisplay() {
-  if (!isChannelActive()) {
+  if (!hasChannelContext()) {
     return {
       ...DEFAULT_SPLASH,
       useRemoteImage: false,
@@ -325,19 +389,50 @@ function getSplashDisplay() {
       sloganColor: ''
     }
   }
-  const b = getEffectiveBranding()
+  const channelId = getChannelId()
+  let b = getEffectiveBranding()
+  if (!b) {
+    b = readBrandingCache(channelId, { allowStale: true })
+  }
+  if (!b || b.status === 'disabled') {
+    const local = LOCAL_CHANNEL_SPLASH[channelId]
+    if (local) {
+      const media = resolveChannelSplashMedia(channelId, null)
+      return {
+        imageUrl: media.imageUrl,
+        title: local.title,
+        subtitle: local.subtitle,
+        slogan: local.slogan,
+        useRemoteImage: media.useRemoteImage,
+        fullBleed: media.fullBleed,
+        titleColor: media.fullBleed ? '#fffdf5' : '',
+        subtitleColor: media.fullBleed ? 'rgba(255, 253, 245, 0.88)' : '',
+        sloganColor: media.fullBleed ? 'rgba(255, 253, 245, 0.62)' : ''
+      }
+    }
+    return {
+      ...DEFAULT_SPLASH,
+      useRemoteImage: false,
+      fullBleed: false,
+      titleColor: '',
+      subtitleColor: '',
+      sloganColor: ''
+    }
+  }
   const s = b.splash || {}
   const t = b.theme || {}
-  const useRemote = !!(s.imageUrl && /^https:\/\//i.test(String(s.imageUrl)))
-  const fullBleed = useRemote
-  const titleColor = fullBleed ? '#FFFFFF' : t.navFront || '#2D2438'
-  const subtitleColor = fullBleed ? 'rgba(255,255,255,0.92)' : t.primaryColor || '#7568A8'
-  const sloganColor = fullBleed ? 'rgba(255,255,255,0.72)' : '#8A8494'
+  const localFallback = LOCAL_CHANNEL_SPLASH[channelId]
+  const media = resolveChannelSplashMedia(channelId, b)
+  const fullBleed = media.fullBleed
+  const useRemote = media.useRemoteImage
+  const titleColor = fullBleed ? '#fffdf5' : t.navFront || '#2D2438'
+  const subtitleColor = fullBleed ? 'rgba(255, 253, 245, 0.88)' : t.primaryColor || '#7568A8'
+  const sloganColor = fullBleed ? 'rgba(255, 253, 245, 0.62)' : '#8A8494'
   return {
-    imageUrl: s.imageUrl || DEFAULT_SPLASH.imageUrl,
-    title: s.title || DEFAULT_SPLASH.title,
-    subtitle: s.subtitle || DEFAULT_SPLASH.subtitle,
-    slogan: s.slogan || DEFAULT_SPLASH.slogan,
+    imageUrl: media.imageUrl,
+    title: s.title || (localFallback && localFallback.title) || DEFAULT_SPLASH.title,
+    subtitle: s.subtitle || (localFallback && localFallback.subtitle) || DEFAULT_SPLASH.subtitle,
+    slogan: s.slogan || (localFallback && localFallback.slogan) || DEFAULT_SPLASH.slogan,
     useRemoteImage: useRemote,
     fullBleed,
     titleColor,
@@ -436,6 +531,7 @@ module.exports = {
   getPersistedChannel,
   persistChannel,
   resolveChannelFromLaunch,
+  primeBrandingFromCache,
   initOnColdStart,
   ensureInit,
   getChannelId,

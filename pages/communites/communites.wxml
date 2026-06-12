@@ -1,7 +1,15 @@
-<page-meta page-style="{{pageMetaStyle}}" />
-<view class="mb-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
-  <view class="mb-page-body circle-page">
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-body circle-page mb-page-body--nested-scroll">
 
     <view class="circle-top" style="padding-top: {{statusBarHeight}}px;">
       <view class="circle-tabs">

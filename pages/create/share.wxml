@@ -1,7 +1,15 @@
-<page-meta page-style="{{pageMetaStyle}}" />
+<page-meta
+  page-style="{{pageMetaStyle}}"
+  background-color="{{mbPageBg}}"
+  background-color-top="{{mbNavBg}}"
+  background-color-bottom="{{mbPageBg}}"
+  root-background-color="{{mbPageBg}}"
+/>
+<mb-bottom-safe />
 <wxs src="./blessing-preview.wxs" module="bp" />
-<view class="mb-page mb-theme-{{mbTheme}}">
-  <view class="mb-page-bg"></view>
+<view class="mb-page mb-theme-{{mbTheme}}" style="{{pageShellStyle}}">
+  <view class="mb-page-chrome" style="{{pageBgStyle}}"></view>
+  <view class="mb-page-bg" style="{{pageBgStyle}}"></view>
   <view class="mb-page-body share-page">
   <!-- P0：礼物感说明（与完成页 / 分享卡一致） -->
   <view class="share-gift-strip">

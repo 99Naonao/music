@@ -95,11 +95,19 @@ App({
   onLaunch(options) {
     applyGlobalInnerAudioOptions()
     channel.resolveChannelFromLaunch(options || {})
+    channel.primeBrandingFromCache()
+    theme.applyPageBackground()
     theme.initTheme(this)
     channel.ensureInit(options || {})
     preloadSubPackages()
     setupMiniProgramUpdate()
     routeIncomingShareGift(options)
+    if (typeof wx.onAppRoute === 'function') {
+      wx.onAppRoute(() => {
+        theme.applyPageBackground()
+        theme.applyChromeTheme(theme.getEffectiveThemeId(), { animate: false })
+      })
+    }
   },
 
   onShow() {
@@ -113,6 +121,14 @@ App({
       if (promoScheduler.isBlockedRoute(route)) return
       if (!route.includes('pages/create/create')) {
         promoActivity.recordVisit()
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      const giftInbox = require('./utils/gift-inbox')
+      if (giftInbox.isLoggedIn()) {
+        giftInbox.syncPendingGifts()
       }
     } catch (e) {
       /* ignore */

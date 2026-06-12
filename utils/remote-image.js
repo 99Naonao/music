@@ -1,6 +1,12 @@
 /** 远程 PNG/WebP 下载到本地临时路径，改善透明底与缓存 */
 const _cache = Object.create(null)
 
+function getCachedRemoteImageUrl(url) {
+  const raw = url != null ? String(url).trim() : ''
+  if (!raw || !_cache[raw]) return ''
+  return _cache[raw]
+}
+
 function resolveRemoteImageUrl(url) {
   const raw = url != null ? String(url).trim() : ''
   if (!raw) return Promise.resolve(raw)
@@ -33,5 +39,6 @@ function clearRemoteImageCache() {
 
 module.exports = {
   resolveRemoteImageUrl,
+  getCachedRemoteImageUrl,
   clearRemoteImageCache
 }

@@ -38,6 +38,7 @@ const {
   readCreatorShareId
 } = require('../../utils/card-share-remote')
 const { fetchSharedCardPayload } = require('../../utils/shared-card-fetch')
+const giftInbox = require('../../utils/gift-inbox')
 const { log, logWarn } = require('../../utils/log')
 const channel = require('../../utils/channel')
 const channelShare = require('../../utils/channel-share')
@@ -285,6 +286,8 @@ Page({
     this.setData({ canShare: ok })
     if (this.data.isSharedView) {
       this.refreshShareWorkTitle()
+      const sid = this._incomingShareId || this.data.shareId
+      if (sid) giftInbox.touchGiftReceipt(sid)
       return
     }
 
@@ -844,6 +847,7 @@ Page({
               this.refreshShareWorkTitle()
               this.fetchShareWorkTitleFromServer(result.patch.musicId)
             }
+            giftInbox.touchGiftReceipt(id)
           }
         )
       } else {

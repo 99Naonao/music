@@ -18,6 +18,7 @@
   left: 0;
   top: 0;
   width: 100%;
+  height: 100vh;
   z-index: 0;
   pointer-events: none;
   background-color: var(--mb-bg-page);
@@ -54,6 +55,7 @@
   left: 0;
   top: 0;
   width: 100%;
+  height: 100vh;
   z-index: 0;
   pointer-events: none;
   background-color: var(--mb-bg-page);
@@ -69,19 +71,4 @@
   box-sizing: border-box;
 }
 
-/* Android 手势条区域：page-meta 注入 --mb-safe-bottom，与页面渐变末端对齐 */
-page::after {
-  content: '';
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: var(--mb-safe-bottom, 0px);
-  background-color: var(--mb-bg-page-bottom, var(--mb-bg-page));
-  background-image: var(--mb-gradient-page);
-  background-attachment: fixed;
-  background-size: 100% 100%;
-  z-index: 9998;
-  pointer-events: none;
-}
+/* 底部手势条区域由 mb-bottom-safe（非 Tab 页）或 custom-tab-bar 安全区填充 */

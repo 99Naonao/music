@@ -4,6 +4,7 @@
   background-color-top="{{mbNavBg}}"
   background-color-bottom="{{mbPageBgBottom}}"
   root-background-color="{{mbPageBgBottom}}"
+  background-color-content="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <wxs src="./blessing-preview.wxs" module="bp" />

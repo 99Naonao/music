@@ -3,8 +3,5 @@
     "promo-popup": "/components/promo-popup/index"
   },
   "navigationBarTitleText": "我的",
-  "navigationBarBackgroundColor": "#e1f0ff",
-  "navigationBarTextStyle": "black",
-  "backgroundColor": "#e8f2fc",
   "enablePullDownRefresh": true
 }

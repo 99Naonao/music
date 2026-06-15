@@ -19,17 +19,5 @@
     "ignoreDevUnusedFiles": true
   },
   "libVersion": "3.15.2",
-  "condition": {
-    "miniprogram": {
-      "list": [
-        {
-          "name": "pages/splash/splash",
-          "pathName": "pages/splash/splash",
-          "query": "channel=channel_1",
-          "scene": null,
-          "launchMode": "default"
-        }
-      ]
-    }
-  }
+  "condition": {}
 }

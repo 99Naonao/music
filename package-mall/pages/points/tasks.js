@@ -2,10 +2,16 @@ const { request } = require('../../../utils/request')
 const { showAlert } = require('../../../utils/show-alert')
 const { showPointsReward } = require('../../../utils/show-points-reward')
 const { markMineStatsStale } = require('../../../utils/mine-stats-cache')
+const {
+  fetchDailyTasks,
+  getDefaultDailyTasksUI,
+  mapTasksForUI,
+  isLoggedIn
+} = require('../../../utils/daily-tasks')
 
 Page({
   data: {
-    tasks: [],
+    tasks: getDefaultDailyTasksUI(),
     claimDate: ''
   },
 
@@ -15,21 +21,21 @@ Page({
 
   async loadDailyTasks() {
     try {
-      const res = await request({ url: '/api/tasks/daily', silentFail: true })
-      if (res.code === 0 && res.data && Array.isArray(res.data.tasks)) {
-        const tasks = res.data.tasks.map((t, idx) => ({
-          ...t,
-          id: t.taskKey || idx,
-          btnText: t.completed ? '已完成' : t.taskKey === 'sign_in' ? '签到' : '去完成'
-        }))
+      const data = await fetchDailyTasks()
+      if (data && Array.isArray(data.tasks)) {
         this.setData({
-          tasks,
-          claimDate: res.data.date || ''
+          tasks: mapTasksForUI(data.tasks),
+          claimDate: data.date || ''
         })
+        return
       }
     } catch (e) {
       console.warn('加载每日任务失败:', e)
     }
+    this.setData({
+      tasks: getDefaultDailyTasksUI(),
+      claimDate: ''
+    })
   },
 
   async onTaskBtn(e) {
@@ -38,6 +44,10 @@ Page({
     if (!key || completed) return
 
     if (key === 'sign_in') {
+      if (!isLoggedIn()) {
+        showAlert('提示', '请先登录后再签到')
+        return
+      }
       wx.showLoading({ title: '签到中...', mask: true })
       try {
         const res = await request({

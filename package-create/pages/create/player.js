@@ -1,23 +1,23 @@
-const { showAlert } = require('../../utils/show-alert')
-const { request } = require('../../utils/request')
-const { applyGlobalInnerAudioOptions, patchInnerAudioForIOS } = require('../../utils/audio-ios')
+const { showAlert } = require('../../../utils/show-alert')
+const { request } = require('../../../utils/request')
+const { applyGlobalInnerAudioOptions, patchInnerAudioForIOS } = require('../../../utils/audio-ios')
 const {
   buildWorkTitle,
   resolveWorkTags,
   normalizeInstrumentId,
   resolveWorkDurationSec,
   getInstrumentName
-} = require('../../utils/work-meta')
-const { getWorkCoverDisplay, setWorkCover } = require('../../utils/work-cover')
+} = require('../../../utils/work-meta')
+const { getWorkCoverDisplay, setWorkCover } = require('../../../utils/work-cover')
 const {
   mapLibraryTrackItem,
   pickLibraryMiniCover,
   resolveLibraryCoverUrl
-} = require('../../utils/library-music')
-const globalAudio = require('../../utils/global-audio')
-const { log, logWarn } = require('../../utils/log')
-const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
-const sleepTimer = require('../../utils/sleep-timer')
+} = require('../../../utils/library-music')
+const globalAudio = require('../../../utils/global-audio')
+const { log, logWarn } = require('../../../utils/log')
+const { setTabBarSelected, syncTabBarPageLayout } = require('../../../utils/tab-bar')
+const sleepTimer = require('../../../utils/sleep-timer')
 
 function normalizeAudioUrl(url) {
   if (!url) return ''
@@ -30,14 +30,14 @@ function normalizeAudioUrl(url) {
   }
   return u
 }
-const playHistory = require('../../utils/play-history')
+const playHistory = require('../../../utils/play-history')
 
-const favorites = require('../../utils/favorites')
-const downloads = require('../../utils/downloads')
-const promoPageBehavior = require('../../behaviors/promo-page')
-const { SCENES } = require('../../utils/promo-constants')
-const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
-const channel = require('../../utils/channel')
+const favorites = require('../../../utils/favorites')
+const downloads = require('../../../utils/downloads')
+const promoPageBehavior = require('../../../behaviors/promo-page')
+const { SCENES } = require('../../../utils/promo-constants')
+const { MIANJIA_ENTRY_ENABLED } = require('../../../utils/mianjia-config')
+const channel = require('../../../utils/channel')
 
 const MIANJIA_TIP_DISMISS_KEY = 'mb_player_mianjia_tip_dismissed_date'
 
@@ -1023,7 +1023,7 @@ Page({
       audioUrl: this.data.audioUrl,
       workTitle: this.data.workTitle
     })
-    wx.navigateTo({ url: '/pages/create/card-pick' })
+    wx.navigateTo({ url: '/package-create/pages/create/card-pick' })
   },
 
   recreate() {

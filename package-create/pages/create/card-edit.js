@@ -1,12 +1,12 @@
-const { generateBlessing, generateBlessingOffline, stripLeadingRecipientSalutation } = require('../../utils/ai-service')
-const { request } = require('../../utils/request')
-const { showAlert } = require('../../utils/show-alert')
+const { generateBlessing, generateBlessingOffline, stripLeadingRecipientSalutation } = require('../../../utils/ai-service')
+const { request } = require('../../../utils/request')
+const { showAlert } = require('../../../utils/show-alert')
 const {
   DEFAULT_TEMPLATE_ID,
   GRADIENT_OPTIONS,
   isDefaultGradientTemplate
-} = require('../../utils/card-gradient')
-const { uploadWorkCoverTempFile, normalizeHostedCoverUrl, isRemoteCoverUrl, isPersistedCoverUrl } = require('../../utils/work-cover')
+} = require('../../../utils/card-gradient')
+const { uploadWorkCoverTempFile, normalizeHostedCoverUrl, isRemoteCoverUrl, isPersistedCoverUrl } = require('../../../utils/work-cover')
 const {
   resolveCardTextLayout,
   layoutToOverlayStyles,
@@ -16,17 +16,17 @@ const {
   CARD_MESSAGE_MAX_CHARS,
   CARD_MESSAGE_FONT_RPX,
   CARD_TO_LINE_FONT_RPX
-} = require('../../utils/card-text-layout')
-const { resolveWorkDisplayTitle } = require('../../utils/work-meta')
-const promoActivity = require('../../utils/promo-activity-tracker')
+} = require('../../../utils/card-text-layout')
+const { resolveWorkDisplayTitle } = require('../../../utils/work-meta')
+const promoActivity = require('../../../utils/promo-activity-tracker')
 const {
   createCardShareRemote,
   saveCreatorShareId
-} = require('../../utils/card-share-remote')
-const { isShareUuid } = require('../../utils/share-entry')
+} = require('../../../utils/card-share-remote')
+const { isShareUuid } = require('../../../utils/share-entry')
 
 const INCOMING_GIFT_STORAGE_KEY = 'mb_incoming_gift_share'
-const { log, logWarn } = require('../../utils/log')
+const { log, logWarn } = require('../../../utils/log')
 
 Page({
   data: {
@@ -168,7 +168,7 @@ Page({
     }
 
     if (!templateId) {
-      wx.redirectTo({ url: '/pages/create/card-pick' })
+      wx.redirectTo({ url: '/package-create/pages/create/card-pick' })
       return
     }
 
@@ -267,7 +267,7 @@ Page({
       const res = await request({ url: `/api/card/templates/${templateId}`, silentFail: true })
       if (res.code !== 0 || !res.data) {
         showAlert('提示', '贺卡模板不存在或已下架')
-        wx.redirectTo({ url: '/pages/create/card-pick' })
+        wx.redirectTo({ url: '/package-create/pages/create/card-pick' })
         return
       }
       this.applyTemplate(res.data)
@@ -276,7 +276,7 @@ Page({
     } catch (e) {
       console.error('[card-edit] fetchTemplate', e)
       showAlert('提示', '加载贺卡模板失败')
-      wx.redirectTo({ url: '/pages/create/card-pick' })
+      wx.redirectTo({ url: '/package-create/pages/create/card-pick' })
     } finally {
       if (!background) wx.hideLoading()
     }
@@ -284,7 +284,7 @@ Page({
 
   goReselectTemplate() {
     wx.navigateBack({
-      fail: () => wx.redirectTo({ url: '/pages/create/card-pick' })
+      fail: () => wx.redirectTo({ url: '/package-create/pages/create/card-pick' })
     })
   },
 
@@ -386,7 +386,7 @@ Page({
 
     if (!this.data.templateId) {
       showAlert('提示', '请先选择一张贺卡')
-      wx.redirectTo({ url: '/pages/create/card-pick' })
+      wx.redirectTo({ url: '/package-create/pages/create/card-pick' })
       return
     }
 
@@ -495,11 +495,11 @@ Page({
         /* ignore */
       }
       wx.redirectTo({
-        url: `/pages/create/gift?shareId=${encodeURIComponent(returnGiftId)}`
+        url: `/package-create/pages/create/gift?shareId=${encodeURIComponent(returnGiftId)}`
       })
       return
     }
 
-    wx.navigateTo({ url: '/pages/create/share' })
+    wx.navigateTo({ url: '/package-create/pages/create/share' })
   }
 })

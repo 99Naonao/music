@@ -7,7 +7,14 @@ Component({
 
   lifetimes: {
     attached() {
+      this._unregisterBottomSafe = theme.registerBottomSafeRefresher(() => this.refresh())
       this.refresh()
+    },
+    detached() {
+      if (this._unregisterBottomSafe) {
+        this._unregisterBottomSafe()
+        this._unregisterBottomSafe = null
+      }
     }
   },
 
@@ -19,17 +26,8 @@ Component({
 
   methods: {
     refresh() {
-      const layout = theme.getPageLayoutMetrics()
-      const h = layout.safeBottomPx || 0
-      if (!h) {
-        this.setData({ fillStyle: '' })
-        return
-      }
-      this.setData({
-        fillStyle:
-          `height:${h}px;background-color:var(--mb-bg-page-bottom,var(--mb-bg-page));` +
-          'background-image:var(--mb-gradient-page);background-attachment:fixed;background-size:100% 100%;'
-      })
+      const fillStyle = theme.buildBottomSafeFillStyle()
+      this.setData({ fillStyle })
     }
   }
 })

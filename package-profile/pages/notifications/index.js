@@ -1,6 +1,7 @@
 const { request } = require('../../../utils/request')
 const { formatRelativeTime } = require('../../../utils/time-format')
 const { showAlert } = require('../../../utils/show-alert')
+const { notifyMineStatsChanged } = require('../../../utils/mine-stats-cache')
 
 Page({
   data: {
@@ -108,6 +109,7 @@ Page({
           n.id === id ? { ...n, read: true } : n
         )
         this.setData({ notifications })
+        notifyMineStatsChanged()
       }
     } catch (err) {
       console.error('标记已读失败:', err)
@@ -124,6 +126,7 @@ Page({
       if (res.code === 0) {
         const notifications = this.data.notifications.map(n => ({ ...n, read: true }))
         this.setData({ notifications })
+        notifyMineStatsChanged()
         showAlert('提示', '已全部标记为已读。')
       }
     } catch (err) {

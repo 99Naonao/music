@@ -10,10 +10,15 @@ const {
   MINE_STATS_CACHE_TTL_MS,
   consumeMineStatsInvalidateFlag
 } = require('../../utils/mine-stats-cache')
+const {
+  fetchMineSummary,
+  resolveWorksCount
+} = require('../../utils/mine-summary')
 const promoPageBehavior = require('../../behaviors/promo-page')
 const promoActivity = require('../../utils/promo-activity-tracker')
 const { SCENES } = require('../../utils/promo-constants')
 const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
+const { navigateToMallPage } = require('../../utils/launch-mall')
 const channel = require('../../utils/channel')
 
 Page({
@@ -79,10 +84,7 @@ Page({
       return
     }
     try {
-      await Promise.all([
-        this.fetchUserStats({ force: true }),
-        this.fetchUnreadCount()
-      ])
+      await this.fetchMineSummary({ force: true })
     } finally {
       wx.stopPullDownRefresh()
     }
@@ -99,12 +101,10 @@ Page({
 
   /**
    * @param {{ force?: boolean }} options force=true 忽略缓存（登录成功、下拉刷新）
-   * onShow 默认：未读每次拉；统计/积分 60s 内复用缓存
+   * onShow 默认：60s 内复用 mine-summary 缓存
    */
   refreshMinePageData(options = {}) {
-    const force = !!(options && options.force)
-    this.fetchUnreadCount()
-    this.fetchUserStats({ force })
+    this.fetchMineSummary(options)
   },
 
   checkLoginStatus() {
@@ -313,7 +313,7 @@ Page({
     }
   },
 
-  async fetchUserStats(options = {}) {
+  async fetchMineSummary(options = {}) {
     const userInfo = this.data.userInfo
     if (!userInfo || !userInfo.openid) return
 
@@ -335,88 +335,34 @@ Page({
       this.setData({ 'user.points': r.points })
     }
 
-    const applyWorks = (res) => {
-      if (!res || res.code !== 0) return
-      const serverWorks = res.data || []
-      const localWorks = wx.getStorageSync('myWorks') || []
-      const serverIds = new Set(serverWorks.map((w) => w.id))
-      const extraLocal = localWorks.filter((l) => l.id && !serverIds.has(l.id))
-      this.setData({ 'user.worksCount': serverWorks.length + extraLocal.length })
-    }
-
-    const applyPosts = (res) => {
-      if (!res || res.code !== 0 || res.data == null) return
-      const d = res.data
-      const total =
-        typeof d === 'object' && !Array.isArray(d) && typeof d.total === 'number'
-          ? d.total
-          : Array.isArray(d)
-            ? d.length
-            : 0
-      const likes =
-        typeof d === 'object' &&
-        !Array.isArray(d) &&
-        typeof d.totalLikesReceived === 'number'
-          ? d.totalLikesReceived
-          : 0
-      this.setData({
-        'user.postsCount': total,
-        'user.likesCount': likes
-      })
-    }
-
-    const openid = userInfo.openid
-    const applyFollow = (res) => {
-      if (!res || res.code !== 0 || !res.data) return
-      this.setData({
-        'user.followCount': res.data.followCount || 0,
-        'user.fansCount': res.data.fansCount || 0
-      })
-    }
-
-    const applyFavorites = (res) => {
-      if (!res || res.code !== 0 || res.data == null) return
-      this.setData({ 'user.favoritesCount': Math.max(0, Number(res.data.count) || 0) })
-    }
-
     try {
       const results = await Promise.allSettled([
         fetchShopCentre(request),
-        request({ url: `/api/music/user/${openid}`, silentFail: true }),
-        request({
-          url: `/api/community/user/${openid}/posts`,
-          data: { page: 1, limit: 1 },
-          silentFail: true
-        }),
-        request({ url: '/api/user/follow/stats', silentFail: true }),
-        request({ url: '/api/favorites/count', silentFail: true })
+        fetchMineSummary(request, { force })
       ])
 
       if (results[0].status === 'fulfilled') applyShop(results[0].value)
       else console.warn('获取星鹿积分/资料失败:', results[0].reason && results[0].reason.message)
-      if (results[1].status === 'fulfilled') applyWorks(results[1].value)
-      else console.warn('获取作品数失败:', results[1].reason)
-      if (results[2].status === 'fulfilled') applyPosts(results[2].value)
-      else console.warn('获取帖子/获赞统计失败:', results[2].reason)
-      if (results[3].status === 'fulfilled') applyFollow(results[3].value)
-      else console.warn('获取关注统计失败:', results[3].reason)
-      if (results[4].status === 'fulfilled') applyFavorites(results[4].value)
-      else console.warn('获取收藏数失败:', results[4].reason)
 
-      this._statsFetchedAt = Date.now()
+      if (results[1].status === 'fulfilled' && results[1].value && results[1].value.ok) {
+        const d = results[1].value.data || {}
+        this.setData({
+          unreadCount: Math.max(0, Number(d.unreadCount) || 0),
+          'user.worksCount': resolveWorksCount(d.worksCount),
+          'user.postsCount': Math.max(0, Number(d.postsCount) || 0),
+          'user.likesCount': Math.max(0, Number(d.totalLikesReceived) || 0),
+          'user.followCount': Math.max(0, Number(d.followCount) || 0),
+          'user.fansCount': Math.max(0, Number(d.fansCount) || 0),
+          'user.favoritesCount': Math.max(0, Number(d.favoritesCount) || 0)
+        })
+        this._statsFetchedAt = Date.now()
+      } else if (results[1].status === 'fulfilled') {
+        console.warn('获取我的页聚合统计失败:', results[1].value && results[1].value.raw)
+      } else {
+        console.warn('获取我的页聚合统计失败:', results[1].reason)
+      }
     } finally {
       this._statsLoading = false
-    }
-  },
-
-  async fetchUnreadCount() {
-    try {
-      const res = await request({ url: '/api/notifications/unread-count', silentFail: true })
-      if (res.code === 0) {
-        this.setData({ unreadCount: res.data.count || 0 })
-      }
-    } catch (err) {
-      console.error('获取未读消息数失败:', err)
     }
   },
 
@@ -440,21 +386,21 @@ Page({
   },
 
   goToMall() {
-    wx.navigateTo({ url: '/package-mall/pages/mall/index' })
+    navigateToMallPage('/package-mall/pages/mall/index')
   },
 
   goToMianjia() {
     if (!MIANJIA_ENTRY_ENABLED) return
-    wx.navigateTo({ url: '/package-mall/pages/mianjia/index' })
+    navigateToMallPage('/package-mall/pages/mianjia/index')
   },
 
   goToTasks() {
-    wx.navigateTo({ url: '/package-mall/pages/points/tasks' })
+    navigateToMallPage('/package-mall/pages/points/tasks')
   },
 
   goToHistory() {
     if (!this.checkLogin()) return
-    wx.navigateTo({ url: '/package-mall/pages/points/history' })
+    navigateToMallPage('/package-mall/pages/points/history')
   },
 
   goToHelp() {
@@ -467,7 +413,7 @@ Page({
 
   goToPoints() {
     if (!this.checkLogin()) return
-    wx.navigateTo({ url: '/package-mall/pages/points/history' })
+    navigateToMallPage('/package-mall/pages/points/history')
   },
 
   goToLibrary() {

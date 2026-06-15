@@ -1,0 +1,276 @@
+眠音盒 · 全项目优化清单
+================================
+生成说明：基于小程序（music）+ 后端（backend）代码审查整理，按优先级与类别分组。
+建议实施顺序：P0 → P1 → P2，同类项可合并 PR。
+
+────────────────────────────────
+一、P0 · 高收益 / 用户可感知
+────────────────────────────────
+
+【1】「我的」页：6 次请求 → 1～2 次（前后端联动）
+  现状（小程序 pages/mine/mine.js）：
+    · fetchUnreadCount          → GET /api/notifications/unread-count（每次 onShow）
+    · fetchUserStats 并行 5 路：
+        - fetchShopCentre       → GET /api/shop/centre
+        - /api/music/user/:openid
+        - /api/community/user/:openid/posts?limit=1
+        - /api/user/follow/stats
+        - /api/favorites/count
+  统计有 60s 缓存（utils/mine-stats-cache.js），但未读无缓存。
+  建议：
+    · 后端新增 GET /api/user/mine-summary 聚合返回：
+      worksCount / postsCount / likesCount / followCount / fansCount /
+      favoritesCount / unreadCount / points（可选）
+    · 小程序 mine.js 改为 1 次聚合 + 必要时 1 次 shop（星鹿）
+    · 未读数加 30～60s 短缓存（utils/unread-cache.js）
+  涉及：pages/mine/mine.js、utils/shop-xinglu.js、backend/src/routes/user.js
+
+【2】作品数接口过重（后端）
+  现状：GET /api/music/user/:openid 走 music-service.listUserMusic，
+        拉全量作品并对每首 enrichTrackRow（可能远程音频落盘），
+        而「我的」页只用 serverWorks.length。
+  建议：新增 COUNT 接口或在 mine-summary 内 SELECT COUNT(*)。
+  涉及：backend/src/services/music-service.js、src/routes/music.js
+
+【3】社区统计接口过重（后端）
+  现状：limit=1 仍执行 openid 映射 + COUNT + SUM(likes) + SELECT 列表。
+  建议：GET /api/community/user/:openid/stats 单 SQL 返回 total + totalLikesReceived。
+  涉及：backend/src/services/community-service.js
+
+【4】主题刷新重复（Tab 切换卡顿来源之一）
+  现状：单次 Tab 切换可能触发：
+    · app.js wx.onAppRoute → syncThemeSnapshotOnRoute + applyPageBackground + applyChromeTheme
+    · behaviors/theme.js attached/show → syncMbTheme
+    · Page 包装 onLoad/onShow → primePageTheme（无 diff 直接 setData）
+    · applyChromeTheme → schedulePageBackgroundRefresh（立即 + nextTick + 100ms 共 3 次原生刷色）
+  建议：
+    · 统一主题刷新入口，去掉重复 hook 之一
+    · primePageTheme 与 syncMbTheme 共用 isThemePageDataEqual 短路
+    · 路由切换时合并 applyPageBackground 调用，避免三连刷
+  涉及：app.js、behaviors/theme.js、utils/theme.js
+
+【5】SQLite 索引 + WAL（后端全站）
+  现状：热路径 COUNT/SUM/feed 缺索引；database.js 未开 WAL。
+  建议 migration 增加：
+    · idx_music_tracks_user_status
+    · idx_community_posts_user
+    · idx_notifications_user_read
+    · idx_user_follows_follower / following
+    · idx_community_likes_post、idx_community_comments_post
+    · PRAGMA journal_mode=WAL; busy_timeout=5000
+  涉及：backend/src/bootstrap/database.js、src/migrations/
+
+【6】主包体积：创作链路 11 页在主包
+  现状：app.json 主包含 create/* 全链路（ai、generating、player、share 等）。
+  建议：非 Tab 创作页迁入 package-create 分包，preloadRule 按需预载。
+  涉及：app.json、pages/create/*
+
+────────────────────────────────
+二、P1 · 网络 / 缓存 / 重复请求
+────────────────────────────────
+
+【7】fetchShopCentre 无缓存、无 inflight 去重
+  被 mine / communites / mall / profile/edit 等多处独立调用。
+  建议：仿 utils/library-cache.js 做 30～60s TTL + inflight 合并。
+  涉及：utils/shop-xinglu.js
+
+【8】后端 shop/centre 无服务端缓存
+  每次成功调用星鹿 + 可能写 users 表。
+  建议：按 user.id 进程内缓存 30～60s，profile 仅在字段变化时 UPDATE。
+  涉及：backend/src/services/shop-proxy-service.js
+
+【9】gift-inbox.syncPendingGifts 多处触发 + 串行 POST
+  触发点：app.onShow、mine.onShow、登录成功、gift-inbox 页。
+  建议：模块级 _syncInflight + 3s 防抖；pending 多条时限并发或批量接口。
+  涉及：utils/gift-inbox.js、app.js、pages/mine/mine.js
+
+【10】promo-remote 缺 inflight 去重
+  多 Tab 页 onShow 同时 tryPromoShow，缓存过期时会并发 /api/promo/active。
+  建议：对齐 library-cache 的 inflight 模式。
+  涉及：utils/promo-remote.js、utils/promo-scheduler.js
+
+【11】每日任务页每次 onShow 全量拉取
+  建议：按 claimDate 或短 TTL 缓存，下拉刷新 force。
+  涉及：package-mall/pages/points/tasks.js、utils/daily-tasks.js
+
+【12】daily-tasks 领取前多余 GET（前后端）
+  前端 claim 前先 isDailyTaskCompleted() GET，后端 POST 已支持 alreadyClaimed。
+  建议：去掉 claim 前 GET，直接 POST；后端 claim 流程加 db.transaction 防双领。
+  涉及：utils/daily-tasks.js、package-create/pages/create/generating.js、
+        backend/src/services/daily-tasks-service.js、src/routes/tasks.js
+
+【13】认证中间件每请求必查 DB
+  auth.js 每次 prepare + SELECT；optionalAuth 重复逻辑。
+  建议：模块级缓存 prepared statement；openid→user LRU TTL 30～60s。
+  涉及：backend/src/middleware/auth.js
+
+【14】认证后仍重复查用户（同一请求链）
+  profile / points / community 等 service 再次 openid→id 映射。
+  建议：优先使用 req.user.id，扩展 auth SELECT 字段减少二次查询。
+  涉及：backend/src/services/user-service.js、points-ledger-service.js 等
+
+【15】Splash 渠道 branding 可能重复拉取
+  ensureInit 已拉 branding，splash 对非 default 渠道又 force: true。
+  建议：query 无新 channel 时跳过二次请求。
+  涉及：pages/splash/splash.js、utils/channel.js
+
+【16】冷启动预加载 4 分包与 preloadRule 重叠
+  app.js preloadSubPackages 与 app.json preloadRule 争带宽。
+  建议：只保留 preloadRule 按路由懒预载，或 startup 仅预载 profile-ext。
+  涉及：app.js、app.json
+
+────────────────────────────────
+三、P1 · 页面生命周期 / UI 性能
+────────────────────────────────
+
+【17】首页 onShow 重复 syncChannelBrandingUI
+  连续调用 + ensureInit.then 再调一次，launch 已 ensureInit。
+  建议：比对 branding 版本 / logo URL，未变则 skip setData。
+  涉及：pages/create/create.js、utils/channel.js
+
+【18】「我的」页 syncTabBarPageLayout 在 onLoad 与 onShow 各调一次
+  窗口尺寸 Tab 切换通常不变。
+  建议：仅 onLoad 或 resize 时更新。
+  涉及：pages/mine/mine.js、utils/tab-bar.js
+
+【19】盒友圈头像同步成功后整页 onRefresh
+  fetchShopCentre 成功后若 posts.length>0 触发 loadPosts(true) 全量重载。
+  建议：只 patch 帖子列表 avatar 字段。
+  涉及：pages/communites/communites.js
+
+【20】401 并行请求可能连弹多次「登录已过期」
+  5 路并行统计同时 401 时，request.js 每个都 showAlert。
+  建议：全局 401 弹窗锁（只弹一次）。
+  涉及：utils/request.js
+
+【21】page-meta 超长 inline style 每次 rebuild
+  buildThemePageData 每次重建整段 CSS 变量字符串。
+  建议：按 themeId + preset + safeBottom 缓存 pageMetaStyle。
+  涉及：utils/theme.js
+
+【22】getWorkCoverDisplay 每条 feed 读 Storage
+  mapFeedPost 对每条帖子调用，10 条即 10 次 getStorageSync。
+  建议：模块级内存 map，写时落盘。
+  涉及：utils/work-cover.js、pages/communites/communites.js
+
+────────────────────────────────
+四、P2 · 架构 / 可维护性 / 长期优化
+────────────────────────────────
+
+【23】超大单文件拆分
+  · package-create/pages/create/share.js（~1500+ 行）→ card-canvas / card-share-flow
+  · package-create/pages/create/player.js（~900+ 行）
+  · utils/theme.js（~880+ 行）
+  · utils/channel.js（~550+ 行）
+  利于按需加载、维护与编译。
+
+【24】channel-theme-presets 整表打进主包
+  theme.js 多处 require，16 套预设冷启动即加载。
+  建议：设置页懒加载完整列表，运行时只保留当前 preset 精简映射。
+  涉及：utils/channel-theme-presets.js、utils/theme.js
+
+【25】request.js 每次 wx.request 同步 getStorageSync('token')
+  建议：内存 token 快照，401/登录时更新。
+  涉及：utils/request.js
+
+【26】cnTodayDate() 在 5 处重复实现
+  create.js / player.js / complete.js / promo-scheduler.js / complete-cover-prompt.js
+  建议：抽到 utils/date-cn.js。
+
+【27】channel.readBrandingCache 扫描全部 Storage keys
+  建议：固定 key mb_branding_v{channelId}_{version}，避免 getStorageInfoSync 全表扫描。
+  涉及：utils/channel.js
+
+【28】remote-image 内存缓存无上限
+  建议：LRU 或渠道切换时 clearRemoteImageCache。
+  涉及：utils/remote-image.js、utils/channel.js
+
+【29】create.js 迷你播放条 JSON.stringify diff
+  syncMiniPlayerCoverFromLibrary 对大对象双 stringify。
+  建议：只比较 id / cover / title 等关键字段。
+  涉及：pages/create/create.js
+
+【30】运营弹窗 tryPromoShow 固定 320ms delay
+  频控未通过仍排队 timer。
+  建议：先本地 snooze/频控判断，通过再 delay。
+  涉及：behaviors/promo-page.js
+
+────────────────────────────────
+五、后端 · 查询与数据层（P1～P2）
+────────────────────────────────
+
+【31】关注统计两次 COUNT → 一条 SQL
+  user-service.getFollowStats 合并 followCount + fansCount。
+  涉及：backend/src/repositories/users.js
+
+【32】社区 feed 每帖 2 个相关子查询（comments/likes COUNT）
+  每页 20 帖 ≈ 40 次子查询。
+  建议：信任 posts 冗余列或 JOIN 聚合；配合索引。
+  涉及：backend/src/services/community-service.js
+
+【33】通知列表 3 次 COUNT/SELECT
+  listNotifications 可合并 total + unread 聚合。
+  涉及：backend/src/repositories/library.js
+
+【34】积分历史单请求 3 次查询
+  list + COUNT + SUM 可合并或 window function。
+  涉及：backend/src/repositories/points.js
+
+【35】Repository prepared statement 应模块级缓存
+  users / library / points / music-tracks / community-service 大量内联 prepare。
+  建议：模块加载时缓存 stmts，热路径优先。
+
+────────────────────────────────
+六、已有良好实践（保持 / 推广）
+────────────────────────────────
+
+  ✓ utils/library-cache.js     曲库 SWR + inflight + 5min TTL
+  ✓ mine-stats-cache.js        「我的」统计 60s TTL + Promise.allSettled
+  ✓ app.json lazyCodeLoading   组件按需注入
+  ✓ page-layout.js             getWindowMetrics 内存缓存
+  ✓ daily-tasks GET            未登录可浏览（optionalAuth）
+  ✓ silentFail + allSettled    单接口失败不拖垮整页
+
+  推广模式：library-cache → shop / promo / unread / daily-tasks
+
+────────────────────────────────
+七、建议实施路线图
+────────────────────────────────
+
+  阶段 1（1～2 周）
+    · #1 mine-summary 聚合接口 + 小程序改造
+    · #2 #3 作品/社区 COUNT 轻量化
+    · #6 SQLite 索引 + WAL
+    · #4 主题刷新去重
+
+  阶段 2（2～3 周）
+    · #7 #8 shop 前后端缓存
+    · #9 #10 #11 礼物/运营/任务缓存与防抖
+    · #12 daily-tasks 事务 + 去冗余 GET
+    · #13 #14 认证优化
+    · #20 401 弹窗锁
+
+  阶段 3（按需）
+    · #6 主包分包
+    · #23～#29 代码拆分与工具统一
+    · #31～#35 后端查询合并
+
+────────────────────────────────
+八、预期收益摘要
+────────────────────────────────
+
+  用户侧：
+    · 「我的」首屏：6 RTT → 1～2 RTT，弱网改善明显
+    · Tab 切换：减少主题 setData + 原生刷色，降低闪屏/卡顿
+    · 重复进页：缓存命中后网络请求接近 0
+
+  服务端：
+    · mine 相关 QPS 下降约 70%～85%（聚合 + 缓存）
+    · 认证与 COUNT 查询 CPU/IO 下降
+    · daily-tasks 积分一致性提升
+
+  工程侧：
+    · 主包体积下降、超大文件可维护性提升
+    · 工具函数复用，减少隐性 bug（日期、token、缓存模式）
+
+—— 文档结束 ——

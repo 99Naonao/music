@@ -4,6 +4,7 @@
   background-color-top="{{mbNavBg}}"
   background-color-bottom="{{mbPageBgBottom}}"
   root-background-color="{{mbPageBgBottom}}"
+  background-color-content="{{mbPageBgBottom}}"
 />
 <view class="splash-shell" style="{{splashShellStyle}}"></view>
 <view
@@ -49,3 +50,4 @@
     </view>
   </view>
 </view>
+<view wx:if="{{splashSafeFillStyle}}" class="splash-safe-fill" style="{{splashSafeFillStyle}}"></view>

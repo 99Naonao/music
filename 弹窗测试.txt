@@ -162,9 +162,9 @@
   after_card_share    【已暂时关闭】分享后伴手礼弹窗
 
 【不会弹运营弹窗的页面】
-  pages/create/gift（收礼）
-  pages/create/generating（生成中）
-  pages/create/tracks（录音）
+  package-create/pages/create/gift（收礼）
+  package-create/pages/create/generating（生成中）
+  package-create/pages/create/tracks（录音）
   package-community/pages/post/create（发帖编辑）
 
 --------------------------------------------------------------------------------
@@ -253,7 +253,7 @@
 --------------------------------------------------------------------------------
 
   类型：wx.showModal「选择作品封面」+ 页内底部选项面板（关闭提醒）
-  代码：utils/complete-cover-prompt.js、pages/create/complete.js
+  代码：utils/complete-cover-prompt.js、package-create/pages/create/complete.js
   注意：与第三节运营弹窗、眠家横幅均无关。
 
 【清空频控 Storage】
@@ -274,13 +274,13 @@
 
   wx.removeStorageSync('mb_complete_cover_prompt_snooze_until')
   wx.removeStorageSync('mb_complete_cover_prompt_dismiss_date')
-  wx.navigateTo({ url: '/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1' })
+  wx.navigateTo({ url: '/package-create/package-create/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1' })
 
 【方式 C：已在完成页时重复测】
 
   getCurrentPages().pop().testCoverPrompt()
 
-  须当前 route 为 pages/create/complete。
+  须当前 route 为 package-create/pages/create/complete。
 
 【测「不再提示」】
 

@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "points-reward-modal": "/components/points-reward-modal/index",
+    "promo-popup": "/components/promo-popup/index"
+  },
+  "navigationBarTitleText": "晚安贺卡",
+  "navigationBarBackgroundColor": "#e1f0ff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#e8f2fc"
+}

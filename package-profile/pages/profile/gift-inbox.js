@@ -51,7 +51,7 @@ Page({
     const item = this.data.items[idx]
     if (!item || !item.shareId) return
     const path = channel.appendChannelToPath(
-      `/pages/create/gift?shareId=${encodeURIComponent(item.shareId)}`
+      `/package-create/pages/create/gift?shareId=${encodeURIComponent(item.shareId)}`
     )
     wx.navigateTo({ url: path })
   },

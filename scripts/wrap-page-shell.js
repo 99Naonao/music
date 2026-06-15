@@ -9,11 +9,11 @@ const ROOT = path.join(__dirname, '..')
 const SKIP = new Set([
   'pages/splash/splash.wxml',
   'pages/create/create.wxml',
-  'pages/create/ai.wxml',
+  'package-create/pages/create/ai.wxml',
   'pages/create/config.wxml',
-  'pages/create/tracks.wxml',
-  'pages/create/generating.wxml',
-  'pages/create/complete.wxml'
+  'package-create/pages/create/tracks.wxml',
+  'package-create/pages/create/generating.wxml',
+  'package-create/pages/create/complete.wxml'
 ])
 
 function walk(dir, out = []) {

@@ -1,4 +1,4 @@
-@import '../../styles/card-art-text-stroke.wxss';
+@import '../../../styles/card-art-text-stroke.wxss';
 
 .card-edit-page {
   padding: 24rpx 30rpx calc(48rpx + env(safe-area-inset-bottom));

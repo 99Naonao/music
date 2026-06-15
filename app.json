@@ -2,15 +2,7 @@
   "pages": [
     "pages/splash/splash",
     "pages/create/create",
-    "pages/create/ai",
     "pages/create/config",
-    "pages/create/tracks",
-    "pages/create/generating",
-    "pages/create/complete",
-    "pages/create/player",
-    "pages/create/card-pick",
-    "pages/create/card-edit",
-    "pages/create/share",
     "pages/create/gift",
     "pages/communites/communites",
     "pages/library/library",
@@ -19,6 +11,21 @@
     "pages/logs/logs"
   ],
   "subPackages": [
+    {
+      "root": "package-create",
+      "pages": [
+        "pages/create/ai",
+        "pages/create/tracks",
+        "pages/create/generating",
+        "pages/create/complete",
+        "pages/create/player",
+        "pages/create/card-pick",
+        "pages/create/card-edit",
+        "pages/create/share",
+        "pages/create/gift"
+      ],
+      "name": "create-ext"
+    },
     {
       "root": "package-community",
       "pages": [
@@ -74,7 +81,8 @@
     "navigationBarTitleText": "眠音盒",
     "navigationBarBackgroundColor": "#e1f0ff",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#e8f2fc",
+    "backgroundColor": "#0f0b14",
+    "backgroundColorContent": "#0f0b14",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
@@ -113,7 +121,7 @@
   "preloadRule": {
     "pages/mine/mine": {
       "network": "all",
-      "packages": ["profile-ext", "mall", "support"]
+      "packages": ["profile-ext", "support"]
     },
     "pages/communites/communites": {
       "network": "all",
@@ -121,7 +129,15 @@
     },
     "pages/create/create": {
       "network": "all",
-      "packages": ["profile-ext", "community"]
+      "packages": ["profile-ext", "community", "create-ext"]
+    },
+    "pages/create/config": {
+      "network": "all",
+      "packages": ["create-ext"]
+    },
+    "pages/create/gift": {
+      "network": "all",
+      "packages": ["create-ext"]
     }
   },
   "style": "v2",

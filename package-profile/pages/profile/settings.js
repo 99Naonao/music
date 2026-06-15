@@ -59,8 +59,7 @@ Page({
       wx.showToast({ title: '该主题不可用', icon: 'none' })
       return
     }
-    this.syncThemeSettingsUI()
-    this.syncMbTheme()
+    wx.nextTick(() => this.syncThemeSettingsUI())
   },
 
   logout() {

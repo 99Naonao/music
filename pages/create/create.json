@@ -3,7 +3,5 @@
     "promo-popup": "/components/promo-popup/index"
   },
   "navigationStyle": "custom",
-  "navigationBarTitleText": "眠音盒",
-  "backgroundColor": "#F4F0FA",
-  "backgroundColorContent": "#F4F0FA"
+  "navigationBarTitleText": "眠音盒"
 }

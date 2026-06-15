@@ -209,7 +209,8 @@ const PRESETS = {
     tabSelected: '#FFFFFF',
     tabColor: '#C8C8C8',
     tabBg: '#1A1A2E',
-    windowBg: '#202B48'
+    windowBg: '#202B48',
+    pageBgBottom: '#1a2238'
   }
 }
 
@@ -270,16 +271,24 @@ function normalizeChannelPresetId(raw) {
   return DEFAULT_PRESET_ID
 }
 
+function enrichPreset(preset) {
+  if (!preset) return preset
+  if (preset.pageBgBottom) return preset
+  return Object.assign({}, preset, {
+    pageBgBottom: preset.variant === 'night' ? preset.windowBg : '#ffffff'
+  })
+}
+
 function getPreset(presetId) {
-  return PRESETS[normalizePresetId(presetId)]
+  return enrichPreset(PRESETS[normalizePresetId(presetId)])
 }
 
 function listPresets() {
-  return ORDERED_PRESET_IDS.map((id) => ({ ...PRESETS[id] }))
+  return ORDERED_PRESET_IDS.map((id) => enrichPreset({ ...PRESETS[id] }))
 }
 
 function listChannelPresets() {
-  return CHANNEL_ORDERED_PRESET_IDS.map((id) => ({ ...PRESETS[id] }))
+  return CHANNEL_ORDERED_PRESET_IDS.map((id) => enrichPreset({ ...PRESETS[id] }))
 }
 
 function getUserChannelPresetIdRaw() {
@@ -374,7 +383,8 @@ function presetToThemeObject(presetId) {
     tabSelected: p.tabSelected,
     tabColor: p.tabColor,
     tabBg: p.tabBg,
-    windowBg: p.windowBg
+    windowBg: p.windowBg,
+    pageBgBottom: p.pageBgBottom
   }
 }
 

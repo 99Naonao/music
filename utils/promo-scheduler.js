@@ -468,6 +468,7 @@ function shouldDeferVisitRecord() {
   try {
     const launch = wx.getLaunchOptionsSync()
     const path = String(launch.path || '')
+    if (path.includes('package-create/pages/create/gift')) return true
     if (path.includes('pages/create/gift')) return true
     const q = launch.query || {}
     const sid = q.shareId || q.shareid

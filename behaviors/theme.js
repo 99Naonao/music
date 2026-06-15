@@ -1,70 +1,57 @@
 const theme = require('../utils/theme')
 
-function buildThemePageData(themeId) {
-  const id = themeId != null ? themeId : theme.getEffectiveThemeId()
-  const meta = theme.getThemeMeta(id)
-  const accent = theme.getAccentColors(id)
-  const chrome = theme.getPageChromeColors(id)
-  const layout = theme.getPageLayoutMetrics()
-  return {
-    mbTheme: id,
-    pageMetaStyle: theme.getPageMetaStyle(id),
-    mbPageBg: chrome.mbPageBg,
-    mbPageBgBottom: chrome.mbPageBgBottom,
-    mbNavBg: chrome.mbNavBg,
-    pageHeightPx: layout.pageHeightPx,
-    pageShellStyle: theme.buildPageShellStyle(chrome, layout),
-    pageBgStyle: theme.buildPageBgStyle(chrome, layout),
-    mbAccent: meta.primaryColor || meta.tabSelected || accent.accent,
-    mbAccentSoft: accent.accentSoft
+function isTopPage(page) {
+  try {
+    const pages = getCurrentPages()
+    return pages.length > 0 && pages[pages.length - 1] === page
+  } catch (e) {
+    return true
   }
 }
 
-function refreshPageBackground(themeId) {
-  theme.schedulePageBackgroundRefresh(themeId)
+function finishPageThemePaint(page, done) {
+  theme.syncMbBottomSafeComponents()
+  if (isTopPage(page)) {
+    theme.applyPageBackground(undefined, page.route)
+  }
+  if (typeof done === 'function') done()
 }
 
 module.exports = Behavior({
-  data: buildThemePageData(),
-
   methods: {
-    syncMbTheme(themeId) {
-      const next = buildThemePageData(themeId)
-      refreshPageBackground(next.mbTheme)
-      if (
-        this.data.mbTheme !== next.mbTheme ||
-        this.data.pageMetaStyle !== next.pageMetaStyle ||
-        this.data.mbPageBg !== next.mbPageBg ||
-        this.data.mbPageBgBottom !== next.mbPageBgBottom ||
-        this.data.mbNavBg !== next.mbNavBg ||
-        this.data.pageHeightPx !== next.pageHeightPx ||
-        this.data.pageShellStyle !== next.pageShellStyle ||
-        this.data.pageBgStyle !== next.pageBgStyle ||
-        this.data.mbAccent !== next.mbAccent ||
-        this.data.mbAccentSoft !== next.mbAccentSoft
-      ) {
-        this.setData(next, () => refreshPageBackground(next.mbTheme))
+    syncMbTheme(themeId, done) {
+      const next = theme.buildThemePageData(themeId, this.route)
+      const finish = typeof done === 'function' ? done : null
+      let force = false
+      try {
+        const app = getApp()
+        const rev = app && app.globalData ? app.globalData.mbThemeRevision || 0 : 0
+        if (this._mbSyncedThemeRevision !== rev) {
+          this._mbSyncedThemeRevision = rev
+          force = true
+        }
+      } catch (e) {
+        /* ignore */
       }
+      if (!force && theme.isThemePageDataEqual(this.data, next)) {
+        if (finish) finishPageThemePaint(this, finish)
+        return
+      }
+      this.setData(next, () => finishPageThemePaint(this, finish))
     }
   },
 
   pageLifetimes: {
-    attached() {
-      const route = (this.route || '').replace(/^\//, '')
-      if (route === 'pages/splash/splash') return
-      this.syncMbTheme()
-    },
-    ready() {
-      const route = (this.route || '').replace(/^\//, '')
-      if (route === 'pages/splash/splash') return
-      refreshPageBackground()
-    },
     show() {
       const route = (this.route || '').replace(/^\//, '')
       if (route === 'pages/splash/splash') return
-      this.syncMbTheme()
-      theme.applyChromeTheme(theme.getEffectiveThemeId(), { animate: false })
-      refreshPageBackground()
+      if (isTopPage(this)) {
+        theme.applyChromeTheme(theme.getEffectiveThemeId(), {
+          animate: false,
+          skipPageBackground: true
+        })
+      }
+      this.syncMbTheme(undefined)
     }
   }
 })

@@ -1,0 +1,58 @@
+@import './share.wxss';
+
+/* 收礼页：封面播放键仅图标，无圆底/渐变（勿用 share-play-btn） */
+.gift-page .gift-cover-overlay {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.gift-page .gift-cover-play {
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gift-page .gift-cover-play:active {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
+.gift-page .gift-cover-play-icon {
+  width: 80rpx;
+  height: 80rpx;
+  filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.35));
+}
+
+.gift-progress {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+  margin-top: 8rpx;
+  margin-bottom: 8rpx;
+  padding: 0 4rpx;
+  box-sizing: border-box;
+}
+
+.gift-time {
+  font-size: 24rpx;
+  color: var(--mb-text-muted);
+  min-width: 80rpx;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.gift-slider {
+  flex: 1;
+  margin: 0;
+}

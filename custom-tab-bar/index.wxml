@@ -1,23 +1,30 @@
-<view
-  class="tab-bar mb-theme-{{theme}}"
-  style="background: {{tabBg}}; border-top: 1rpx solid rgba(0,0,0,0.06); padding-bottom: {{safeBottomPx}}px;"
->
+<view class="tab-bar-root">
   <view
-    wx:for="{{list}}"
-    wx:key="pagePath"
-    class="tab-bar-item {{selected === index ? 'tab-bar-item--active' : ''}}"
-    data-index="{{index}}"
-    bindtap="switchTab"
+    class="tab-bar mb-theme-{{theme}}"
+    style="background: {{tabBg}}; border-top: 1rpx solid rgba(0,0,0,0.06);"
   >
-    <image
-      class="tab-bar-icon"
-      style="filter: {{selected === index ? iconFilter : 'none'}};"
-      src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
-      mode="aspectFit"
-    />
-    <text
-      class="tab-bar-text"
-      style="color: {{selected === index ? tabSelected : tabColor}}; font-weight: {{selected === index ? 600 : 400}};"
-    >{{item.text}}</text>
+    <view
+      wx:for="{{list}}"
+      wx:key="pagePath"
+      class="tab-bar-item {{selected === index ? 'tab-bar-item--active' : ''}}"
+      data-index="{{index}}"
+      bindtap="switchTab"
+    >
+      <image
+        class="tab-bar-icon"
+        style="filter: {{selected === index ? iconFilter : 'none'}};"
+        src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+        mode="aspectFit"
+      />
+      <text
+        class="tab-bar-text"
+        style="color: {{selected === index ? tabSelected : tabColor}}; font-weight: {{selected === index ? 600 : 400}};"
+      >{{item.text}}</text>
+    </view>
   </view>
+  <view
+    wx:if="{{safeBottomPx > 0}}"
+    class="tab-bar-safe"
+    style="height: {{safeBottomPx}}px; background: {{tabBg}};"
+  ></view>
 </view>

@@ -1,6 +1,6 @@
-const { request } = require('../../utils/request')
-const { showAlert } = require('../../utils/show-alert')
-const { getDefaultTemplateItem } = require('../../utils/card-gradient')
+const { request } = require('../../../utils/request')
+const { showAlert } = require('../../../utils/show-alert')
+const { getDefaultTemplateItem } = require('../../../utils/card-gradient')
 
 function mergeDefaultTemplate(list) {
   const rows = Array.isArray(list) ? list.filter((t) => t && t.id !== 'tpl_default') : []
@@ -114,7 +114,7 @@ Page({
     })
 
     wx.navigateTo({
-      url: `/pages/create/card-edit?templateId=${encodeURIComponent(templateId)}`
+      url: `/package-create/pages/create/card-edit?templateId=${encodeURIComponent(templateId)}`
     })
   }
 })

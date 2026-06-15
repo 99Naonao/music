@@ -285,7 +285,7 @@ Page({
     wx.setStorageSync('createConfig', config)
 
     wx.navigateTo({
-      url: '/pages/create/tracks'
+      url: '/package-create/pages/create/tracks'
     })
   }
 })

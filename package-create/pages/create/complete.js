@@ -1,4 +1,4 @@
-const { request } = require('../../utils/request')
+const { request } = require('../../../utils/request')
 const {
   buildWorkTitle,
   resolveWorkTags,
@@ -8,25 +8,25 @@ const {
   saveWorkToLibrary,
   promptEditWorkTitle,
   saveWorkTitle
-} = require('../../utils/work-meta')
+} = require('../../../utils/work-meta')
 const {
   DEFAULT_WORK_COVER,
   getWorkCoverDisplay,
   pickUploadAndSetWorkCover
-} = require('../../utils/work-cover')
-const promoPageBehavior = require('../../behaviors/promo-page')
-const promoActivity = require('../../utils/promo-activity-tracker')
-const { SCENES } = require('../../utils/promo-constants')
-const { MIANJIA_ENTRY_ENABLED } = require('../../utils/mianjia-config')
-const channel = require('../../utils/channel')
-const { getDefaultTemplateItem, GRADIENT_OPTIONS } = require('../../utils/card-gradient')
-const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
-const { showAlert } = require('../../utils/show-alert')
+} = require('../../../utils/work-cover')
+const promoPageBehavior = require('../../../behaviors/promo-page')
+const promoActivity = require('../../../utils/promo-activity-tracker')
+const { SCENES } = require('../../../utils/promo-constants')
+const { MIANJIA_ENTRY_ENABLED } = require('../../../utils/mianjia-config')
+const channel = require('../../../utils/channel')
+const { getDefaultTemplateItem, GRADIENT_OPTIONS } = require('../../../utils/card-gradient')
+const { setTabBarSelected, syncTabBarPageLayout } = require('../../../utils/tab-bar')
+const { showAlert } = require('../../../utils/show-alert')
 const {
   promptChooseWorkCoverIfNeeded,
   handleCoverSnoozeOption,
   isCoverPromptSnoozed
-} = require('../../utils/complete-cover-prompt')
+} = require('../../../utils/complete-cover-prompt')
 
 const COVER_PROMPT_SNOOZE_UNTIL_KEY = 'mb_complete_cover_prompt_snooze_until'
 const COVER_PROMPT_DISMISS_DATE_KEY = 'mb_complete_cover_prompt_dismiss_date'
@@ -286,7 +286,7 @@ Page({
   },
 
   buildPlayerUrl() {
-    let url = '/pages/create/player'
+    let url = '/package-create/pages/create/player'
     const q = []
     if (this._musicId) q.push(`musicId=${encodeURIComponent(String(this._musicId))}`)
     if (this._audioUrl) q.push(`audioUrl=${encodeURIComponent(this._audioUrl)}`)
@@ -396,13 +396,13 @@ Page({
 
     this.savePlayerCardDraft({ selectedTemplate })
     wx.navigateTo({
-      url: `/pages/create/card-edit?templateId=${encodeURIComponent(templateId)}`
+      url: `/package-create/pages/create/card-edit?templateId=${encodeURIComponent(templateId)}`
     })
   },
 
   goMoreCards() {
     this.savePlayerCardDraft()
-    wx.navigateTo({ url: '/pages/create/card-pick' })
+    wx.navigateTo({ url: '/package-create/pages/create/card-pick' })
   },
 
   recreate() {
@@ -421,7 +421,7 @@ Page({
     const title = this.data.workTitle
       ? `${prefix} · ${this.data.workTitle}`
       : `${prefix} · 专属助眠声波`
-    let path = '/pages/create/complete'
+    let path = '/package-create/pages/create/complete'
     if (this._musicId) {
       path += `?musicId=${encodeURIComponent(String(this._musicId))}`
       if (this._audioUrl) {

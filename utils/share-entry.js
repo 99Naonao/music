@@ -124,7 +124,8 @@ function resolveShareIdFromAppLaunch(launchOpts) {
   if (!launchOpts || typeof launchOpts !== 'object') return ''
 
   const path = String(launchOpts.path || '')
-  if (path.includes('pages/create/share')) return ''
+  if (path.includes('package-create/pages/create/share')) return ''
+  if (path.includes('package-create/pages/create/gift')) return ''
   if (path.includes('pages/create/gift')) return ''
 
   const fromQuery = pickShareId(launchOpts.query, 'appLaunch.query')

@@ -22,7 +22,6 @@
   bottom: 0;
   z-index: 0;
   pointer-events: none;
-  background: var(--mb-gradient-page);
 }
 
 .config-page-body {

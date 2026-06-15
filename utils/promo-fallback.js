@@ -55,7 +55,7 @@ const FALLBACK_CAMPAIGNS = [
     subtitle: '换一首曲子、换一句祝福，再给 TA 一份新的助眠礼',
     buttonText: '制作贺卡',
     secondaryText: '7天内不再提示',
-    linkPath: '/pages/create/card-pick',
+    linkPath: '/package-create/pages/create/card-pick',
     linkType: 'navigate',
     enabled: true
   },
@@ -139,7 +139,7 @@ const FALLBACK_CAMPAIGNS = [
     subtitle: '把这首专属助眠曲配上祝福，送给在乎的人',
     buttonText: '制作贺卡',
     secondaryText: '7天内不再提示',
-    linkPath: '/pages/create/card-pick',
+    linkPath: '/package-create/pages/create/card-pick',
     linkType: 'navigate',
     enabled: true
   }

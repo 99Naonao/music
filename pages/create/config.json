@@ -1,7 +1,4 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "音乐创作",
-  "navigationBarBackgroundColor": "#e1f0ff",
-  "navigationBarTextStyle": "black",
-  "backgroundColor": "#e8f2fc"
+  "navigationBarTitleText": "音乐创作"
 }

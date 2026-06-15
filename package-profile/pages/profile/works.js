@@ -48,7 +48,7 @@ Page({
   preloadPlayerPage() {
     if (this._playerPreloaded || typeof wx.preloadPage !== 'function') return
     try {
-      wx.preloadPage({ url: '/pages/create/player' })
+      wx.preloadPage({ url: '/package-create/pages/create/player' })
       this._playerPreloaded = true
     } catch (e) {
       /* 低版本基础库无 preloadPage */
@@ -264,7 +264,7 @@ Page({
     }
     this.preloadPlayerPage()
     log('works-play', '点击作品播放', { musicId: work.id, title: work.title })
-    let url = `/pages/create/player?musicId=${work.id}&audioUrl=${encodeURIComponent(work.audioUrl)}&from=works`
+    let url = `/package-create/pages/create/player?musicId=${work.id}&audioUrl=${encodeURIComponent(work.audioUrl)}&from=works`
     if (work.durationMs != null && work.durationMs > 0) {
       url += `&durationMs=${encodeURIComponent(String(work.durationMs))}`
     } else if (work.durationSec != null && Number(work.durationSec) > 0) {

@@ -75,7 +75,7 @@ Page({
       showAlert('提示', '该记录缺少音频地址，无法播放。')
       return
     }
-    let url = `/pages/create/player?musicId=${encodeURIComponent(item.id)}&audioUrl=${encodeURIComponent(item.audioUrl)}`
+    let url = `/package-create/pages/create/player?musicId=${encodeURIComponent(item.id)}&audioUrl=${encodeURIComponent(item.audioUrl)}`
     if (item.source === 'works' || item.source === 'create') {
       url += '&from=works'
     } else if (item.source === 'library') {

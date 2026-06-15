@@ -1,17 +1,17 @@
 // AI音乐生成页面 - 调用后端MiniMax API真实生成音乐
-const { request, isRetryableNetworkError } = require('../../utils/request')
-const { showAlert } = require('../../utils/show-alert')
-const { showPointsReward } = require('../../utils/show-points-reward')
-const { API_BASE_URL, MUSIC_GENERATION_TIMEOUT_MS, TIMEOUT, devApiMode } = require('../../utils/config')
-const { buildWorkTitle, getInstrumentName } = require('../../utils/work-meta')
-const { log, logWarn } = require('../../utils/log')
-const { resolveVoiceUrlForCreate } = require('../../utils/voice-upload')
-const { resolveReferenceUrlForCreate } = require('../../utils/reference-music')
-const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
-const { isDailyTaskCompleted } = require('../../utils/daily-tasks')
-const themeMod = require('../../utils/theme')
-const channel = require('../../utils/channel')
-const { resolveRemoteImageUrl, getCachedRemoteImageUrl } = require('../../utils/remote-image')
+const { request, isRetryableNetworkError } = require('../../../utils/request')
+const { showAlert } = require('../../../utils/show-alert')
+const { showPointsReward } = require('../../../utils/show-points-reward')
+const { API_BASE_URL, MUSIC_GENERATION_TIMEOUT_MS, TIMEOUT, devApiMode } = require('../../../utils/config')
+const { buildWorkTitle, getInstrumentName } = require('../../../utils/work-meta')
+const { log, logWarn } = require('../../../utils/log')
+const { resolveVoiceUrlForCreate } = require('../../../utils/voice-upload')
+const { resolveReferenceUrlForCreate } = require('../../../utils/reference-music')
+const { setTabBarSelected, syncTabBarPageLayout } = require('../../../utils/tab-bar')
+const { isDailyTaskCompleted } = require('../../../utils/daily-tasks')
+const themeMod = require('../../../utils/theme')
+const channel = require('../../../utils/channel')
+const { resolveRemoteImageUrl, getCachedRemoteImageUrl } = require('../../../utils/remote-image')
 
 const DEFAULT_GEN_LOGO = '/static/new_logo/logo_bg.png'
 
@@ -429,7 +429,7 @@ Page({
     if (this._cancelled) return
     this.clearTimers()
     try {
-      require('../../utils/promo-activity-tracker').touchMusicGenerate()
+      require('../../../utils/promo-activity-tracker').touchMusicGenerate()
     } catch (e) {
       /* ignore */
     }
@@ -443,7 +443,7 @@ Page({
 
     const goComplete = () => {
       if (this._cancelled) return
-      let url = `/pages/create/complete?musicId=${encodeURIComponent(String(musicId))}&audioUrl=${encodeURIComponent(audioUrl)}`
+      let url = `/package-create/pages/create/complete?musicId=${encodeURIComponent(String(musicId))}&audioUrl=${encodeURIComponent(audioUrl)}`
       if (audioDurationMs != null && audioDurationMs !== '' && !Number.isNaN(Number(audioDurationMs))) {
         url += `&durationMs=${encodeURIComponent(String(Math.round(Number(audioDurationMs))))}`
       }

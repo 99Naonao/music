@@ -9,11 +9,12 @@ const THEMES = {
     desc: '深蓝夜空渐变，安静专业',
     navFront: '#ffffff',
     navBg: '#1a1a2e',
-    windowBg: '#202b48',
+    windowBg: '#1a2238',
     tabColor: '#c8c8c8',
     tabSelected: '#ffffff',
     tabBg: '#1a1a2e',
-    tabBorder: 'black'
+    tabBorder: 'black',
+    pageBgBottom: '#1a2238'
   },
   dawn: {
     id: 'dawn',
@@ -25,14 +26,9 @@ const THEMES = {
     tabColor: '#6b7a8c',
     tabSelected: '#2d5a8e',
     tabBg: '#ffffff',
-    tabBorder: 'white'
+    tabBorder: 'white',
+    pageBgBottom: '#ffffff'
   }
-}
-
-/** page-meta / 手势条区域应与渐变末端一致，而非 windowBg */
-const PAGE_THEME_BOTTOM = {
-  dawn: '#ffffff',
-  night: '#1a2238'
 }
 
 /** page-meta 注入的 CSS 变量（须与 styles/theme-skins.wxss 一致） */
@@ -131,8 +127,8 @@ function buildChannelPageVarStyle(t) {
     const textPrimary = t.navFront || '#EAEEF8'
     const darkAccentSoft = `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
     const darkAccentMedium = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`
-    const gradientPage = `linear-gradient(180deg,${windowBg} 0%,${navBg} 48%,${windowBg} 100%)`
-    const pageBottom = normalizeHexColor(windowBg, '#202b48')
+    const pageBottom = normalizeHexColor(t.pageBgBottom || windowBg, windowBg)
+    const gradientPage = `linear-gradient(180deg,${windowBg} 0%,${navBg} 48%,${pageBottom} 100%)`
     return [
       `--mb-gradient-page:${gradientPage}`,
       `--mb-bg-page:${windowBg}`,
@@ -163,12 +159,13 @@ function buildChannelPageVarStyle(t) {
   }
 
   const textPrimary = t.navFront || '#352D4A'
-  const gradientPage = `linear-gradient(165deg,${windowBg} 0%,${navBg} 52%,#ffffff 100%)`
+  const pageBottom = normalizeHexColor(t.pageBgBottom, '#ffffff')
+  const gradientPage = `linear-gradient(165deg,${windowBg} 0%,${navBg} 52%,${pageBottom} 100%)`
 
   return [
     `--mb-gradient-page:${gradientPage}`,
     `--mb-bg-page:${windowBg}`,
-    `--mb-bg-page-bottom:#ffffff`,
+    `--mb-bg-page-bottom:${pageBottom}`,
     `--mb-bg-page-alt:${navBg}`,
     `--mb-bg-elevated:rgba(255,255,255,0.94)`,
     `--mb-text-primary:${textPrimary}`,
@@ -226,8 +223,10 @@ function getAppearancePresetTheme() {
   const forChannel =
     !!(ch && typeof ch.hasChannelContext === 'function' && ch.hasChannelContext())
   const id = presets.getUserChannelPresetId(forChannel)
-  if (!id) return null
-  return presets.presetToThemeObject(id)
+  if (id) return presets.presetToThemeObject(id)
+  const legacyOfficial = presets.getLegacyOfficialPresetId()
+  if (legacyOfficial) return presets.presetToThemeObject(legacyOfficial)
+  return null
 }
 
 function getChannelThemeOverrides() {
@@ -285,6 +284,7 @@ function mergeChannelIntoMeta(baseMeta) {
   if (overrides.tabSelected) next.tabSelected = overrides.tabSelected
   if (overrides.tabBg) next.tabBg = overrides.tabBg
   if (overrides.primaryColor) next.primaryColor = overrides.primaryColor
+  if (overrides.pageBgBottom) next.pageBgBottom = overrides.pageBgBottom
   return next
 }
 
@@ -322,13 +322,12 @@ const SPLASH_PAGE_STYLE = {
     'background:linear-gradient(135deg,#202b48 0%,#2d3a5c 45%,#1a2238 100%);color:#fffdf5'
 }
 
-function getSplashPageMetaStyle(id) {
+function getSplashPageMetaStyle(id, fullBleed) {
+  if (fullBleed) {
+    return appendSafeBottomVar('background:#0f0b14;color:#fffdf5;--mb-bg-page:#0f0b14')
+  }
   const ch = getChannelModule()
   if (ch && ch.hasChannelContext && ch.hasChannelContext()) {
-    const splash = ch.getSplashDisplay()
-    if (splash.fullBleed) {
-      return appendSafeBottomVar('background:#0f0b14;color:#fffdf5;--mb-bg-page:#0f0b14')
-    }
     const overrides = getChannelThemeOverrides()
     if (overrides && (overrides.windowBg || overrides.navBg)) {
       const bg = overrides.windowBg || '#F0ECF5'
@@ -383,59 +382,192 @@ function getPageLayoutMetrics() {
   return { pageHeightPx, shellHeightPx, safeBottomPx }
 }
 
-const PAGE_GRADIENT_BG =
-  'background-color:var(--mb-bg-page);background-image:var(--mb-gradient-page);'
-
-function buildPageShellStyle(chrome, metrics) {
-  const h = metrics && metrics.shellHeightPx ? metrics.shellHeightPx : 0
-  if (!h) return `${PAGE_GRADIENT_BG}min-height:100vh;box-sizing:border-box;`
-  return `${PAGE_GRADIENT_BG}height:${h}px;min-height:${h}px;max-height:${h}px;box-sizing:border-box;`
-}
-
-function buildPageBgStyle(chrome, metrics) {
-  const h = metrics && metrics.shellHeightPx ? metrics.shellHeightPx : 0
-  if (!h) return ''
-  return `height:${h}px;`
-}
-
-/** 开屏全屏图模式：fixed 铺满窗口（含底部手势区） */
-function buildSplashFullPageStyle(metrics) {
-  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
-  if (!h) {
-    return 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:1;width:100%;padding:0;overflow:hidden;'
+/** 页面背景渐变（内联到 shell/bg，避免 page-meta CSS 变量晚一帧） */
+function resolvePageGradientPaint(id, themeOverride) {
+  const overrides = themeOverride || getChannelThemeOverrides()
+  if (overrides) {
+    const windowBg = normalizeHexColor(overrides.windowBg, '#F4F0FA')
+    const navBg = normalizeHexColor(overrides.navBg || overrides.windowBg, windowBg)
+    const pageBottom = normalizeHexColor(overrides.pageBgBottom, isDarkChannelTheme(overrides) ? windowBg : '#ffffff')
+    if (isDarkChannelTheme(overrides)) {
+      return {
+        bgColor: windowBg,
+        bgImage: `linear-gradient(180deg,${windowBg} 0%,${navBg} 48%,${pageBottom} 100%)`
+      }
+    }
+    return {
+      bgColor: windowBg,
+      bgImage: `linear-gradient(165deg,${windowBg} 0%,${navBg} 52%,${pageBottom} 100%)`
+    }
   }
-  return `position:fixed;left:0;top:0;width:100%;height:${h}px;z-index:1;padding:0;overflow:hidden;`
+  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
+  if (key === 'night') {
+    return {
+      bgColor: '#202b48',
+      bgImage: 'linear-gradient(180deg,#202b48 0%,#2d3a5c 45%,#1a2238 100%)'
+    }
+  }
+  return {
+    bgColor: '#e8f2fc',
+    bgImage: 'linear-gradient(135deg,#d1e9ff 0%,#e8f4ff 42%,#f7faff 72%,#ffffff 100%)'
+  }
 }
 
-function buildSplashFullShellStyle(metrics) {
-  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
-  const bg = '#0f0b14'
-  if (!h) {
-    return `position:fixed;left:0;top:0;right:0;bottom:0;background-color:${bg};z-index:0;pointer-events:none;`
-  }
-  return `position:fixed;left:0;top:0;width:100%;height:${h}px;background-color:${bg};z-index:0;pointer-events:none;`
+function buildInlinePageGradientStyle(paint) {
+  return `background-color:${paint.bgColor};background-image:${paint.bgImage};`
 }
+
+function buildPageShellStyle(chrome, metrics, id, themeOverride) {
+  const paint = resolvePageGradientPaint(id, themeOverride)
+  const bg = buildInlinePageGradientStyle(paint)
+  // 使用 pageHeightPx（含安全区域），避免 bottom:0 在某些 Android 机不包含手势条区
+  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
+  if (!h) return `${bg}min-height:100vh;box-sizing:border-box;`
+  return `${bg}height:${h}px;min-height:${h}px;max-height:${h}px;box-sizing:border-box;`
+}
+
+function buildPageBgStyle(chrome, metrics, id, themeOverride) {
+  const paint = resolvePageGradientPaint(id, themeOverride)
+  const bg = buildInlinePageGradientStyle(paint)
+  // 使用 pageHeightPx（含安全区域），确保背景层覆盖到底部手势条区
+  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
+  if (!h) return `${bg}min-height:100vh;`
+  return `${bg}height:${h}px;min-height:${h}px;`
+}
+
+/** 开屏全屏图模式：fixed 铺满物理屏幕（含底部手势区） */
+function getSplashCoverMetrics() {
+  const layout = getPageLayoutMetrics()
+  let coverHeightPx = layout.pageHeightPx || 0
+  try {
+    const sys = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+    const screenHeight = Math.ceil(sys.screenHeight || 0)
+    if (screenHeight > coverHeightPx) coverHeightPx = screenHeight
+  } catch (e) {
+    /* ignore */
+  }
+  return Object.assign({}, layout, { coverHeightPx })
+}
+
+function buildSplashFixedCoverStyle(id, fullBleed, zIndex) {
+  const z = zIndex != null ? zIndex : 0
+  // 使用 coverHeightPx（物理屏幕高度）替代 bottom:0，避免某些 Android 机 bottom:0 不包含手势条区
+  const metrics = getSplashCoverMetrics()
+  const h = metrics.coverHeightPx
+  const heightExpr = h > 0 ? `height:${h}px;` : 'height:100vh;'
+  if (fullBleed) {
+    return `position:fixed;left:0;top:0;z-index:${z};width:100%;${heightExpr}pointer-events:none;background-color:#0f0b14;`
+  }
+  const paint = resolvePageGradientPaint(id)
+  const bg = buildInlinePageGradientStyle(paint)
+  return `position:fixed;left:0;top:0;z-index:${z};width:100%;${heightExpr}pointer-events:none;${bg}`
+}
+
+function buildSplashFullPageStyle() {
+  const metrics = getSplashCoverMetrics()
+  const h = metrics.coverHeightPx
+  const heightExpr = h > 0 ? `height:${h}px;` : 'height:100vh;'
+  return `position:fixed;left:0;top:0;z-index:1;width:100%;padding:0;overflow:hidden;background-color:#0f0b14;${heightExpr}`
+}
+
+function buildSplashContentShellStyle() {
+  return 'position:relative;z-index:1;width:100%;min-height:100%;box-sizing:border-box;'
+}
+
+function buildSplashFullShellStyle() {
+  return buildSplashFixedCoverStyle(null, true, 0)
+}
+const TAB_PAGE_ROUTES = [
+  'pages/create/create',
+  'pages/create/config',
+  'pages/communites/communites',
+  'pages/mine/mine'
+]
+
+function isTabBarPageRoute(route) {
+  const r = String(route || '').replace(/^\//, '')
+  return TAB_PAGE_ROUTES.indexOf(r) >= 0
+}
+
+/** 含底部手势区的全屏背景（开屏等无 mb-bottom-safe 的页面） */
+function buildPageBackdropStyle(chrome, metrics, id, themeOverride, useCoverHeight) {
+  const paint = resolvePageGradientPaint(id, themeOverride)
+  const bg = buildInlinePageGradientStyle(paint)
+  const h =
+    metrics && (useCoverHeight ? metrics.coverHeightPx || metrics.pageHeightPx : metrics.pageHeightPx)
+      ? useCoverHeight
+        ? metrics.coverHeightPx || metrics.pageHeightPx
+        : metrics.pageHeightPx
+      : 0
+  if (!h) return `${bg}min-height:100vh;box-sizing:border-box;`
+  return `${bg}height:${h}px;min-height:${h}px;max-height:${h}px;box-sizing:border-box;`
+}
+
+function getSplashChromeColors(id, fullBleed) {
+  if (fullBleed) {
+    const bg = '#0f0b14'
+    return { mbPageBg: bg, mbNavBg: bg, mbPageBgBottom: bg }
+  }
+  return getPageChromeColors(id)
+}
+
+function applySplashPageBackground(id, fullBleed) {
+  const colors = getSplashChromeColors(id, fullBleed)
+  const contentBg = colors.mbPageBgBottom || colors.mbPageBg
+  try {
+    wx.setBackgroundColor({
+      backgroundColor: colors.mbPageBg,
+      backgroundColorTop: colors.mbNavBg,
+      backgroundColorBottom: colors.mbPageBgBottom
+    })
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    if (typeof wx.setPageStyle === 'function') {
+      wx.setPageStyle({
+        style: {
+          backgroundColor: colors.mbPageBg,
+          backgroundColorTop: colors.mbNavBg,
+          backgroundColorBottom: colors.mbPageBgBottom,
+          backgroundColorContent: contentBg
+        }
+      })
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 /** 开屏全屏底色（fixed 铺满含底部手势区，避免 mb-bottom-safe 与渐变露白） */
-function buildSplashShellStyle(chrome, metrics, fullBleed) {
-  if (fullBleed) return buildSplashFullShellStyle(metrics)
-  const bg = (chrome && chrome.mbPageBg) || '#e8f2fc'
-  const h = metrics && metrics.pageHeightPx ? metrics.pageHeightPx : 0
-  if (!h) {
-    return `position:fixed;left:0;top:0;right:0;bottom:0;background-color:${bg};z-index:0;pointer-events:none;`
-  }
-  return `position:fixed;left:0;top:0;width:100%;height:${h}px;background-color:${bg};z-index:0;pointer-events:none;`
+function buildSplashShellStyle(chrome, metrics, fullBleed, id) {
+  return buildSplashFixedCoverStyle(id, fullBleed, 0)
 }
 
 function getPageBgBottomColor(id) {
-  const overrides = getChannelThemeOverrides()
-  if (overrides) {
-    if (isDarkChannelTheme(overrides)) {
-      return normalizeHexColor(overrides.windowBg || overrides.navBg, '#202b48')
-    }
-    return '#ffffff'
+  const meta = getThemeMeta(id == null ? getEffectiveThemeId() : id)
+  return normalizeHexColor(meta.pageBgBottom || meta.windowBg, '#ffffff')
+}
+
+/** Tab 页底部与 tabBg 对齐，非 Tab 页与渐变末端 pageBgBottom 对齐 */
+function resolvePageBottomForRoute(id, route) {
+  const effectiveId = id == null ? getEffectiveThemeId() : normalizeThemeId(id)
+  let bottom = getPageBgBottomColor(effectiveId)
+  const r = String(route || '').replace(/^\//, '')
+  if (r && isTabBarPageRoute(r)) {
+    const meta = getThemeMeta(effectiveId)
+    bottom = normalizeHexColor(meta.tabBg || bottom, bottom)
   }
-  const key = normalizeThemeId(id == null ? getEffectiveThemeId() : id)
-  return PAGE_THEME_BOTTOM[key] || PAGE_THEME_BOTTOM.dawn
+  return bottom
+}
+
+function getCurrentPageRoute() {
+  try {
+    const pages = getCurrentPages()
+    return pages.length ? String(pages[pages.length - 1].route || '') : ''
+  } catch (e) {
+    return ''
+  }
 }
 
 function getPageChromeColors(id) {
@@ -446,12 +578,20 @@ function getPageChromeColors(id) {
   return { mbPageBg, mbNavBg, mbPageBgBottom }
 }
 
+/**
+ * 获取可用的主题选项列表
+ * @returns {Array} 包含夜间和黎明主题的数组
+ */
 function getThemeOptions() {
   return [THEMES.night, THEMES.dawn]
 }
 
-function applyPageBackground(id) {
-  const { mbPageBg, mbNavBg, mbPageBgBottom } = getPageChromeColors(id)
+function applyPageBackground(id, route) {
+  const effectiveId = id == null ? getEffectiveThemeId() : normalizeThemeId(id)
+  const { mbPageBg, mbNavBg } = getPageChromeColors(effectiveId)
+  const pageRoute = route != null ? route : getCurrentPageRoute()
+  const mbPageBgBottom = resolvePageBottomForRoute(effectiveId, pageRoute)
+  const contentBg = mbPageBgBottom
   try {
     wx.setBackgroundColor({
       backgroundColor: mbPageBg,
@@ -467,7 +607,8 @@ function applyPageBackground(id) {
         style: {
           backgroundColor: mbPageBg,
           backgroundColorTop: mbNavBg,
-          backgroundColorBottom: mbPageBgBottom
+          backgroundColorBottom: mbPageBgBottom,
+          backgroundColorContent: contentBg
         }
       })
     }
@@ -476,7 +617,12 @@ function applyPageBackground(id) {
   }
 }
 
-function schedulePageBackgroundRefresh(id) {
+/** 路由切换时尽早刷原生背景，避免二级页 backgroundColorContent 默认白闪一下 */
+function applyPageBackgroundOnRoute(route) {
+  applyPageBackground(undefined, route != null ? route : getCurrentPageRoute())
+}
+
+function applyPageBackgroundDeferred(id) {
   applyPageBackground(id)
   try {
     if (typeof wx.nextTick === 'function') {
@@ -485,14 +631,41 @@ function schedulePageBackgroundRefresh(id) {
   } catch (e) {
     /* ignore */
   }
-  setTimeout(() => applyPageBackground(id), 100)
+}
+
+function schedulePageBackgroundRefresh(id) {
+  applyPageBackgroundDeferred(id)
+}
+
+function isThemePageDataEqual(current, next) {
+  if (!current || !next) return false
+  return (
+    current.mbTheme === next.mbTheme &&
+    current.mbAppearancePresetId === next.mbAppearancePresetId &&
+    current.pageMetaStyle === next.pageMetaStyle &&
+    current.mbPageBg === next.mbPageBg &&
+    current.mbPageBgBottom === next.mbPageBgBottom &&
+    current.mbNavBg === next.mbNavBg &&
+    current.pageHeightPx === next.pageHeightPx &&
+    current.pageShellStyle === next.pageShellStyle &&
+    current.pageBgStyle === next.pageBgStyle &&
+    current.mbAccent === next.mbAccent &&
+    current.mbAccentSoft === next.mbAccentSoft
+  )
 }
 
 function applyChromeTheme(id, options = {}) {
   const effectiveId = id == null ? getEffectiveThemeId() : normalizeThemeId(id)
   const meta = getThemeMeta(effectiveId)
-  schedulePageBackgroundRefresh(effectiveId)
-  const animate = options.animate === true
+  const opts = options || {}
+  if (!opts.skipPageBackground) {
+    if (opts.deferredPageBackground) {
+      applyPageBackgroundDeferred(effectiveId)
+    } else {
+      schedulePageBackgroundRefresh(effectiveId)
+    }
+  }
+  const animate = opts.animate === true
   wx.setNavigationBarColor({
     frontColor: resolveWxNavFrontColor(meta.navBg),
     backgroundColor: meta.navBg,
@@ -544,15 +717,66 @@ function syncCustomTabBarTheme(id) {
   }
 }
 
+const bottomSafeRefreshers = []
+
+function registerBottomSafeRefresher(fn) {
+  if (typeof fn !== 'function') return function noop() {}
+  bottomSafeRefreshers.push(fn)
+  return function unregister() {
+    const i = bottomSafeRefreshers.indexOf(fn)
+    if (i >= 0) bottomSafeRefreshers.splice(i, 1)
+  }
+}
+
+function syncMbBottomSafeComponents() {
+  for (let i = 0; i < bottomSafeRefreshers.length; i++) {
+    try {
+      bottomSafeRefreshers[i]()
+    } catch (e) {
+      /* ignore */
+    }
+  }
+}
+
+function buildBottomSafeFillStyle(id) {
+  const layout = getPageLayoutMetrics()
+  const h = layout.safeBottomPx || 0
+  if (!h) return ''
+  try {
+    const pages = getCurrentPages()
+    const top = pages.length ? pages[pages.length - 1] : null
+    if (top && isTabBarPageRoute(top.route)) return ''
+  } catch (e) {
+    /* ignore */
+  }
+  const bottomColor = getPageBgBottomColor(id)
+  return `height:${h}px;background-color:${bottomColor};`
+}
+
+/** 页面 setData 完成后再改原生导航/窗口色，避免视图仍显示旧主题时原生层已切换 */
+function applyNativeChromeAfterPagePaint(themeId) {
+  const id = themeId != null ? normalizeThemeId(themeId) : getEffectiveThemeId()
+  applyChromeTheme(id, { animate: false, skipPageBackground: true })
+  applyPageBackgroundDeferred(id)
+}
+
+function applyThemeToOpenPages(themeId) {
+  const effective = themeId != null ? normalizeThemeId(themeId) : getEffectiveThemeId()
+  refreshOpenPages(effective, () => {
+    syncMbBottomSafeComponents()
+    applyNativeChromeAfterPagePaint(effective)
+  })
+}
+
 function setTheme(id) {
   const key = normalizeThemeId(id)
   wx.setStorageSync(STORAGE_KEY, key)
   const app = getApp()
   if (app && app.globalData) {
     app.globalData.mbTheme = getEffectiveThemeId()
+    app.globalData.mbThemePageData = buildThemePageData()
   }
-  applyChromeTheme(getEffectiveThemeId(), { animate: true })
-  refreshOpenPages(getEffectiveThemeId())
+  applyThemeToOpenPages(getEffectiveThemeId())
   return key
 }
 
@@ -588,14 +812,19 @@ function getActiveChannelThemePresetId() {
   return presets.getActiveAppearancePresetId(brandingPresetId || '', forChannel)
 }
 
-function refreshOpenPages(themeId) {
+function refreshOpenPages(themeId, done) {
   const effective = themeId != null ? normalizeThemeId(themeId) : getEffectiveThemeId()
-  const pages = getCurrentPages()
-  pages.forEach((page) => {
-    if (typeof page.syncMbTheme === 'function') {
-      page.syncMbTheme(effective)
-    }
-  })
+  const pages = getCurrentPages().filter((p) => typeof p.syncMbTheme === 'function')
+  if (!pages.length) {
+    if (typeof done === 'function') done()
+    return
+  }
+  let pending = pages.length
+  const finish = () => {
+    pending -= 1
+    if (pending <= 0 && typeof done === 'function') done()
+  }
+  pages.forEach((page) => page.syncMbTheme(effective, finish))
 }
 
 function refreshAfterChannelBranding() {
@@ -603,18 +832,99 @@ function refreshAfterChannelBranding() {
   const app = getApp()
   if (app && app.globalData) {
     app.globalData.mbTheme = effective
+    app.globalData.mbThemePageData = buildThemePageData()
+    app.globalData.mbThemeRevision = (app.globalData.mbThemeRevision || 0) + 1
   }
-  applyChromeTheme(effective, { animate: false })
-  refreshOpenPages(effective)
+  applyThemeToOpenPages(effective)
 }
 
-function initTheme(app) {
+function initTheme(app, options) {
   const key = getEffectiveThemeId()
   if (app && app.globalData) {
     app.globalData.mbTheme = key
+    app.globalData.mbThemePageData = buildThemePageData()
   }
-  applyChromeTheme(key)
+  const opts = options || {}
+  applyChromeTheme(key, {
+    animate: false,
+    skipPageBackground: opts.skipPageBackground === true
+  })
   return key
+}
+
+function buildThemePageData(themeId, pageRoute) {
+  const id = themeId != null ? themeId : getEffectiveThemeId()
+  const meta = getThemeMeta(id)
+  const accent = getAccentColors(id)
+  const chrome = getPageChromeColors(id)
+  const layout = getPageLayoutMetrics()
+  const route = pageRoute != null ? pageRoute : getCurrentPageRoute()
+  const mbPageBgBottom = resolvePageBottomForRoute(id, route)
+  return {
+    mbTheme: id,
+    mbAppearancePresetId: getActiveChannelThemePresetId() || '',
+    pageMetaStyle: getPageMetaStyle(id),
+    mbPageBg: chrome.mbPageBg,
+    mbPageBgBottom,
+    mbNavBg: chrome.mbNavBg,
+    pageHeightPx: layout.pageHeightPx,
+    pageShellStyle: buildPageShellStyle(chrome, layout, id),
+    pageBgStyle: buildPageBgStyle(chrome, layout, id),
+    mbAccent: meta.primaryColor || meta.tabSelected || accent.accent,
+    mbAccentSoft: accent.accentSoft
+  }
+}
+
+/** 同步写入 page.data，使 onLoad 首次渲染前即使用当前主题（避免 Page 注册时旧主题首帧） */
+function applyThemeDataToPage(page, themeId) {
+  const route = page && page.route
+  const next = buildThemePageData(themeId, route)
+  if (page && page.data) {
+    Object.assign(page.data, next)
+  }
+  return next
+}
+
+function isSplashRoute(route) {
+  return String(route || '').replace(/^\//, '') === 'pages/splash/splash'
+}
+
+function primePageTheme(page) {
+  if (!page || isSplashRoute(page.route)) return null
+  const next = applyThemeDataToPage(page)
+  applyPageBackground(undefined, page.route)
+  if (typeof page.setData === 'function' && !isThemePageDataEqual(page.data, next)) {
+    page.setData(next)
+  }
+  return next
+}
+
+/** 路由切换前缓存当前主题快照，供即将打开的页面首帧使用 */
+function syncThemeSnapshotOnRoute(nextRoute) {
+  const snapshot = buildThemePageData(undefined, nextRoute)
+  try {
+    const app = getApp()
+    if (app && app.globalData) {
+      app.globalData.mbThemePageData = snapshot
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  applyPageBackgroundOnRoute(nextRoute)
+  applyChromeTheme(getEffectiveThemeId(), { animate: false, skipPageBackground: true })
+  return snapshot
+}
+
+function getThemePageDataSeed() {
+  try {
+    const app = getApp()
+    if (app && app.globalData && app.globalData.mbThemePageData) {
+      return app.globalData.mbThemePageData
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return buildThemePageData()
 }
 
 module.exports = {
@@ -629,21 +939,40 @@ module.exports = {
   getPageMetaStyle,
   getPageChromeColors,
   getPageLayoutMetrics,
+  getSplashCoverMetrics,
+  getSplashChromeColors,
+  applySplashPageBackground,
   buildPageShellStyle,
   buildPageBgStyle,
+  resolvePageGradientPaint,
+  buildBottomSafeFillStyle,
+  buildPageBackdropStyle,
+  isTabBarPageRoute,
   buildSplashShellStyle,
   buildSplashFullPageStyle,
+  buildSplashContentShellStyle,
   getSplashPageMetaStyle,
   getAccentColors,
   applyChromeTheme,
   applyPageBackground,
+  applyPageBackgroundOnRoute,
+  applyPageBackgroundDeferred,
+  applyNativeChromeAfterPagePaint,
   schedulePageBackgroundRefresh,
   syncCustomTabBarTheme,
+  registerBottomSafeRefresher,
+  syncMbBottomSafeComponents,
   setTheme,
   setChannelThemePreset,
   getChannelThemePresetOptions,
   getActiveChannelThemePresetId,
   initTheme,
+  buildThemePageData,
+  isThemePageDataEqual,
+  applyThemeDataToPage,
+  primePageTheme,
+  syncThemeSnapshotOnRoute,
+  getThemePageDataSeed,
   refreshOpenPages,
   refreshAfterChannelBranding
 }

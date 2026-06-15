@@ -1,6 +1,8 @@
 /**
  * 眠家商品页导航（应用内详情，不跳外部小程序）
  */
+const { navigateInSubPackage } = require('./preload-subpackages')
+
 const PRODUCT_DRAFT_KEY = 'mianjiaProductDraft'
 
 const MIANJIA_INDEX = '/package-mall/pages/mianjia/index'
@@ -14,13 +16,18 @@ function openMianjiaProductDetail(product) {
   try {
     wx.setStorageSync(PRODUCT_DRAFT_KEY, product)
   } catch (e) {}
-  wx.navigateTo({
-    url: `${MIANJIA_DETAIL}?goodsId=${encodeURIComponent(String(product.goodsId))}`
-  })
+  navigateInSubPackage(
+    'mall',
+    `${MIANJIA_DETAIL}?goodsId=${encodeURIComponent(String(product.goodsId))}`
+  )
 }
 
 function openMianjiaIndex() {
-  wx.navigateTo({ url: MIANJIA_INDEX })
+  navigateInSubPackage('mall', MIANJIA_INDEX)
+}
+
+function navigateToMallPage(url) {
+  navigateInSubPackage('mall', url)
 }
 
 module.exports = {
@@ -28,5 +35,6 @@ module.exports = {
   MIANJIA_INDEX,
   MIANJIA_DETAIL,
   openMianjiaProductDetail,
-  openMianjiaIndex
+  openMianjiaIndex,
+  navigateToMallPage
 }

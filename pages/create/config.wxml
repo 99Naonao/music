@@ -4,10 +4,11 @@
   background-color-top="{{mbNavBg}}"
   background-color-bottom="{{mbPageBgBottom}}"
   root-background-color="{{mbPageBgBottom}}"
+  background-color-content="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <view class="config-page mb-theme-{{mbTheme}}">
-  <view class="config-page-bg"></view>
+  <view class="config-page-bg" style="{{pageBgStyle}}"></view>
   <scroll-view
     class="config-scroll"
     style="height: {{scrollHeight}}px;"

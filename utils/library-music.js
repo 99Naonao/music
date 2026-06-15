@@ -140,7 +140,7 @@ function buildLibraryPlayerUrl(track) {
   if (cover) {
     q.push(`coverUrl=${encodeURIComponent(cover)}`)
   }
-  return `/pages/create/player?${q.join('&')}`
+  return `/package-create/pages/create/player?${q.join('&')}`
 }
 
 /** 供 globalAudio / 迷你播放条使用的播放对象 */

@@ -81,9 +81,18 @@ function computeScrollHeightPx(opts = {}) {
   return Math.max(160, Math.floor(h))
 }
 
+function computeBodyBottomPaddingPx(opts = {}) {
+  const m = getWindowMetrics(!!opts.forceRefresh)
+  const safe = m.safeBottom || 0
+  const extra = opts.extraPx != null ? opts.extraPx : 40
+  // mb-bottom-safe 占 safe 高度，再留 extra 避免最后一行按钮被手势条遮住
+  return Math.ceil(safe + safe + extra)
+}
+
 module.exports = {
   getWindowMetrics,
   computeSafeBottomPx,
   rpxToPx,
-  computeScrollHeightPx
+  computeScrollHeightPx,
+  computeBodyBottomPaddingPx
 }

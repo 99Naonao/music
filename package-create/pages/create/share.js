@@ -1,8 +1,8 @@
-const { stripLeadingRecipientSalutation } = require('../../utils/ai-service')
-const { request } = require('../../utils/request')
-const { showAlert } = require('../../utils/show-alert')
-const { showPointsReward } = require('../../utils/show-points-reward')
-const { applyGlobalInnerAudioOptions, patchInnerAudioForIOS } = require('../../utils/audio-ios')
+const { stripLeadingRecipientSalutation } = require('../../../utils/ai-service')
+const { request } = require('../../../utils/request')
+const { showAlert } = require('../../../utils/show-alert')
+const { showPointsReward } = require('../../../utils/show-points-reward')
+const { applyGlobalInnerAudioOptions, patchInnerAudioForIOS } = require('../../../utils/audio-ios')
 const {
   resolveCardTextLayout,
   layoutToOverlayStyles,
@@ -22,28 +22,29 @@ const {
   CARD_TO_LINE_FONT_RPX,
   CARD_TEXT_COLOR_TO,
   CARD_TEXT_COLOR_MESSAGE
-} = require('../../utils/card-text-layout')
-const { resolveCardCustomCover, resolveCardShareCover } = require('../../utils/card-cover')
-const { getWorkCoverDisplay } = require('../../utils/work-cover')
-const { markMineStatsStale } = require('../../utils/mine-stats-cache')
-const { resolveWorkDisplayTitle, resolveWorkDurationSec, findWorkInLibrary } = require('../../utils/work-meta')
+} = require('../../../utils/card-text-layout')
+const { resolveCardCustomCover, resolveCardShareCover } = require('../../../utils/card-cover')
+const { getWorkCoverDisplay } = require('../../../utils/work-cover')
+const { markMineStatsStale } = require('../../../utils/mine-stats-cache')
+const { resolveWorkDisplayTitle, resolveWorkDurationSec, findWorkInLibrary } = require('../../../utils/work-meta')
 const {
   resolveShareIdFromOptions,
   resolveShareIdFromEntry,
   isShareUuid
-} = require('../../utils/share-entry')
+} = require('../../../utils/share-entry')
 const {
   createCardShareRemote,
   saveCreatorShareId,
   readCreatorShareId
-} = require('../../utils/card-share-remote')
-const { fetchSharedCardPayload } = require('../../utils/shared-card-fetch')
-const giftInbox = require('../../utils/gift-inbox')
-const { log, logWarn } = require('../../utils/log')
-const channel = require('../../utils/channel')
-const channelShare = require('../../utils/channel-share')
-const promoPageBehavior = require('../../behaviors/promo-page')
-const { getWindowMetrics } = require('../../utils/page-layout')
+} = require('../../../utils/card-share-remote')
+const { fetchSharedCardPayload } = require('../../../utils/shared-card-fetch')
+const giftInbox = require('../../../utils/gift-inbox')
+const { log, logWarn } = require('../../../utils/log')
+const channel = require('../../../utils/channel')
+const channelShare = require('../../../utils/channel-share')
+const { buildGiftSharePath } = require('../../../utils/gift-entry')
+const promoPageBehavior = require('../../../behaviors/promo-page')
+const { computeBodyBottomPaddingPx } = require('../../../utils/page-layout')
 
 function defaultCardBlessing() {
   return (
@@ -109,6 +110,8 @@ Page({
     canShare: false,
     /** 已有云端 shareId，才允许转发小程序卡片（保证好友打开能加载） */
     shareReady: false,
+    /** Canvas 分享封面已生成（含 TO/祝福语，避免卡片只有背景图） */
+    shareImageReady: false,
     shareMsgFontSize: 24,
     shareMessageDisplay: '',
     shareMessageLines: [''],
@@ -118,8 +121,7 @@ Page({
   },
 
   updatePageBottomPadding() {
-    const m = getWindowMetrics()
-    const px = Math.ceil((m.safeBottom || 0) + 48)
+    const px = computeBodyBottomPaddingPx({ forceRefresh: true })
     if (px !== this.data.pageBottomPaddingPx) {
       this.setData({ pageBottomPaddingPx: px })
     }
@@ -213,7 +215,7 @@ Page({
     const isGiftOpen = options.gift === '1' || options.gift === 1 || options.gift === 'true'
     const creatorShareId = readCreatorShareId()
     log('share-page', 'onLoad', {
-      route: 'pages/create/share',
+      route: 'package-create/pages/create/share',
       incomingShareId: briefShareId(incomingShareId),
       isGiftOpen,
       creatorShareId: briefShareId(creatorShareId),
@@ -222,7 +224,7 @@ Page({
 
     if (incomingShareId) {
       wx.redirectTo({
-        url: `/pages/create/gift?shareId=${encodeURIComponent(incomingShareId)}`
+        url: `/package-create/pages/create/gift?shareId=${encodeURIComponent(incomingShareId)}`
       })
       return
     }
@@ -296,7 +298,7 @@ Page({
       channel.ensureInit({ query: options || {} }).then(() => {
         this._cachedShareCardImage = null
         if (this.isLoggedInForShare() && !this.data.isSharedView) {
-          this.cacheShareCardImage()
+          this.prepareShareCoverStrategy()
         }
       })
       if (!patch.canShare) {
@@ -306,7 +308,7 @@ Page({
         log('share-page', '开始 primeShareRecord（本地无 shareId）')
         this.primeShareRecord()
       } else {
-        this.cacheShareCardImage()
+        this.prepareShareCoverStrategy()
       }
     })
   },
@@ -333,6 +335,9 @@ Page({
     }
 
     this.syncCardDataFromStorage()
+    if (!this.data.isSharedView && this.data.canShare) {
+      this.prepareShareCoverStrategy()
+    }
   },
 
   /** 从 storage 同步贺卡正文（避免 onShow 早于 onLoad setData 导致收件人丢失） */
@@ -369,6 +374,11 @@ Page({
         textLayout: stored.textLayout
       })
       this.refreshShareWorkTitle()
+      if (!this.data.isSharedView && this.data.canShare) {
+        this.invalidateShareImageCache()
+        channelShare.resetChannelShareCoverVerify()
+        this.prepareShareCoverStrategy(true)
+      }
     })
   },
 
@@ -379,7 +389,7 @@ Page({
       if (!this.data.shareReady) {
         this.primeShareRecord()
       } else {
-        this.cacheShareCardImage()
+        this.prepareShareCoverStrategy()
       }
     }
   },
@@ -412,8 +422,6 @@ Page({
   },
 
   pickShareCardImageUrl() {
-    const channelCover = channelShare.getChannelShareCoverUrl()
-    if (channelCover) return channelCover
     const { cardData, coverImage } = this.getSharePayloadFromPage()
     const artistBg = (cardData && cardData.artistBgImage) || ''
     if (/^https:\/\//i.test(artistBg)) return artistBg
@@ -424,16 +432,62 @@ Page({
     return SHARE_CARD_FALLBACK_IMAGE
   },
 
-  buildSharePagePath(shareId) {
-    const sid = shareId != null ? String(shareId).trim() : ''
-    if (!sid || !isShareUuid(sid)) return ''
-    return channel.appendChannelToPath(
-      `/pages/create/gift?shareId=${encodeURIComponent(sid)}`
-    )
+  invalidateShareImageCache() {
+    this._cachedShareCardImage = null
+    if (this.data.shareImageReady) {
+      this.setData({ shareImageReady: false })
+    }
   },
 
-  /** 预生成分享卡片封面（须同步返回 onShareAppMessage，不能靠 Promise 拖慢 path） */
+  refreshShareImageReadyState() {
+    if (this.data.isSharedView) return
+    if (channelShare.shouldUseChannelShareCardCover()) {
+      if (!this.data.shareImageReady) {
+        this.setData({ shareImageReady: true })
+      }
+      return
+    }
+    const ready = !!this._cachedShareCardImage
+    if (ready !== this.data.shareImageReady) {
+      this.setData({ shareImageReady: ready })
+    }
+  },
+
+  /** 渠道先验 share-card；拉不到则与非渠道一样走 Canvas */
+  async prepareShareCoverStrategy(forceVerify) {
+    if (this.data.isSharedView || !this.data.canShare) return
+    if (!channelShare.isChannelGiftSharePartner()) {
+      this.scheduleShareImageCache()
+      return
+    }
+    const ok = await channelShare.verifyChannelShareCoverUrl(!!forceVerify)
+    if (ok) {
+      this.refreshShareImageReadyState()
+      return
+    }
+    this.scheduleShareImageCache()
+  },
+
+  scheduleShareImageCache() {
+    if (this.data.isSharedView || !this.data.canShare) return
+    if (channelShare.shouldUseChannelShareCardCover()) {
+      this.refreshShareImageReadyState()
+      return
+    }
+    if (this._shareImageCacheTimer) clearTimeout(this._shareImageCacheTimer)
+    this._shareImageCacheTimer = setTimeout(() => {
+      this._shareImageCacheTimer = null
+      this.cacheShareCardImage()
+    }, 180)
+  },
+
+  /** 预生成分享卡片封面（非渠道商才需要 Canvas 完整贺卡） */
   async cacheShareCardImage() {
+    if (this.data.isSharedView) return null
+    if (channelShare.shouldUseChannelShareCardCover()) {
+      this.refreshShareImageReadyState()
+      return null
+    }
     try {
       const drawn = await this.drawCardToCanvas({ forShare: true })
       if (drawn) {
@@ -442,6 +496,12 @@ Page({
     } catch (e) {
       console.warn('[share] cacheShareCardImage', e)
     }
+    this.refreshShareImageReadyState()
+    return this._cachedShareCardImage || null
+  },
+
+  buildSharePagePath(shareId) {
+    return buildGiftSharePath(shareId)
   },
 
   /** 同步组装转发参数，避免微信超时后打开无 shareId 的 share 页 */
@@ -452,12 +512,8 @@ Page({
     const title = channelShare.buildShareTitle(recipient, workTitle)
     const sid = this.data.shareId || readCreatorShareId()
     const path = this.buildSharePagePath(sid)
-    const imageUrl = channelShare.pickShareImageUrl(
-      this._cachedShareCardImage,
-      null,
-      this.pickShareCardImageUrl()
-    )
-    const finalPath = path || channel.appendChannelToPath('/pages/create/share')
+    const imageUrl = channelShare.pickCardGiftShareImageUrl(this._cachedShareCardImage)
+    const finalPath = path || channel.appendChannelToPath('/package-create/pages/create/share')
     if (!path) {
       logWarn('share-page', '转发 path 无 shareId，将退回 share 页', {
         dataShareId: briefShareId(this.data.shareId),
@@ -487,7 +543,7 @@ Page({
     if (sid) {
       saveCreatorShareId(sid)
       this.setData({ shareId: sid, shareReady: true })
-      this.cacheShareCardImage()
+      this.prepareShareCoverStrategy()
       log('share-page', 'primeShareRecord 成功', { shareId: briefShareId(sid) })
     } else {
       logWarn('share-page', 'primeShareRecord 失败：未拿到 shareId', {
@@ -504,6 +560,23 @@ Page({
       duration: 2500
     })
     this.primeShareRecord()
+  },
+
+  onShareImagePrepare() {
+    if (!this.isLoggedInForShare()) {
+      this.promptLoginForShare()
+      return
+    }
+    if (this.data.shareImageReady) return
+    wx.showLoading({ title: '生成分享封面...', mask: true })
+    Promise.resolve(this.prepareShareCoverStrategy(true))
+      .then(() => this.cacheShareCardImage())
+      .finally(() => {
+        wx.hideLoading()
+        if (!this.data.shareImageReady) {
+          wx.showToast({ title: '封面生成失败，请重试', icon: 'none' })
+        }
+      })
   },
 
   /**
@@ -666,10 +739,12 @@ Page({
       canShare: ok,
       isSharedView: this.data.isSharedView,
       shareReady: this.data.shareReady,
+      shareImageReady: this.data.shareImageReady,
+      hasCachedImage: !!this._cachedShareCardImage,
       shareId: briefShareId(this.data.shareId || readCreatorShareId())
     })
     if (!ok) {
-      logWarn('share-page', 'onShareAppMessage 未登录，path=/pages/create/share')
+      logWarn('share-page', 'onShareAppMessage 未登录，path=/package-create/pages/create/share')
       wx.showModal({
         title: '需要登录',
         content: '请先登录后再使用小程序卡片分享贺卡。',
@@ -681,7 +756,7 @@ Page({
       })
       return {
         title: channelShare.buildFallbackShareTitle(),
-        path: channel.appendChannelToPath('/pages/create/share'),
+        path: channel.appendChannelToPath('/package-create/pages/create/share'),
         imageUrl: channelShare.pickShareImageUrl(null, null, SHARE_CARD_FALLBACK_IMAGE)
       }
     }
@@ -698,8 +773,16 @@ Page({
         duration: 2800
       })
     }
-    log('share-page', 'onShareAppMessage 返回', { path: syncPayload.path })
-    this.cacheShareCardImage()
+    log('share-page', 'onShareAppMessage 返回', {
+      path: syncPayload.path,
+      imageUrl: syncPayload.imageUrl ? `${String(syncPayload.imageUrl).slice(0, 48)}…` : '(空)'
+    })
+    this.tryClaimShareWorkTask()
+    if (!this.data.shareImageReady) {
+      this.prepareShareCoverStrategy()
+    } else if (!channelShare.shouldUseChannelShareCardCover()) {
+      this.cacheShareCardImage()
+    }
     return syncPayload
   },
 
@@ -840,7 +923,7 @@ Page({
         })
         return {
           title,
-          path: '/pages/create/share',
+          path: '/package-create/pages/create/share',
           imageUrl
         }
       }
@@ -1259,7 +1342,7 @@ Page({
             this
           )
         },
-        forShare ? 520 : 300
+        forShare ? (meta.hasRemoteBg ? 900 : 520) : 300
       )
     })
   },
@@ -1381,7 +1464,8 @@ Page({
           this._finishCanvasExport(ctx, resolve, reject, {
             forShare: true,
             contentH: SHARE_H,
-            scale: 1
+            scale: 1,
+            hasRemoteBg: !!drawBg && /^https?:\/\//i.test(artistBg)
           })
           return
         }
@@ -1696,6 +1780,6 @@ Page({
       wx.navigateBack({ delta: 1 })
       return
     }
-    wx.redirectTo({ url: '/pages/create/card-edit' })
+    wx.redirectTo({ url: '/package-create/pages/create/card-edit' })
   }
 })

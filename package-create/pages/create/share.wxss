@@ -1,4 +1,4 @@
-@import '../../styles/card-art-text-stroke.wxss';
+@import '../../../styles/card-art-text-stroke.wxss';
 .share-page {
   padding: 20rpx 30rpx 0;
 }
@@ -391,6 +391,8 @@
   box-sizing: border-box;
   margin-top: 8rpx;
   padding-top: 8rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .share-points-hint {

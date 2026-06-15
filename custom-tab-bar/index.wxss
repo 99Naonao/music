@@ -1,12 +1,20 @@
-.tab-bar {
+.tab-bar-root {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 9999;
+}
+
+.tab-bar {
   display: flex;
   height: 96rpx;
-  box-sizing: content-box;
+  box-sizing: border-box;
+}
+
+.tab-bar-safe {
+  width: 100%;
+  pointer-events: none;
 }
 
 .tab-bar-item {

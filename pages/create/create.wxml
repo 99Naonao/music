@@ -4,13 +4,14 @@
   background-color-top="{{mbNavBg}}"
   background-color-bottom="{{mbPageBgBottom}}"
   root-background-color="{{mbPageBgBottom}}"
+  background-color-content="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <view
   class="create-home mb-theme-{{mbTheme}} {{miniPlayer ? 'create-home--has-player' : ''}}"
-  style="{{miniPlayer ? 'padding-bottom: ' + homeBottomPaddingPx + 'px;' : ''}}"
+  style="{{pageShellStyle}}{{miniPlayer ? ';padding-bottom:' + homeBottomPaddingPx + 'px' : ''}}"
 >
-  <view class="create-home-bg"></view>
+  <view class="create-home-bg" style="{{pageBgStyle}}"></view>
 
   <view class="create-home-content">
     <!-- 顶部问候 -->

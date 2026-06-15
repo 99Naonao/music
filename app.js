@@ -3,28 +3,33 @@ const theme = require('./utils/theme')
 const channel = require('./utils/channel')
 const themeBehavior = require('./behaviors/theme')
 const { resolveShareIdFromAppLaunch } = require('./utils/share-entry')
+const { rerouteSubpackageGiftLaunch, buildGiftSharePath } = require('./utils/gift-entry')
 const { log, logWarn } = require('./utils/log')
 
 const _Page = Page
-Page = function (pageOptions) {
-  pageOptions.behaviors = [themeBehavior].concat(pageOptions.behaviors || [])
-  return _Page(pageOptions)
+
+function wrapPageLifecycle(pageOptions, name, before) {
+  const userFn = pageOptions[name]
+  pageOptions[name] = function (...args) {
+    const route = (this.route || '').replace(/^\//, '')
+    if (route !== 'pages/splash/splash') {
+      before.call(this)
+    }
+    if (typeof userFn === 'function') {
+      return userFn.apply(this, args)
+    }
+  }
 }
 
-/** 提前下载分包；低版本基础库无 preloadSubpackage，回退 loadSubpackage；均无则依赖 app.json preloadRule */
-function preloadSubPackages() {
-  const preloadFn =
-    typeof wx.preloadSubpackage === 'function'
-      ? wx.preloadSubpackage
-      : typeof wx.loadSubpackage === 'function'
-        ? wx.loadSubpackage
-        : null
-  if (!preloadFn) return
+Page = function (pageOptions) {
+  pageOptions.behaviors = [themeBehavior].concat(pageOptions.behaviors || [])
+  pageOptions.data = Object.assign({}, theme.getThemePageDataSeed(), pageOptions.data || {})
 
-  const names = ['profile-ext', 'community', 'mall', 'support']
-  names.forEach((name) => {
-    preloadFn.call(wx, { name }).catch(() => {})
+  wrapPageLifecycle(pageOptions, 'onLoad', function () {
+    theme.primePageTheme(this)
   })
+
+  return _Page(pageOptions)
 }
 
 /** 线上新版本下载完成后，固定弹窗提示用户重启小程序 */
@@ -69,10 +74,9 @@ function routeIncomingShareGift(launchOpts) {
       log('app-launch', '冷启动无贺卡 shareId', { path })
       return
     }
-    const url = channel.appendChannelToPath(
-      `/pages/create/gift?shareId=${encodeURIComponent(shareId)}`
-    )
-    log('app-launch', '冷启动跳转收礼页', {
+    const url = buildGiftSharePath(shareId)
+    if (!url) return
+    log('app-launch', '冷启动跳转收礼 relay', {
       shareId: `${shareId.slice(0, 8)}…`,
       path,
       target: url
@@ -86,6 +90,7 @@ function routeIncomingShareGift(launchOpts) {
 App({
   globalData: {
     mbTheme: 'dawn',
+    mbThemePageData: null,
     mbChannel: 'default',
     mbBranding: null,
     /** splash → 首页 后首次 home_show 不弹「眠家好物」弹窗（其它运营弹窗仍可弹） */
@@ -96,16 +101,28 @@ App({
     applyGlobalInnerAudioOptions()
     channel.resolveChannelFromLaunch(options || {})
     channel.primeBrandingFromCache()
-    theme.applyPageBackground()
-    theme.initTheme(this)
+    const launchPath = String((options && options.path) || 'pages/splash/splash')
+    if (launchPath.indexOf('splash/splash') >= 0) {
+      const splash = channel.getSplashDisplay()
+      theme.applySplashPageBackground(theme.getEffectiveThemeId(), !!splash.fullBleed)
+      theme.initTheme(this, { skipPageBackground: true })
+    } else {
+      theme.applyPageBackground()
+      theme.initTheme(this)
+    }
     channel.ensureInit(options || {})
-    preloadSubPackages()
+    rerouteSubpackageGiftLaunch(options || {})
     setupMiniProgramUpdate()
     routeIncomingShareGift(options)
     if (typeof wx.onAppRoute === 'function') {
-      wx.onAppRoute(() => {
-        theme.applyPageBackground()
-        theme.applyChromeTheme(theme.getEffectiveThemeId(), { animate: false })
+      wx.onAppRoute((res) => {
+        const path = res && res.path ? String(res.path) : ''
+        if (path.indexOf('splash/splash') >= 0) {
+          const splash = channel.getSplashDisplay()
+          theme.applySplashPageBackground(theme.getEffectiveThemeId(), !!splash.fullBleed)
+          return
+        }
+        theme.syncThemeSnapshotOnRoute(path)
       })
     }
   },

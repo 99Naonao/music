@@ -1,11 +1,11 @@
-const { showAlert } = require('../../utils/show-alert')
-const { setTabBarSelected, syncTabBarPageLayout } = require('../../utils/tab-bar')
+const { showAlert } = require('../../../utils/show-alert')
+const { setTabBarSelected, syncTabBarPageLayout } = require('../../../utils/tab-bar')
 const {
   formatRefDurationHint,
   validateReferenceDurationSec,
   probeAudioDurationSec,
   resolveLibraryReferenceTrack
-} = require('../../utils/reference-music')
+} = require('../../../utils/reference-music')
 
 /** 与第一步 pages/create/config 乐器列表 icon 路径一致 */
 const INSTRUMENT_ICONS = {
@@ -768,7 +768,7 @@ Page({
     wx.setStorageSync('trackConfig', trackConfig)
 
     wx.navigateTo({
-      url: '/pages/create/generating'
+      url: '/package-create/pages/create/generating'
     })
   },
 

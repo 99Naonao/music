@@ -51,7 +51,7 @@ Page({
       showAlert('提示', '本地文件不存在，请重新下载。')
       return
     }
-    let url = `/pages/create/player?musicId=${encodeURIComponent(item.id)}&localPath=${encodeURIComponent(item.localPath)}&from=downloads`
+    let url = `/package-create/pages/create/player?musicId=${encodeURIComponent(item.id)}&localPath=${encodeURIComponent(item.localPath)}&from=downloads`
     if (item.durationSec > 0) {
       url += `&durationMs=${item.durationSec * 1000}`
     }

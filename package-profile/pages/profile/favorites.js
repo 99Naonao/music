@@ -73,7 +73,7 @@ Page({
       showAlert('提示', '该作品暂无音频，无法播放。')
       return
     }
-    let url = `/pages/create/player?musicId=${encodeURIComponent(item.id)}&audioUrl=${encodeURIComponent(item.audioUrl)}&from=works`
+    let url = `/package-create/pages/create/player?musicId=${encodeURIComponent(item.id)}&audioUrl=${encodeURIComponent(item.audioUrl)}&from=works`
     if (item.durationSec > 0) {
       url += `&durationMs=${item.durationSec * 1000}`
     }

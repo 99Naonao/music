@@ -1,6 +1,6 @@
-const { showAlert } = require('../../utils/show-alert')
-const { getAllSelectableScenes, getSceneById } = require('../../utils/ai-scenes')
-const { computeScrollHeightPx } = require('../../utils/page-layout')
+const { showAlert } = require('../../../utils/show-alert')
+const { getAllSelectableScenes, getSceneById } = require('../../../utils/ai-scenes')
+const { computeScrollHeightPx } = require('../../../utils/page-layout')
 
 function clearTrackSession() {
   try {

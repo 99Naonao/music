@@ -1,58 +1,43 @@
-@import './share.wxss';
-
-/* 收礼页：封面播放键仅图标，无圆底/渐变（勿用 share-play-btn） */
-.gift-page .gift-cover-overlay {
-  background: rgba(0, 0, 0, 0.22);
-}
-
-.gift-page .gift-cover-play {
-  width: auto;
-  height: auto;
-  padding: 0;
-  margin: 0;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
+.gift-relay {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.gift-page .gift-cover-play:active {
-  opacity: 0.85;
-  transform: scale(0.96);
-}
-
-.gift-page .gift-cover-play-icon {
-  width: 80rpx;
-  height: 80rpx;
-  filter: drop-shadow(0 4rpx 12rpx rgba(0, 0, 0, 0.35));
-}
-
-.gift-progress {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  width: 100%;
-  margin-top: 8rpx;
-  margin-bottom: 8rpx;
-  padding: 0 4rpx;
+  padding: 48rpx;
   box-sizing: border-box;
+  background: #e8f2fc;
 }
 
-.gift-time {
-  font-size: 24rpx;
-  color: var(--mb-text-muted);
-  min-width: 80rpx;
+.gift-relay-box {
+  width: 100%;
   text-align: center;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
 }
 
-.gift-slider {
-  flex: 1;
-  margin: 0;
+.gift-relay-title {
+  display: block;
+  font-size: 32rpx;
+  color: #2d5a8e;
+  line-height: 1.6;
+}
+
+.gift-relay-sub {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #6b7a8c;
+}
+
+.gift-relay-btn {
+  margin-top: 32rpx;
+  width: 100%;
+  background: #2d5a8e;
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 999rpx;
+}
+
+.gift-relay-btn.ghost {
+  background: transparent;
+  color: #2d5a8e;
+  border: 1rpx solid #2d5a8e;
 }

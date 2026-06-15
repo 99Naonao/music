@@ -665,7 +665,7 @@ Page({
       return
     }
     const work = mp.work
-    let url = `/pages/create/player?musicId=${work.id}&audioUrl=${encodeURIComponent(work.audioUrl)}&from=create`
+    let url = `/package-create/pages/create/player?musicId=${work.id}&audioUrl=${encodeURIComponent(work.audioUrl)}&from=create`
     const ms =
       work.audioDurationMs != null
         ? Number(work.audioDurationMs)
@@ -692,7 +692,7 @@ Page({
       /* ignore */
     }
     wx.navigateTo({
-      url: '/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1'
+      url: '/package-create/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1'
     })
   }
 })

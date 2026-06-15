@@ -25,9 +25,9 @@ const LEGACY_DISMISS_KEYS = [
 
 /** 禁止弹窗的路由片段 */
 const BLOCKED_ROUTE_PARTS = [
-  'pages/create/generating',
-  'pages/create/tracks',
-  'pages/create/gift',
+  'package-create/pages/create/generating',
+  'package-create/pages/create/tracks',
+  'package-create/pages/create/gift',
   'package-community/pages/post/create'
 ]
 

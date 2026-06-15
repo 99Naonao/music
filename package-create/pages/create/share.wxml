@@ -4,6 +4,7 @@
   background-color-top="{{mbNavBg}}"
   background-color-bottom="{{mbPageBgBottom}}"
   root-background-color="{{mbPageBgBottom}}"
+  background-color-content="{{mbPageBgBottom}}"
 />
 <mb-bottom-safe />
 <wxs src="./time-format.wxs" module="tf" />
@@ -152,11 +153,15 @@
       <text class="share-points-hint" wx:if="{{canShare}}">点击分享并发送给好友，每日可得 3 积分</text>
       <view class="share-footer-actions">
         <button
-          wx:if="{{canShare && shareReady}}"
+          wx:if="{{canShare && shareReady && shareImageReady}}"
           class="share-btn share-btn--primary"
           open-type="share"
-          bindtap="onShareCardTap"
         >分享小程序卡片</button>
+        <button
+          wx:elif="{{canShare && shareReady}}"
+          class="share-btn share-btn--primary"
+          bindtap="onShareImagePrepare"
+        >生成分享封面</button>
         <button
           wx:elif="{{canShare}}"
           class="share-btn share-btn--primary"

@@ -41,7 +41,7 @@
   | 意见反馈       | POST /api/feedback                        | 有列表 API 无 UI    |
   | 音乐/贺卡/社区 | 完整业务流                                | 业务表无 source_channel |
 
-2.2 后端侧（backend/src/app.js 单体 ~5000 行）
+2.2 后端侧（backend/src/app.js 单体 ~5000 行） 
 
   技术栈：Express 4、cors、multer、better-sqlite3、axios、fluent-ffmpeg。
   数据：SQLite 单文件（生产在宝塔 Node 进程内）。

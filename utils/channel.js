@@ -267,6 +267,12 @@ async function initOnColdStart(options) {
   applyBrandingToApp()
   refreshThemeAfterBranding()
   tryChannelBindIfLoggedIn()
+  try {
+    const channelAnalytics = require('./channel-analytics')
+    channelAnalytics.reportAppLaunch(options)
+  } catch (e) {
+    /* ignore */
+  }
   return channelId
 }
 

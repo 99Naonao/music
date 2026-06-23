@@ -278,30 +278,98 @@ function getFileSizeBytes(filePath) {
   })
 }
 
-/** 微信 imgSecCheck 限制 1MB；上传前尽量压到 900KB 以内 */
-async function compressImageForUpload(filePath, maxBytes = 900 * 1024) {
-  let current = filePath
-  try {
-    let size = await getFileSizeBytes(current)
-    if (size <= maxBytes) return current
+const WX_IMG_SEC_HARD_MAX = 1024 * 1024
+/** 上传目标体积（留余量，避免微信 imgSecCheck 1MB 边界失败） */
+const UPLOAD_TARGET_MAX_BYTES = 900 * 1024
 
-    const qualities = [80, 65, 50, 40]
-    for (const quality of qualities) {
-      const compressed = await new Promise((resolve, reject) => {
-        wx.compressImage({
-          src: current,
-          quality,
-          success: (res) => resolve(res.tempFilePath),
-          fail: reject
-        })
-      })
-      current = compressed
+function getImageInfo(filePath) {
+  return new Promise((resolve, reject) => {
+    wx.getImageInfo({
+      src: filePath,
+      success: resolve,
+      fail: reject
+    })
+  })
+}
+
+function wxCompressImage(src, options) {
+  const quality = options && options.quality != null ? options.quality : 80
+  const compressedWidth = options && options.compressedWidth
+  const compressedHeight = options && options.compressedHeight
+  return new Promise((resolve, reject) => {
+    const opts = { src, quality }
+    if (compressedWidth > 0) opts.compressedWidth = compressedWidth
+    if (compressedHeight > 0) opts.compressedHeight = compressedHeight
+    wx.compressImage({
+      ...opts,
+      success: (res) => resolve(res.tempFilePath),
+      fail: reject
+    })
+  })
+}
+
+function scaleDimensions(width, height, maxSide) {
+  const w = Math.max(1, Math.round(Number(width) || 1))
+  const h = Math.max(1, Math.round(Number(height) || 1))
+  const longest = Math.max(w, h)
+  if (longest <= maxSide) return { width: w, height: h }
+  const ratio = maxSide / longest
+  return {
+    width: Math.max(1, Math.round(w * ratio)),
+    height: Math.max(1, Math.round(h * ratio))
+  }
+}
+
+/** 微信 imgSecCheck 限制 1MB；多档 quality + 缩放，尽量压到 900KB 以内 */
+async function compressImageForUpload(filePath, maxBytes = UPLOAD_TARGET_MAX_BYTES) {
+  let current = filePath
+  let size = await getFileSizeBytes(current)
+  if (size <= maxBytes) return current
+
+  const qualitySteps = [80, 65, 50, 40, 30, 20]
+  for (const quality of qualitySteps) {
+    try {
+      current = await wxCompressImage(current, { quality })
       size = await getFileSizeBytes(current)
       if (size <= maxBytes) return current
+    } catch (e) {
+      logWarn('work-cover', 'quality 压缩失败', { quality, message: e && e.message })
     }
-    logWarn('work-cover', '压缩后仍接近 1MB', { size })
-  } catch (e) {
-    logWarn('work-cover', '图片压缩跳过', { message: e && e.message })
+  }
+
+  const info = await getImageInfo(filePath).catch(() => null)
+  const origW = info && info.width
+  const origH = info && info.height
+  if (origW && origH) {
+    const maxSides = [1920, 1280, 1024, 800, 640, 480]
+    const dimQualities = [72, 60, 50, 40]
+    for (const maxSide of maxSides) {
+      const { width, height } = scaleDimensions(origW, origH, maxSide)
+      for (const quality of dimQualities) {
+        try {
+          current = await wxCompressImage(filePath, {
+            quality,
+            compressedWidth: width,
+            compressedHeight: height
+          })
+          size = await getFileSizeBytes(current)
+          if (size <= maxBytes) {
+            log('work-cover', '缩放压缩成功', { maxSide, quality, sizeKb: Math.round(size / 1024) })
+            return current
+          }
+        } catch (e) {
+          /* 尝试下一档 */
+        }
+      }
+    }
+  }
+
+  size = await getFileSizeBytes(current)
+  if (size > WX_IMG_SEC_HARD_MAX) {
+    throw new Error('图片过大，请换一张较小的 JPG/PNG 或裁剪后再试')
+  }
+  if (size > maxBytes) {
+    logWarn('work-cover', '压缩后仍略大于目标体积', { sizeKb: Math.round(size / 1024) })
   }
   return current
 }

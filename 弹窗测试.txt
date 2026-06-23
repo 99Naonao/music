@@ -1,292 +1,353 @@
 ================================================================================
-眠音盒小程序 · 运营弹窗测试说明
+眠音盒 · 运营后台 · 已完成盘点 & 增强方向分析
 ================================================================================
-版本：2026-05
-工具：微信开发者工具（建议勾选「不校验合法域名」仅测本地接口时）
-相关代码：utils/promo-scheduler.js、components/promo-popup、behaviors/promo-page
+更新：2026-06
+访问：https://music.zsyl.cc/admin/
+后端：D:\中数\backProject\backend
+小程序：本仓库（music）
 
 --------------------------------------------------------------------------------
-一、弹窗 vs 眠家横幅（别搞混）
+一、当前已完成（Phase 2 · Step 0～4）✅
 --------------------------------------------------------------------------------
 
-  类型          表现                              关闭方式
-  ------------  --------------------------------  --------------------------
-  眠家横幅      页面内横条「眠家深睡 · 好物推荐」    各页「今天不再显示」（独立 key）
-  运营弹窗      全屏遮罩 + 居中卡片                「7天内不再提示」/ 右上角 X
+  模块          页面/能力                              现状简述
+  ─────────────────────────────────────────────────────────────────────
+  登录鉴权      Session + Cookie                       可用
+  M1 渠道       渠道列表 / 编辑 / Branding / 上传      可用，偏表单
+  M2 看板       总览卡片 + 柱状趋势 + 渠道对比表       可用，图表较简
+  M3 导出       渠道日统计 / 反馈 → CSV                可用，无 XLSX
+  M4 反馈       分页列表                               只读，无处理状态
+  M4 社区       关键词搜帖 + 删帖                      无评论审核、无置顶
+  M4 弹窗       列表 / JSON 编辑 / 启停                无可视化表单、无 A/B
+  审计          渠道操作有 audit-log API               无独立「操作日志」页
+  M5 合作方     partner 角色 + 渠道过滤                未做独立门户与账号自助
 
-  测弹窗时看：是否出现半透明遮罩 + 居中 promo-popup 卡片。
-
---------------------------------------------------------------------------------
-二、测试前：清空频控（否则 7 天内可能什么都不弹）
---------------------------------------------------------------------------------
-
-开发者工具 → Storage → 本地存储，删除或清空下列 key：
-
-  mb_promo_last_show_at          上次弹窗时间
-  mb_promo_snooze_until         「7天内不再提示」截止时间
-  mb_promo_session_closed_ids   本次启动已关闭的 campaign 列表
-  mb_promo_remote_cache         远程活动缓存（改后端配置后建议删）
-
-【可选】测「久未 7 天」类弹窗时，再改行为时间（见第四节）。
-
-清空后：点击「编译」或完全关闭模拟器再打开。
+  小结：功能「该有的都有」，但呈现以 **表格 + 数字卡片 + 简易柱状图** 为主，
+        缺少 **下钻、对比、告警、工作流、内容运营** 等让运营「有事情做」的能力，
+        因此体感偏单调、偏「研发后台」而非「运营驾驶舱」。
 
 --------------------------------------------------------------------------------
-三、最快：控制台强制弹出（推荐日常 UI 测试）
+二、为什么感觉单调（问题诊断）
 --------------------------------------------------------------------------------
 
-【必须先满足】
-  1. 当前页是「带运营弹窗」的页面，不是闪屏 splash。
-     首页 create、我的 mine、盒友圈、播放页、完成页、分享 share 均可。
-  2. 在模拟器里先点进该 Tab，再执行命令（getCurrentPages().pop() 才是当前页）。
-  3. page.tryPromoShow 必须存在；若为 undefined，说明当前页未接入弹窗。
+  1. 看板层
+     · 只有 4 类核心指标（DAU / 绑定 / 音乐完成 / 贺卡），缺少漏斗与留存
+     · 趋势图是 CSS 柱状条，无折线/堆叠/同比环比
+     · 无「今日实时 vs 昨日同期」、无异常高亮（涨跌 >20% 标红）
+     · 无单渠道详情页（从排行点进去看该渠道 30 天曲线）
 
-【推荐一键命令（复制整段，在首页 Console 执行）】
+  2. 运营层
+     · 反馈只能看，不能标记「已处理 / 已回复 / 忽略」
+     · 社区只能删帖，不能删评论、禁言用户、置顶优质帖
+     · 弹窗编辑是裸 JSON，运营不敢改；无预览、无按场景模拟
+     · 渠道 Branding 无「小程序预览二维码」一键生成
 
-  const page = getCurrentPages().pop()
-  console.log('当前页', page && page.route, '有tryPromoShow=', !!(page && page.tryPromoShow))
-  page && page.tryPromoShow && page.tryPromoShow('home_show', {
-    forceCampaignId: 'inactive_music',
-    recordVisitAfter: false
-  }).then((ok) => console.log('[promo] 强制弹窗结果', ok))
+  3. 内容层
+     · 官方曲库、贺卡模板、商城商品仍在代码/脚本里，后台不可配
+     · 无 Banner / 首页推荐位 / 任务活动配置
+     · promo 曝光点击数据未回收到看板（POST /api/promo/event 仅写日志）
 
-  · 约 0.3 秒后出现弹窗；ok 为 true 表示成功。
-  · forceCampaignId 绕过规则校验与 7 天频控；且不会写入 mb_promo_last_show_at（不影响自然触发测试）。
+  4. 治理层
+     · admin_audit_logs 已有数据，但 UI 无「谁在何时改了什么」
+     · 无管理员账号管理（改密、新建 operator、禁用账号）
+     · 无合同到期提醒、渠道 health 红绿灯
 
-【诊断自然触发为何不弹（首页 Console）】
-
-  getCurrentPages().pop().tryPromoDiagnose('home_show').then(console.log)
-
-  看 wouldPick（会弹哪条）、frequencyOk、candidates 里 inactive_card 的 ruleOk/days。
-
-  测「久未贺卡」示例（8 天前做贺卡，但最近有访问）：
-
-  const ago8 = Date.now() - 8 * 24 * 60 * 60 * 1000
-  const ago1 = Date.now() - 1 * 24 * 60 * 60 * 1000
-  wx.setStorageSync('mb_last_card_make_at', ago8)
-  wx.setStorageSync('mb_last_visit_at', ago1)
-  wx.removeStorageSync('mb_promo_last_show_at')
-  wx.removeStorageSync('mb_promo_snooze_until')
-  wx.removeStorageSync('mb_promo_session_closed_ids')
-  // 杀进程重进首页，或切 Tab 再回首页
-
-【通用写法】
-  const page = getCurrentPages().pop()
-  page.tryPromoShow('场景名', {
-    forceCampaignId: '活动id',
-    recordVisitAfter: false
-  }).then((ok) => console.log('[promo]', ok))
-
-【活动 id 与建议页面】
-
-  id                      说明                    建议页面 / scene
-  ----------------------  ----------------------  ----------------------------------
-  inactive_visit          好久不见 / N 天没来      首页  home_show
-  inactive_login          登录有礼                首页或我的  home_show / mine_show
-  inactive_card           久未制作贺卡            首页  home_show
-  inactive_music          久未生成音乐            首页  home_show
-  inactive_community      久未盒友圈发帖          盒友圈  community_show
-  mianjia_goods           眠家好物                首页  home_show
-  after_card_share_gift   伴手礼（已暂时关闭）    贺卡分享页  after_card_share
-  after_generate_card     生成成功提醒制作贺卡    完成页  after_generate
-
-【示例：首页强制「眠家好物」】
-  getCurrentPages().pop().tryPromoShow('home_show', {
-    forceCampaignId: 'mianjia_goods',
-    recordVisitAfter: false
-  })
-
-【示例：分享页强制「伴手礼」】
-  getCurrentPages().pop().tryPromoShow('after_card_share', {
-    forceCampaignId: 'after_card_share_gift',
-    recordVisitAfter: false
-  })
-
-【示例：完成页强制「生成成功」】
-  getCurrentPages().pop().tryPromoShow('after_generate', {
-    forceCampaignId: 'after_generate_card',
-    recordVisitAfter: false
-  })
-
-控制台可过滤关键字：[promo]。
-  · show + 强制弹窗结果 true  → 成功
-  · 7天频控未通过            → 未用 forceCampaignId（自然触发时常见）
-  · forceCampaignId 未找到    → id 拼错或 scene 不对（如伴手礼要用 after_card_share）
-  · 当前页面在黑名单          → 在 gift / generating 等页无法弹
-  · PROMO_ENABLED=false      → 检查 utils/mianjia-config.js
-
-【仍不弹时自查】
-  [ ] 是否在首页 route 为 pages/create/create
-  [ ] create.wxml 是否有 <promo-popup visible="{{promoVisible}}" …>
-  [ ] 删 mb_promo_remote_cache 后重试
-  [ ] 看 Console 是否报 page.tryPromoShow is not a function
+  5. 体验层
+     · 侧栏 6 项平铺，无分组（数据 / 运营 / 配置 / 系统）
+     · 无首页「待办」：未处理反馈数、待审帖子、即将到期合同
+     · 无深色模式、无移动端适配（运营外出只看数）
 
 --------------------------------------------------------------------------------
-四、按业务规则测「久未 7 天」（真实逻辑）
+三、可增强方向（按价值 × 难度排序）
 --------------------------------------------------------------------------------
 
-规则：距上次行为 ≥ 7 天，且第三节频控 key 已清空。
-优先级：久未访问 > 久未登录 > 久未贺卡 > 久未音乐 > 久未发帖 > … > 眠家好物
+  图例：⭐ 业务价值  ·  🔧 实现难度（低/中/高）  ·  📦 主要依赖
 
-在 Console 执行（8 天前时间戳）：
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ P0 · 建议优先做（1～2 周，立刻让后台「好用」）                            │
+  └─────────────────────────────────────────────────────────────────────────┘
 
-  const ago8 = Date.now() - 8 * 24 * 60 * 60 * 1000
-  wx.setStorageSync('mb_last_visit_at', ago8)
-  wx.setStorageSync('mb_first_visit_at', ago8)
-  // 按需只测某一种时，只改对应 key：
-  // wx.setStorageSync('mb_last_phone_login_at', ago8)
-  // wx.setStorageSync('mb_last_card_make_at', ago8)
-  // wx.setStorageSync('mb_last_music_generate_at', ago8)
-  // wx.setStorageSync('mb_last_community_post_at', ago8)
-  wx.removeStorageSync('mb_promo_last_show_at')
-  wx.removeStorageSync('mb_promo_snooze_until')
-  wx.removeStorageSync('mb_promo_session_closed_ids')
+  【P0-1】看板升级 · 运营驾驶舱首页 ⭐⭐⭐  🔧中  📦 ECharts + 现有 stats API
+    · 折线图替代纯柱状（DAU / 音乐 / 贺卡 多指标切换）
+    · 同比：较昨日 / 较上周同日 百分比小标签
+    · 渠道详情：点击排行 → /dashboard/channel/:id 专页
+    · 迷你 KPI：音乐生成中 vs 已完成、今日新增用户数
+    · 可选：接入 POST /api/promo/event 聚合 → 「弹窗曝光 / 点击」卡片
 
-然后：完全关闭小程序 → 重新编译进入 → 进对应 Tab。
+  【P0-2】工作台 · 待办与快捷入口 ⭐⭐⭐  🔧低  📦 聚合现有 API
+    · 登录后首页卡片：
+        - 未读反馈 N 条（需加 status 字段，见 P0-3）
+        - 近 7 日零 DAU 渠道列表（异常提醒）
+        - 合同 30 天内到期渠道（channels.contract_end）
+        - 快捷：新建渠道 / 导出月报 / 查看昨日 DAU
+    · 侧栏分组：概览 | 数据 | 运营 | 配置 | 系统
 
-注意：首页 onShow 会先 tryPromoShow，再 recordVisit。测「久未访问」必须在
-改完 storage 后冷启动再进首页，不要在同一会话里先逛一圈再改时间。
+  【P0-3】反馈工作流 ⭐⭐⭐  🔧低  📦 user_feedback 加 status / admin_note
+    · 状态：pending → processing → resolved → ignored
+    · 列表筛选 + 运营备注 + 处理人 + 处理时间
+    · 看板增加「待处理反馈」计数
+    API：PATCH /api/admin/feedback/:id
 
---------------------------------------------------------------------------------
-五、各场景自然触发（不走 forceCampaignId）
---------------------------------------------------------------------------------
+  【P0-4】弹窗可视化编辑 ⭐⭐⭐  🔧中  📦 替代 JSON  textarea
+    · 表单字段：标题、副标题、按钮文案、场景多选、规则、优先级
+    · 「预览 JSON」折叠区给高级用户
+    · 按 scene 模拟：选 home_show + channel → 展示将命中哪条活动
+    · 活动效果：近 7 日 exposure / click / dismiss（需聚合 promo event）
 
-  scene               触发时机                          进入方式
-  ------------------  --------------------------------  -------------------------
-  home_show           首页 Tab onShow                   闪屏结束 / 点 Tab 首页
-  mine_show           我的 Tab onShow                   Tab「我的」
-  community_show      盒友圈 Tab onShow                 Tab「盒友圈」
-  player_show         播放页 onShow                     播放一首作品
-  complete_show       完成页 onShow                     生成成功进入完成页
-  after_generate      完成页 onLoad 有 musicId 后约 0.6s  同上（第二条机会）
-  after_card_share    【已暂时关闭】分享后伴手礼弹窗
+  【P0-5】操作审计页 ⭐⭐  🔧低  📦 admin_audit_logs 已有
+    · /audit 列表：时间、操作人、动作、目标、IP
+    · 筛选：渠道变更 / branding / 登录 / 弹窗
+    API：GET /api/admin/audit-logs?from=&to=&action=
 
-【不会弹运营弹窗的页面】
-  package-create/pages/create/gift（收礼）
-  package-create/pages/create/generating（生成中）
-  package-create/pages/create/tracks（录音）
-  package-community/pages/post/create（发帖编辑）
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ P1 · 中期增强（2～4 周，形成完整运营闭环）                               │
+  └─────────────────────────────────────────────────────────────────────────┘
 
---------------------------------------------------------------------------------
-六、闪屏 → 首页（专项：只屏蔽「眠家好物」弹窗）
---------------------------------------------------------------------------------
+  【P1-1】社区审核增强 ⭐⭐  🔧中
+    · 帖子详情：评论列表、点赞数、关联音乐
+    · 删评论（复用现有 community-service 逻辑）
+    · 用户维度：某 openid 近 30 天发帖数（简易风控）
+    · 可选：敏感词命中高亮（接 content-security 结果缓存）
 
-产品规则：从 splash 刚进首页的第一次 home_show，不弹 mianjia_goods；
-其它运营弹窗（如好久不见）仍可弹。眠家横幅不受影响。
+  【P1-2】渠道运营包 ⭐⭐⭐  🔧中
+    · 渠道详情页整合：Branding + 近 30 天曲线 + 合同信息 + 审计记录
+    · 一键生成渠道体验链接 / 小程序码参数说明
+    · 渠道复制：从 channel_1 复制 branding 到新渠道
+    · 批量启停（活动结束批量 disabled）
 
-【应不出现】
-  闪屏（等 2 秒或点跳过）→ 首页：不应出现「眠家好物 · 搭配助眠音乐」居中弹窗。
+  【P1-3】漏斗与留存看板 ⭐⭐⭐  🔧高  📦 biz_events 或业务表统计
+    · 漏斗：启动 → 登录 → 生成音乐 → 完成 → 贺卡 → 分享
+    · 按渠道对比转化率（需统一埋点 event_type）
+    · 7 日留存：D0 启动用户在 D1/D7 是否回访
+    · 依赖：小程序埋点补全 + 日聚合脚本扩展
 
-【仍可出现】
-  若第四节已配置 8 天未访问等，冷启动后首页可能弹「好久不见」等更高优先级弹窗。
+  【P1-4】内容配置台（曲库 / 贺卡 / Banner） ⭐⭐  🔧高
+    · 官方曲库：上下架、排序、封面（现 partly 在 DB + 脚本）
+    · 贺卡模板：触发 sync-card-templates + Admin 列表启停
+    · 首页 Banner / 任务入口：新表 home_banners，小程序 GET 公开 API
+    · 减少改代码发版频率
 
-【验证「眠家好物」延后】
-  1. 清空第二节频控 key
-  2. 闪屏 → 首页（不弹眠家好物弹窗）
-  3. 切到「我的」再切回「首页」→ 若频控允许，可弹眠家好物
+  【P1-5】导出增强 ⭐⭐  🔧中
+    · XLSX（exceljs）多 Sheet：汇总 + 分渠道明细
+    · 定时月报：每月 1 号邮件/企业微信推送 CSV 链接（可选）
+    · 导出任务持久化（现内存 Job，重启丢失 → 改落盘 + 24h 清理）
 
---------------------------------------------------------------------------------
-七、交互与频控 checklist
---------------------------------------------------------------------------------
+  【P1-6】系统管理 ⭐⭐  🔧中
+    · /settings/admins：super 管理后台账号（CRUD、重置密码）
+    · /settings/account：当前用户改密
+    · /settings/health：DB 大小、最近聚合时间、Node 版本、磁盘 uploads
 
-  [ ] 主按钮：跳转正确（登录→我的、眠家→分包、制作贺卡→card-pick 等）
-  [ ] 右上角 X：仅本次冷启动内不再弹同一条 campaign；杀进程重进可再弹（未点 7 天）
-  [ ] 「7天内不再提示」：写入 mb_promo_snooze_until，7 天内各页强弹窗都不再出
-  [ ] 7 天内只弹 1 条强弹窗：弹过后 mb_promo_last_show_at 会挡住下一条
-  [ ] 横幅与弹窗独立：关弹窗不影响首页眠家横条
-  [ ] 闪屏→首页：不弹眠家好物弹窗（第六节）
-  [ ] 收礼页 gift：任意情况不弹运营弹窗
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ P2 · 规模化 / 商务向（Phase 3，4～8 周）                                  │
+  └─────────────────────────────────────────────────────────────────────────┘
 
---------------------------------------------------------------------------------
-八、行为时间戳（写入时机，便于构造测试数据）
---------------------------------------------------------------------------------
+  【P2-1】M5 Partner 门户 ⭐⭐⭐  🔧中  📦 指导.txt §4.5
+    · partner 登录后独立首页：仅本渠道 KPI + 导出 + 素材下载
+    · 白标 PDF 月报（带渠道 Logo）
+    · 可选：partner 提交 branding 变更 → 我方审批流
 
-  storage key                   何时写入
-  ----------------------------  ------------------------------------------
-  mb_last_visit_at              每次进小程序（首页 tryPromoShow 之后 recordVisit）
-  mb_first_visit_at             首次 recordVisit
-  mb_last_phone_login_at        我的页手机号登录成功
-  mb_last_card_make_at          贺卡编辑完成保存 cardData（进分享前）
-  mb_last_music_generate_at     生成页 onGenerationComplete / 完成页 onLoad 有 musicId
-  mb_last_community_post_at     盒友圈发帖成功
+  【P2-2】结算与合同 ⭐⭐⭐  🔧高
+    · channels 表补 contract_start/end、KPI 目标 JSON
+    · 自动生成「月度 KPI 达成报告」对比合同指标
+    · 到期邮件 / 企微提醒
 
---------------------------------------------------------------------------------
-九、远程配置与开关
---------------------------------------------------------------------------------
+  【P2-3】告警中心 ⭐⭐  🔧中
+    · 规则：DAU 连续 3 天跌 30%、封面上传失败率 >5%、API 5xx 突增
+    · 通知：企业微信 webhook / 邮件
+    · 后台「告警历史」页
 
-  · 活动列表：GET /api/promo/active?scene=home_show（失败用 utils/promo-fallback.js）
-  · 总开关：utils/mianjia-config.js → PROMO_ENABLED（false 则全站不弹）
-  · 埋点（可选）：POST /api/promo/event，后端记日志
+  【P2-4】BI 外挂（可选） ⭐  🔧低
+    · Metabase / Superset 只读连接 SQLite 或 PG 副本
+    · Admin 内嵌 iframe 或链接跳转
+    · 适合复杂 ad-hoc 分析，不替代 M1 配置台
 
-改后端 promo 配置后：删 mb_promo_remote_cache，重新编译。
-
---------------------------------------------------------------------------------
-十、真机预览注意
---------------------------------------------------------------------------------
-
-  · Storage 清空只在当前设备/模拟器生效，真机需各自操作或发体验版自测。
-  · 线上需小程序 + 后端均已发布。
-  · 分享伴手礼弹窗：仅在制作者 share 页、且登录+云端 share 同步成功后触发。
-
---------------------------------------------------------------------------------
-十一、常见问题
---------------------------------------------------------------------------------
-
-  Q：清了 storage 仍不弹？
-  A：查 PROMO_ENABLED；是否 7 天内 snooze；是否在黑名单页；控制台 [promo] 是否有输出。
-
-  Q：只想看 UI、不想等 7 天？
-  A：用第三节 forceCampaignId（已绕过频控）；务必在首页等已接入页面执行。
-
-  Q：Console 执行了 force 仍不弹？
-  A：先执行 console.log(getCurrentPages().pop().route)；
-     必须是 create/mine 等；用第三节「推荐一键命令」看 ok 与 [promo] 日志。
-
-  Q：首页只有横幅没有弹窗？
-  A：可能频控未过、或仅命中 mianjia_goods 且刚从闪屏进来（第六节）、或优先级更高的规则未满足天数。
-
-  Q：弹窗和横幅能一起关吗？
-  A：不能共用；横幅用 mb_home_mianjia_entry_dismissed_date 等，弹窗用 mb_promo_*。
+  【P2-5】A/B 与实验 ⭐  🔧高
+    · 同场景多活动按流量百分比分配
+    · 实验结论回流看板
 
 --------------------------------------------------------------------------------
-七、选封面弹窗（完成页 · 非运营 promo-popup）
+四、看板指标扩展建议（在现有 M2 上「加厚度」）
 --------------------------------------------------------------------------------
 
-  类型：wx.showModal「选择作品封面」+ 页内底部选项面板（关闭提醒）
-  代码：utils/complete-cover-prompt.js、package-create/pages/create/complete.js
-  注意：与第三节运营弹窗、眠家横幅均无关。
+  已有                          建议新增（按数据可得性）
+  ─────────────────────────────────────────────────────────────
+  DAU                           新增注册用户、登录用户、回访用户
+  新增渠道绑定                  绑定来源（二维码 / 分享 / 手动）
+  音乐完成                      生成中 / 失败数、平均生成时长
+  贺卡创建                      分享次数、保存到曲库次数
+  用户反馈数                    待处理 / 已解决、按类型分布饼图
+  （无）                        弹窗曝光 / 点击率
+  （无）                        曲库播放 Top10、社区发帖/评论数
+  （无）                        积分发放 / 商城点击（若业务需要）
 
-【清空频控 Storage】
+  实现路径：
+    · 短期：从现有表 SQL 聚合，扩展 daily_channel_stats 列或加 daily_metric 宽表
+    · 中期：biz_events 统一事件名，aggregate-daily-stats.js 扩展
+    · 长期：关键路径漏斗单独 materialized 表
 
-  mb_complete_cover_prompt_snooze_until
-  mb_complete_cover_prompt_dismiss_date
+--------------------------------------------------------------------------------
+五、UI/UX 体验升级（不改业务也能「不那么单调」）
+--------------------------------------------------------------------------------
 
-【方式 A：在首页 Console 一键（推荐，需重新编译后）】
+  1. 图表：引入 ECharts（折线、面积、饼图、渠道对比堆叠柱）
+  2. 首页布局：左 KPI 卡片 + 右趋势大图 + 下方待办与渠道排行
+  3. 空状态：无数据时引导「如何配置埋点 / 如何跑 aggregate:stats」
+  4. 渠道主题色：列表行展示 primaryColor 色块，一眼区分渠道皮
+  5. 弹窗编辑：分 Tab（基础 / 文案 / 规则 / 渠道范围 / 高级 JSON）
+  6. 表格：反馈/社区支持列宽拖拽、内容展开、导出当前筛选
+  7. 权限：readonly 隐藏一切写操作按钮，partner 菜单极简
+  8. 国际化：暂可不做；文案统一「运营语言」而非 API 字段名
 
-  1. 模拟器停在「AI生成」首页 Tab
-  2. 开发者工具 → Console，粘贴执行：
+--------------------------------------------------------------------------------
+六、推荐实施路线（Phase 2+ 增量）
+--------------------------------------------------------------------------------
 
-  getCurrentPages().pop().testCoverPrompt()
+  批次 A（约 1～2 周）— 「让运营愿意每天打开」              ✅ 已完成
+    ☑ P0-2 工作台待办 + 侧栏分组（/workbench 默认首页）
+    ☑ P0-1 看板 ECharts 折线 + 同比标签 + 渠道详情页
+    ☑ P0-5 操作审计页（/audit）
+    ☑ P0-3 反馈状态流（pending/processing/resolved/ignored）
 
-  会自动跳转完成页并弹出选封面对话框。
+  批次 A 新增 API：
+    GET  /api/admin/workbench
+    GET  /api/admin/audit-logs?from=&to=&action=
+    PATCH /api/admin/feedback/:id  { status, adminNote }
+    GET  /api/admin/stats/channel/:id
+    GET  /api/admin/stats/overview  （含 compare、pendingFeedback）
 
-【方式 B：首页只执行跳转（等价）】
+  批次 A 新增页面：
+    /admin/#/workbench          工作台（待办 + 快捷入口）
+    /admin/#/dashboard/channel/:id   渠道数据详情
+    /admin/#/audit              操作日志
+    反馈页支持状态筛选与下拉更新
 
-  wx.removeStorageSync('mb_complete_cover_prompt_snooze_until')
-  wx.removeStorageSync('mb_complete_cover_prompt_dismiss_date')
-  wx.navigateTo({ url: '/package-create/package-create/pages/create/complete?musicId=console-test-cover&testCoverPrompt=1' })
+  批次 A 部署：
+    · node scripts/migrate.js   （007_feedback_workflow.js）
+    · 上传 deploy/admin/ 整目录（含 echarts，体积约 1.2MB）
+    · 重启 Node
 
-【方式 C：已在完成页时重复测】
+  批次 B（约 2～3 周）— 「运营能独立闭环」                  ✅ 已完成
+    ☑ P0-4 弹窗可视化编辑 + 场景/渠道预览 + 效果统计
+    ☑ P1-2 渠道详情整合页（hub：branding + 30d 趋势 + 合同 + 审计 + 体验链接 + 复制 branding）
+    ☑ P1-5 导出 XLSX（exceljs 双 sheet）+ 任务落盘 24h 清理
+    ☑ P1-6 管理员 CRUD（super）+ 改密 + 系统健康页
 
-  getCurrentPages().pop().testCoverPrompt()
+  批次 B 新增 API：
+    GET  /api/admin/promo/meta
+    GET  /api/admin/promo/simulate?scene=&channel=
+    GET  /api/admin/promo/campaigns/:id/stats?days=
+    GET  /api/admin/channels/:id/hub
+    POST /api/admin/channels/:id/branding/copy  { sourceChannelId }
+    PATCH /api/admin/channels/batch-status  { ids, status }
+    POST /api/admin/export/jobs  { format: csv|xlsx }
+    GET  /api/admin/settings/health
+    POST /api/admin/settings/password
+    GET/POST/PATCH /api/admin/settings/admins
 
-  须当前 route 为 package-create/pages/create/complete。
+  批次 B 埋点增强：
+    POST /api/promo/event  现写入 biz_events（promo.show/click 等）
 
-【测「不再提示」】
+  批次 B 新增页面：
+    /admin/#/promo/:id         弹窗分 Tab 可视化编辑 + 预览 + 效果
+    /admin/#/dashboard/channel/:id   渠道整合详情（增强）
+    /admin/#/export            支持 CSV / XLSX
+    /admin/#/settings/account  修改密码
+    /admin/#/settings/admins   管理员（super）
+    /admin/#/settings/health   系统健康
+    渠道列表：批量启用/停用 + 跳转详情
 
-  · 点「稍后再说」→ 仅关闭，不再立刻弹出菜单
-  · 完成页封面下方「不想每次自动提醒选封面？」→ 底部弹出：今天 / 7天 / 自定义
+  批次 B 部署：
+    · node scripts/migrate.js   （008_promo_events_index.js）
+    · npm install               （新增 exceljs）
+    · 上传 deploy/admin/ 整目录
+    · 重启 Node
+
+  批次 C（约 3～4 周）— 「数据有深度」                    ✅ 已完成
+    ☑ P1-3 漏斗 / 留存看板（启动→登录→生成→完成→贺卡→分享 + D1/D3/D7）
+    ☑ P1-1 社区评论审核（帖子详情、删评论、用户 30 天风控）
+    ☑ P1-4 内容配置台（官方曲库上下架/排序、贺卡模板启停、首页 Banner + 公开 API）
+
+  批次 C 新增 API：
+    GET  /api/admin/analytics/funnel?from=&to=&channel=
+    GET  /api/admin/analytics/retention?cohortDate=&channel=
+    GET  /api/admin/community/posts/:id
+    DELETE /api/admin/community/posts/:postId/comments/:commentId
+    GET  /api/admin/community/users/:openid/risk
+    GET/PATCH /api/admin/content/library
+    GET/PATCH /api/admin/content/card-templates
+    POST /api/admin/content/card-templates/sync
+    GET/POST/PUT/DELETE /api/admin/content/banners
+    GET  /api/home/banners?channel=          （小程序可读，暂未接 UI）
+
+  批次 C 新增页面：
+    /admin/#/analytics/funnel      漏斗 + 留存
+    /admin/#/community/:id         帖子详情与评论审核
+    /admin/#/content/library       官方曲库
+    /admin/#/content/cards         贺卡模板
+    /admin/#/content/banners       首页 Banner
+
+  批次 C 部署：
+    · node scripts/migrate.js   （009_batch_c_content.js）
+    · 上传 deploy/admin/ 整目录
+    · 重启 Node
+
+  批次 C 上传文件清单（相对 backend 根目录）：
+    【必传 · 后端】
+    src/migrations/009_batch_c_content.js
+    src/repositories/music-tracks.js
+    src/routes/branding.js
+    src/admin/index.js
+    src/admin/routes/analytics.js          ← 新增
+    src/admin/routes/content.js            ← 新增
+    src/admin/routes/community.js          ← 覆盖
+    src/services/admin-analytics-service.js ← 新增
+    src/services/admin-content-service.js   ← 新增
+    src/services/admin-card-service.js      ← 新增
+    src/services/admin-community-service.js ← 覆盖
+    【必传 · 前端静态】
+    deploy/admin/index.html
+    deploy/admin/assets/index-*.js
+    deploy/admin/assets/index-*.css
+    （整目录覆盖 deploy/admin/，删旧 assets 残留）
+
+  批次 D（商务阶段）— 「渠道方也能用」
+    □ P2-1 Partner 门户
+    □ P2-2 合同 KPI 月报
+    □ P2-3 告警中心
+
+  人力粗估（1 全栈）：批次 A+B 约 3～5 人日；A～C 约 8～12 人日。
+
+--------------------------------------------------------------------------------
+七、与小程序的关系（增强时勿破坏）
+--------------------------------------------------------------------------------
+
+  · 后台纯增量 API 走 /api/admin/*，不改小程序 Bearer 鉴权
+  · 新增公开配置（Banner、推荐位）走新 GET /api/*，版本化 JSON
+  · 埋点类增强需小程序发版或热更新 utils/channel-analytics.js
+  · M1/M4 已有能力：运营改 branding / 弹窗后，小程序缓存 TTL 内自动生效
+
+--------------------------------------------------------------------------------
+八、快速决策表（给产品 / 商务）
+--------------------------------------------------------------------------------
+
+  若当前痛点是…                    建议先做
+  ────────────────────────────────────────────────────
+  看数字太枯燥、看不出问题          P0-1 看板 + P0-2 待办告警
+  反馈看了没法跟进                  P0-3 反馈工作流
+  不敢改弹窗                        P0-4 可视化编辑 + 效果数据
+  渠道多了管不过来                  P1-2 渠道详情 + P2-2 合同提醒
+  第三方要看自己的数                  P2-1 Partner 门户
+  商务每月要交 Excel                P1-5 XLSX 月报（已有 CSV 基础）
+  想知道用户从哪流失                P1-3 漏斗（投入最大，价值最高）
+
+--------------------------------------------------------------------------------
+九、相关文档
+--------------------------------------------------------------------------------
+
+  · 指导.txt              完整架构 M1～M5、DDL、权限矩阵
+  · backend/admin-web/    现 Admin SPA 源码
+  · deploy/admin/         生产静态产物（上传此目录，非 admin-web 源码）
 
 ================================================================================
-文档结束
+文档说明：Phase 2（Step 0～4）+ 批次 A/B/C 增强已完成；批次 D 按需迭代。
 ================================================================================
